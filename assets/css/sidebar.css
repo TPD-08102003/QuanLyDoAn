@@ -1,0 +1,145 @@
+.sidebar {
+    width: 250px;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: #2c3e50;
+    color: white;
+    padding-top: 20px;
+    transition: transform 0.3s ease;
+    z-index: 1000;
+}
+
+.sidebar.collapsed {
+    transform: translateX(-250px);
+}
+
+.sidebar .logo-container {
+    text-align: center;
+    margin-bottom: 20px;
+    padding: 10px;
+}
+
+.sidebar .nav-link {
+    color: #d1d9e6;
+    padding: 10px 20px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+    background-color: #34495e;
+    color: white;
+}
+
+.sidebar .nav-link i {
+    margin-right: 10px;
+}
+
+.sidebar .dropdown-toggle {
+    cursor: pointer;
+}
+
+.sidebar .dropdown-menu {
+    background-color: #34495e;
+    border: none;
+    padding: 0;
+    position: static;
+    /* Hiển thị inline trong sidebar */
+    display: none;
+    /* Ẩn mặc định */
+    width: 100%;
+    /* Chiếm toàn bộ chiều rộng sidebar */
+    max-height: 0;
+    /* Chiều cao ban đầu bằng 0 */
+    overflow: hidden;
+    /* Ẩn nội dung vượt quá */
+    transition: max-height 0.3s ease-in-out;
+    /* Hiệu ứng mượt mà */
+}
+
+.sidebar .dropdown-menu.show {
+    display: block;
+    /* Hiện khi toggle */
+    max-height: 200px;
+    /* Chiều cao tối đa (đủ cho 3-4 item) */
+}
+
+.sidebar .dropdown-item {
+    color: #d1d9e6;
+    padding: 8px 40px;
+    /* Thụt vào để căn chỉnh với icon */
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.sidebar .dropdown-item:hover {
+    background-color: #2c3e50;
+    color: white;
+}
+
+.sidebar .dropdown-item i {
+    margin-right: 10px;
+}
+
+/* Main content */
+.main-content {
+    margin-left: 250px;
+    transition: margin-left 0.3s ease;
+    padding-top: 60px;
+}
+
+.main-content.collapsed {
+    margin-left: 0;
+}
+
+/* Top navbar */
+.top-navbar {
+    position: fixed;
+    top: 0;
+    left: 250px;
+    right: 0;
+    z-index: 999;
+    transition: left 0.3s ease;
+}
+
+.top-navbar.collapsed {
+    left: 0;
+}
+
+/* Toggle button */
+.sidebar-toggle {
+    font-size: 1.5rem;
+    color: white;
+    background: none;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .sidebar {
+        transform: translateX(-250px);
+    }
+
+    .sidebar.collapsed {
+        transform: translateX(0);
+    }
+
+    .main-content {
+        margin-left: 0;
+    }
+
+    .main-content.collapsed {
+        margin-left: 250px;
+    }
+
+    .top-navbar {
+        left: 0;
+    }
+
+    .top-navbar.collapsed {
+        left: 250px;
+    }
+}

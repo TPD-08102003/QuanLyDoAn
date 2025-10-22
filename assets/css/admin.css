@@ -1,0 +1,269 @@
+/* Dropdown menu và item */
+.top-navbar .dropdown-menu {
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    right: 0;
+    left: auto !important;
+}
+
+.top-navbar .dropdown-item {
+    font-weight: 600;
+    padding: 0.5rem 1.5rem;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.top-navbar .dropdown-item:hover,
+.top-navbar .dropdown-item:focus {
+    background-color: #f8f9fa;
+    color: #0d6efd;
+}
+
+.top-navbar .dropdown-item:hover::after {
+    content: '';
+    position: absolute;
+    left: 1.5rem;
+    right: 1.5rem;
+    bottom: 0.3rem;
+    height: 2px;
+    background-color: #0d6efd;
+    animation: underlineExpand 0.3s ease-out forwards;
+}
+
+@keyframes underlineExpand {
+    from {
+        transform: scaleX(0);
+    }
+
+    to {
+        transform: scaleX(1);
+    }
+}
+
+.top-navbar .dropdown-item i {
+    width: 20px;
+    text-align: center;
+    margin-right: 10px;
+    color: #6c757d;
+}
+
+.top-navbar .dropdown-item:hover i {
+    color: #0d6efd;
+}
+
+.top-navbar .dropdown-divider {
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+/* Dropdown toggle styles */
+.top-navbar .dropdown-toggle {
+    font-weight: 700;
+    color: #fff !important;
+    position: relative;
+    padding-bottom: 5px;
+    background: none !important;
+    border: none;
+    box-shadow: none;
+    transition: color 0.2s;
+}
+
+.top-navbar .dropdown-toggle::after {
+    margin-left: 0.5em;
+    vertical-align: 0.15em;
+    border-top: 0.3em solid #fff;
+    border-right: 0.3em solid transparent;
+    border-left: 0.3em solid transparent;
+    transition: none;
+}
+
+.top-navbar .dropdown-toggle:hover::after,
+.top-navbar .dropdown-toggle:focus::after {
+    border-top: 0.3em solid #fff;
+    border-right: 0.3em solid transparent;
+    border-left: 0.3em solid transparent;
+}
+
+.top-navbar .dropdown-toggle:hover::before,
+.top-navbar .dropdown-toggle:focus::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    background-color: #fff;
+    animation: navUnderlineExpand 0.3s ease-out forwards;
+}
+
+.top-navbar .dropdown-toggle:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+/* Định dạng nav-link */
+.top-navbar .navbar-nav .nav-link {
+    font-weight: 600;
+    color: #fff !important;
+    position: relative;
+    padding-bottom: 5px;
+    transition: color 0.2s;
+}
+
+.top-navbar .navbar-nav .nav-link:not(.dropdown-toggle):hover::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    background-color: #fff;
+    animation: navUnderlineExpand 0.3s ease-out forwards;
+}
+
+@keyframes navUnderlineExpand {
+    from {
+        transform: scaleX(0);
+    }
+
+    to {
+        transform: scaleX(1);
+    }
+}
+
+/* Avatar styling */
+.top-navbar .avatar-container {
+    margin-left: 0.5rem;
+}
+
+.top-navbar .avatar-img {
+    transition: transform 0.2s ease;
+}
+
+.top-navbar .avatar-img:hover {
+    transform: scale(1.1);
+}
+
+/* Bỏ gạch chân cho Study Sharing Admin */
+.logo-container a {
+    text-decoration: none !important;
+}
+
+.logo-container a:hover,
+.logo-container a:focus {
+    text-decoration: none !important;
+}
+
+.logo-container a::after,
+.logo-container a::before {
+    display: none !important;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .top-navbar .dropdown-menu {
+        left: 0 !important;
+        right: auto !important;
+    }
+}
+
+/* Card styles */
+.dashboard-card {
+    border-radius: 12px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    overflow: hidden;
+    background: linear-gradient(145deg, #ffffff, #f8f9fa);
+}
+
+.dashboard-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+}
+
+.card-users {
+    border-left: 4px solid #0d6ffd;
+}
+
+.card-documents {
+    border-left: 4px solid #198754;
+}
+
+.card-courses {
+    border-left: 4px solid #dc3545;
+}
+
+.card-categories {
+    border-left: 4px solid #ffc107;
+}
+
+.card-body {
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.card-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.dashboard-card:hover .card-icon {
+    transform: scale(1.2);
+    color: #0d6efd;
+}
+
+.card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #343a40;
+    margin-bottom: 0.5rem;
+}
+
+.card-text {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #212529;
+    margin-bottom: 1rem;
+}
+
+.quick-link {
+    display: inline-block;
+    font-weight: 500;
+    color: #0d6efd;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.quick-link:hover {
+    background-color: #e9ecef;
+    color: #0d6efd;
+}
+
+.quick-action-btn {
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.quick-action-btn:hover {
+    background-color: #0d6efd;
+    color: #fff;
+    transform: translateY(-3px);
+}
+
+@media (max-width: 768px) {
+    .dashboard-card {
+        margin-bottom: 1rem;
+    }
+
+    .card-text {
+        font-size: 1.5rem;
+    }
+
+    .quick-action-btn {
+        width: 100%;
+        text-align: center;
+    }
+}
