@@ -6,5 +6,25 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
+    'App\\Account' => $baseDir . '/models/Account.php',
+    'App\\AccountController' => $baseDir . '/controllers/AccountController.php',
+    'App\\AuthController' => $baseDir . '/controllers/AuthController.php',
+    'App\\Feedback' => $baseDir . '/models/Feedback.php',
+    'App\\FeedbackController' => $baseDir . '/controllers/FeedbackController.php',
+    'App\\Group' => $baseDir . '/models/Group.php',
+    'App\\GroupController' => $baseDir . '/controllers/GroupController.php',
+    'App\\GroupMember' => $baseDir . '/models/GroupMember.php',
+    'App\\GroupMemberController' => $baseDir . '/controllers/GroupMemberController.php',
+    'App\\HomeController' => $baseDir . '/controllers/HomeController.php',
+    'App\\Lecturer' => $baseDir . '/models/Lecturer.php',
+    'App\\LecturerController' => $baseDir . '/controllers/LecturerController.php',
+    'App\\Project' => $baseDir . '/models/Project.php',
+    'App\\ProjectController' => $baseDir . '/controllers/ProjectController.php',
+    'App\\Report' => $baseDir . '/models/Report.php',
+    'App\\ReportController' => $baseDir . '/controllers/ReportController.php',
+    'App\\Student' => $baseDir . '/models/Student.php',
+    'App\\StudentController' => $baseDir . '/controllers/StudentController.php',
+    'App\\User' => $baseDir . '/models/User.php',
+    'App\\UserController' => $baseDir . '/controllers/UserController.php',
     'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
 );

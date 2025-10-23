@@ -16,11 +16,32 @@ class ComposerStaticInit73cd6991189d89348d2ec506c5db6a25
     public static $prefixDirsPsr4 = array (
         'App\\' => 
         array (
-            0 => __DIR__ . '/../..' . '/app',
+            0 => __DIR__ . '/../..' . '/models',
+            1 => __DIR__ . '/../..' . '/controllers',
         ),
     );
 
     public static $classMap = array (
+        'App\\Account' => __DIR__ . '/../..' . '/models/Account.php',
+        'App\\AccountController' => __DIR__ . '/../..' . '/controllers/AccountController.php',
+        'App\\AuthController' => __DIR__ . '/../..' . '/controllers/AuthController.php',
+        'App\\Feedback' => __DIR__ . '/../..' . '/models/Feedback.php',
+        'App\\FeedbackController' => __DIR__ . '/../..' . '/controllers/FeedbackController.php',
+        'App\\Group' => __DIR__ . '/../..' . '/models/Group.php',
+        'App\\GroupController' => __DIR__ . '/../..' . '/controllers/GroupController.php',
+        'App\\GroupMember' => __DIR__ . '/../..' . '/models/GroupMember.php',
+        'App\\GroupMemberController' => __DIR__ . '/../..' . '/controllers/GroupMemberController.php',
+        'App\\HomeController' => __DIR__ . '/../..' . '/controllers/HomeController.php',
+        'App\\Lecturer' => __DIR__ . '/../..' . '/models/Lecturer.php',
+        'App\\LecturerController' => __DIR__ . '/../..' . '/controllers/LecturerController.php',
+        'App\\Project' => __DIR__ . '/../..' . '/models/Project.php',
+        'App\\ProjectController' => __DIR__ . '/../..' . '/controllers/ProjectController.php',
+        'App\\Report' => __DIR__ . '/../..' . '/models/Report.php',
+        'App\\ReportController' => __DIR__ . '/../..' . '/controllers/ReportController.php',
+        'App\\Student' => __DIR__ . '/../..' . '/models/Student.php',
+        'App\\StudentController' => __DIR__ . '/../..' . '/controllers/StudentController.php',
+        'App\\User' => __DIR__ . '/../..' . '/models/User.php',
+        'App\\UserController' => __DIR__ . '/../..' . '/controllers/UserController.php',
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
     );
 

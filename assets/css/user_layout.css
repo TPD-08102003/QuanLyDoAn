@@ -9,7 +9,7 @@
     --dark-color: #343a40;
     --text-dark: #2c3e50;
     --text-light: #6c757d;
-    --border-color: #e1e5e9;
+    --border-color: #a9aaa1;
 }
 
 body {
@@ -40,10 +40,55 @@ body {
     max-height: 45px;
     width: auto;
     object-fit: contain;
+
     /* Thay đổi từ cover thành contain để giữ nguyên tỷ lệ */
     margin-right: 10px;
     border-radius: 0;
     /* Loại bỏ bo tròn */
+}
+
+/* CHỈNH SỬA ĐỂ CÂN BẰNG HÀNG CHỮ MENU */
+.navbar-nav {
+    align-items: center;
+}
+
+.navbar-custom .nav-item {
+    margin-bottom: 0 !important;
+}
+
+.navbar-custom .nav-link {
+    padding: 0.75rem 1rem !important;
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+/* Đảm bảo tất cả các mục menu có chiều cao bằng nhau */
+.navbar-custom .navbar-nav .nav-item {
+    display: flex;
+    align-items: center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 991.98px) {
+    .navbar-custom .navbar-nav .nav-item {
+        justify-content: flex-start;
+        padding: 0.5rem 0;
+    }
+
+    .navbar-custom .nav-link {
+        padding: 0.5rem 0 !important;
+    }
+}
+
+/* Đảm bảo dropdown menu cũng cân bằng */
+.navbar-custom .dropdown-toggle {
+    white-space: nowrap;
+}
+
+/* Cân bằng chiều cao cho avatar và text */
+.navbar-custom .nav-link.d-flex {
+    min-height: 50px;
 }
 
 .navbar-custom .nav-link {
@@ -132,6 +177,151 @@ body {
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
+.avatar-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+
+
+.avatar-img:hover {
+    border-color: var(--primary-color);
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.avatar-status {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 10px;
+    height: 10px;
+    background-color: var(--success-color);
+    border: 2px solid white;
+    border-radius: 50%;
+}
+
+/* User name styling */
+.user-name {
+    font-weight: 600;
+    color: var(--text-dark);
+    transition: color 0.3s ease;
+}
+
+.nav-link:hover .user-name {
+    color: var(--primary-color);
+}
+
+/* Dropdown avatar */
+.dropdown-menu .avatar-img {
+    width: 32px;
+    height: 32px;
+    margin-right: 8px;
+}
+
+
+.dropdown-header {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+}
+
+.dropdown-header .avatar-img {
+    width: 48px;
+    height: 48px;
+    margin-right: 12px;
+}
+
+/* Responsive avatar */
+@media (max-width: 768px) {
+    .avatar-img {
+        width: 36px;
+        height: 36px;
+    }
+
+    .user-name {
+        font-size: 0.9rem;
+    }
+}
+
+
+
+/* Avatar styling */
+.avatar-container {
+    margin-left: 0.5rem;
+}
+
+.avatar-img {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.avatar-img:hover {
+    transform: scale(1.1);
+}
+
+/* ===== ENHANCED NAVBAR STYLES ===== */
+.navbar-custom .dropdown-toggle::after {
+    margin-left: 0.5rem;
+}
+
+.navbar-custom .dropdown-menu {
+    border: none;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    margin-top: 8px;
+}
+
+.navbar-custom .dropdown-item {
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.navbar-custom .dropdown-item:hover {
+    background-color: var(--light-color);
+    color: var(--primary-color);
+    padding-left: 1.25rem;
+}
+
+/* Mobile specific avatar styles */
+@media (max-width: 991.98px) {
+    .navbar-custom .nav-item.dropdown .d-flex {
+        justify-content: center;
+        padding: 0.5rem 0;
+    }
+
+    .navbar-custom .dropdown-menu {
+        text-align: center;
+    }
+}
+
+/* Avatar animation */
+@keyframes avatar-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 6px rgba(52, 152, 219, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(52, 152, 219, 0);
+    }
+}
+
+.avatar-notification {
+    animation: avatar-pulse 2s infinite;
+}
+
 /* Features Section */
 .features-section {
     padding: 5rem 0;
@@ -198,10 +388,10 @@ body {
     font-weight: 500;
 }
 
-/* Footer - SỬA LOGO FOOTER */
+/* Footer */
 .footer {
-    background-color: var(--secondary-color);
-    color: white;
+    background-color: #ffffff;
+    color: rgb(0, 0, 0);
     padding: 4rem 0 2rem;
 }
 
@@ -262,14 +452,14 @@ body {
 }
 
 .footer-links a {
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(0, 0, 0, 0.8);
     text-decoration: none;
     transition: all 0.3s ease;
     font-weight: 500;
 }
 
 .footer-links a:hover {
-    color: white;
+    color: rgb(255, 145, 0);
     padding-left: 5px;
 }
 
@@ -287,7 +477,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
+    color: rgb(0, 8, 255);
     text-decoration: none;
     transition: all 0.3s ease;
 }
