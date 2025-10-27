@@ -23,7 +23,7 @@ class HomeAdminController
             session_start();
         }
 
-        if (!isset($_SESSION['user']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+        if (!isset($_SESSION['account_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
             header('Location: /quanlydoan');
             exit();
         }

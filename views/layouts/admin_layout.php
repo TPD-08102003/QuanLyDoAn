@@ -235,7 +235,7 @@ if (session_status() === PHP_SESSION_NONE) {
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
     <!-- Admin JS -->
-    <script src="/study_sharing/assets/js/admin.js"></script>
+    <script src="/quanlydoan/assets/js/admin.js"></script>
 </body>
 
 </html>

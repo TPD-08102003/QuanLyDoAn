@@ -18,6 +18,7 @@ class HomeController
 
     public function index()
     {
+        $pdo = $this->pdo;
 
         $accountModel = new Account($this->pdo);
         $userModel = new User($this->pdo);
@@ -26,6 +27,12 @@ class HomeController
         $latestProjects = array_slice($projectModel->getAllProjects(), 0, 5);
         $totalUsers = count($userModel->getAllUsers());
         $totalProjects = count($projectModel->getAllProjects());
+
+        if (isset($_SESSION['account_id'])) {
+            $user = $userModel->getUserById($_SESSION['account_id']);
+        } else {
+            $user = null;
+        }
 
         $title = 'Trang chủ';
         ob_start();

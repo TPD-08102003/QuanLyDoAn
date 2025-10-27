@@ -171,8 +171,8 @@ if (isset($_SESSION['account_id']) && isset($_SESSION['role']) && $_SESSION['rol
         </div>
     </footer>
 
-    <!-- Login Modal -->
-    <div id="loginModal" class="modal fade">
+    <!-- Modal Đăng nhập -->
+    <div id="loginModal" class="modal fade" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">

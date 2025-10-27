@@ -3,7 +3,7 @@ function getBaseURL() {
 }
 
 // Xử lý form đăng nhập
-document.getElementById('loginForm').addEventListener('submit', function(e) {
+document.getElementById('loginForm').addEventListener('submit', function (e) {
     e.preventDefault();
     const form = this;
     const submitButton = form.querySelector('button[type="submit"]');
@@ -26,44 +26,44 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
     submitButton.disabled = true;
     spinner.classList.remove('d-none');
 
-    fetch('/study_sharing/auth/login', {
+    fetch('/quanlydoan/auth/login', {
         method: 'POST',
         body: new FormData(form)
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
-    .then(data => {
-        document.getElementById('loginMessage').innerHTML = `<div class="alert ${data.success ? 'alert-success' : 'alert-danger'}">${data.message}</div>`;
-        if (data.success) {
-            if (data.role === 'admin') {
-                setTimeout(() => window.location.href = '/study_sharing/HomeAdmin/index', 1000);
-            } else {
-                setTimeout(() => location.reload(), 1000);
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
             }
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        document.getElementById('loginMessage').innerHTML = '<div class="alert alert-danger">Lỗi server, vui lòng thử lại!</div>';
-    })
-    .finally(() => {
-        submitButton.disabled = false;
-        spinner.classList.add('d-none');
-    });
+            return response.json();
+        })
+        .then(data => {
+            document.getElementById('loginMessage').innerHTML = `<div class="alert ${data.success ? 'alert-success' : 'alert-danger'}">${data.message}</div>`;
+            if (data.success) {
+                if (data.role === 'admin') {
+                    setTimeout(() => window.location.href = '/quanlydoan/HomeAdmin/index', 1000);
+                } else {
+                    setTimeout(() => location.reload(), 1000);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('loginMessage').innerHTML = '<div class="alert alert-danger">Lỗi server, vui lòng thử lại!</div>';
+        })
+        .finally(() => {
+            submitButton.disabled = false;
+            spinner.classList.add('d-none');
+        });
 
     form.classList.remove('was-validated');
 });
 
 // Xử lý form đăng ký
-(function() {
+(function () {
     'use strict';
     const registerForm = document.querySelector('#registerForm');
     if (registerForm) {
-        registerForm.addEventListener('submit', function(event) {
+        registerForm.addEventListener('submit', function (event) {
             const form = this;
             const submitButton = form.querySelector('button[type="submit"]');
             let spinner = submitButton.querySelector('.spinner-border') || document.createElement('span');
@@ -81,28 +81,28 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
                 submitButton.disabled = true;
                 spinner.classList.remove('d-none');
                 const formData = new FormData(form);
-                fetch('/study_sharing/auth/register', {
+                fetch('/quanlydoan/auth/register', {
                     method: 'POST',
                     body: formData
                 })
-                .then(response => response.json())
-                .then(data => {
-                    const messageDiv = document.querySelector('#registerMessage');
-                    messageDiv.innerHTML = `<div class="alert alert-${data.success ? 'success' : 'danger'}">${data.message}</div>`;
-                    if (data.success) {
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 2000);
-                    }
-                })
-                .catch(error => {
-                    const messageDiv = document.querySelector('#registerMessage');
-                    messageDiv.innerHTML = '<div class="alert alert-danger">Lỗi server, vui lòng thử lại!</div>';
-                })
-                .finally(() => {
-                    submitButton.disabled = false;
-                    spinner.classList.add('d-none');
-                });
+                    .then(response => response.json())
+                    .then(data => {
+                        const messageDiv = document.querySelector('#registerMessage');
+                        messageDiv.innerHTML = `<div class="alert alert-${data.success ? 'success' : 'danger'}">${data.message}</div>`;
+                        if (data.success) {
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 2000);
+                        }
+                    })
+                    .catch(error => {
+                        const messageDiv = document.querySelector('#registerMessage');
+                        messageDiv.innerHTML = '<div class="alert alert-danger">Lỗi server, vui lòng thử lại!</div>';
+                    })
+                    .finally(() => {
+                        submitButton.disabled = false;
+                        spinner.classList.add('d-none');
+                    });
             }
             form.classList.add('was-validated');
         }, false);
@@ -111,7 +111,7 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
         optionalFields.forEach(id => {
             const field = document.querySelector(`#${id}`);
             if (field) {
-                field.addEventListener('input', function() {
+                field.addEventListener('input', function () {
                     if (this.value) {
                         this.classList.add('is-valid');
                         this.classList.remove('is-invalid');
@@ -125,11 +125,11 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
 })();
 
 // Xử lý form quên mật khẩu
-(function() {
+(function () {
     'use strict';
     const forgotPasswordForm = document.querySelector('#forgotPasswordForm');
     if (forgotPasswordForm) {
-        forgotPasswordForm.addEventListener('submit', function(event) {
+        forgotPasswordForm.addEventListener('submit', function (event) {
             const form = this;
             const submitButton = form.querySelector('#forgotPasswordSubmit');
             let spinner = submitButton.querySelector('.spinner-border');
@@ -150,28 +150,28 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
                 submitButton.disabled = true;
                 spinner.classList.remove('d-none');
                 const formData = new FormData(form);
-                fetch('/study_sharing/auth/forgotPassword', {
+                fetch('/quanlydoan/auth/forgotPassword', {
                     method: 'POST',
                     body: formData
                 })
-                .then(response => response.json())
-                .then(data => {
-                    const messageDiv = document.querySelector('#forgotPasswordMessage');
-                    messageDiv.innerHTML = `<div class="alert alert-${data.success ? 'success' : 'danger'}">${data.message}</div>`;
-                    if (data.success) {
-                        setTimeout(() => {
-                            bootstrap.Modal.getInstance(document.getElementById('forgotPasswordModal')).hide();
-                        }, 2000);
-                    }
-                })
-                .catch(error => {
-                    const messageDiv = document.querySelector('#forgotPasswordMessage');
-                    messageDiv.innerHTML = '<div class="alert alert-danger">Lỗi server, vui lòng thử lại!</div>';
-                })
-                .finally(() => {
-                    submitButton.disabled = false;
-                    spinner.classList.add('d-none');
-                });
+                    .then(response => response.json())
+                    .then(data => {
+                        const messageDiv = document.querySelector('#forgotPasswordMessage');
+                        messageDiv.innerHTML = `<div class="alert alert-${data.success ? 'success' : 'danger'}">${data.message}</div>`;
+                        if (data.success) {
+                            setTimeout(() => {
+                                bootstrap.Modal.getInstance(document.getElementById('forgotPasswordModal')).hide();
+                            }, 2000);
+                        }
+                    })
+                    .catch(error => {
+                        const messageDiv = document.querySelector('#forgotPasswordMessage');
+                        messageDiv.innerHTML = '<div class="alert alert-danger">Lỗi server, vui lòng thử lại!</div>';
+                    })
+                    .finally(() => {
+                        submitButton.disabled = false;
+                        spinner.classList.add('d-none');
+                    });
             }
             form.classList.add('was-validated');
         }, false);
@@ -179,11 +179,11 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
 })();
 
 // Xử lý form đổi mật khẩu
-(function() {
+(function () {
     'use strict';
     const changePasswordForm = document.querySelector('#changePasswordForm');
     if (changePasswordForm) {
-        changePasswordForm.addEventListener('submit', function(event) {
+        changePasswordForm.addEventListener('submit', function (event) {
             const form = this;
             const submitButton = form.querySelector('button[type="submit"]');
             let spinner = submitButton.querySelector('.spinner-border');
@@ -204,29 +204,29 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
                 submitButton.disabled = true;
                 spinner.classList.remove('d-none');
                 const formData = new FormData(form);
-                fetch('/study_sharing/auth/changePassword', {
+                fetch('/quanlydoan/auth/changePassword', {
                     method: 'POST',
                     body: formData
                 })
-                .then(response => response.json())
-                .then(data => {
-                    const messageDiv = document.querySelector('#changePasswordMessage');
-                    messageDiv.innerHTML = `<div class="alert alert-${data.success ? 'success' : 'danger'}">${data.message}</div>`;
-                    if (data.success) {
-                        setTimeout(() => {
-                            bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide();
-                            location.reload();
-                        }, 2000);
-                    }
-                })
-                .catch(error => {
-                    const messageDiv = document.querySelector('#changePasswordMessage');
-                    messageDiv.innerHTML = '<div class="alert alert-danger">Lỗi server, vui lòng thử lại!</div>';
-                })
-                .finally(() => {
-                    submitButton.disabled = false;
-                    spinner.classList.add('d-none');
-                });
+                    .then(response => response.json())
+                    .then(data => {
+                        const messageDiv = document.querySelector('#changePasswordMessage');
+                        messageDiv.innerHTML = `<div class="alert alert-${data.success ? 'success' : 'danger'}">${data.message}</div>`;
+                        if (data.success) {
+                            setTimeout(() => {
+                                bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide();
+                                location.reload();
+                            }, 2000);
+                        }
+                    })
+                    .catch(error => {
+                        const messageDiv = document.querySelector('#changePasswordMessage');
+                        messageDiv.innerHTML = '<div class="alert alert-danger">Lỗi server, vui lòng thử lại!</div>';
+                    })
+                    .finally(() => {
+                        submitButton.disabled = false;
+                        spinner.classList.add('d-none');
+                    });
             }
             form.classList.add('was-validated');
         }, false);
