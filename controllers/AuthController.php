@@ -303,7 +303,7 @@ class AuthController
         <body>
             <div class="email-container">
                 <div class="email-header">
-                    <h2>Study Sharing</h2>
+                    <h2></h2>
                     <p>Đặt lại mật khẩu</p>
                 </div>
                 
@@ -327,7 +327,7 @@ class AuthController
                 </div>
                 
                 <div class="email-footer">
-                    <p>© 2025 Study Sharing. Đã đăng ký bản quyền.</p>
+                    <p>© 2025 Quản lý Đồ Án. Đã đăng ký bản quyền.</p>
                     <p>Đây là email tự động, vui lòng không trả lời.</p>
                 </div>
             </div>

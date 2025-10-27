@@ -21,11 +21,5 @@
         "optimize-autoloader": true,
         "preferred-install": "dist",
         "sort-packages": true
-    },
-    "authors": [
-        {
-            "name": "To Phuoc Day",
-            "email": "day@example.com"
-        }
-    ]
+    }
 }

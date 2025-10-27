@@ -41,8 +41,8 @@ $title = "Đặt lại mật khẩu";
             <div class="col-md-6">
                 <div class="card shadow-sm">
                     <div class="card-header bg-primary text-white text-center">
-                        <img src="/study_sharing/assets/images/logo.png" alt="Logo" class="logo rounded-circle">
-                        <h5 class="mb-0">Đặt lại mật khẩu - Study Sharing</h5>
+                        <img src="/quanlydoan/assets/images/logo.png" alt="Logo" class="logo rounded-circle">
+                        <h5 class="mb-0">Đặt lại mật khẩu - Quản Lý Đồ Án</h5>
                     </div>
                     <div class="card-body">
                         <div id="resetPasswordMessage"></div>
@@ -61,7 +61,7 @@ $title = "Đặt lại mật khẩu";
                             <button type="submit" class="btn btn-primary w-100">Đặt lại mật khẩu</button>
                         </form>
                         <div class="mt-3 text-center">
-                            <a href="/study_sharing">Quay lại trang chủ</a>
+                            <a href="/quanlydoan">Quay lại trang chủ</a>
                         </div>
                     </div>
                 </div>
@@ -93,7 +93,7 @@ $title = "Đặt lại mật khẩu";
                     } else {
                         event.preventDefault();
                         const formData = new FormData(form);
-                        fetch('/study_sharing/auth/resetPassword', {
+                        fetch('/quanlydoan/auth/resetPassword', {
                                 method: 'POST',
                                 body: formData
                             })
@@ -103,7 +103,7 @@ $title = "Đặt lại mật khẩu";
                                 messageDiv.innerHTML = `<div class="alert alert-${data.success ? 'success' : 'danger'}">${data.message}</div>`;
                                 if (data.success) {
                                     setTimeout(() => {
-                                        window.location.href = '/study_sharing';
+                                        window.location.href = '/quanlydoan';
                                     }, 2000);
                                 }
                             })

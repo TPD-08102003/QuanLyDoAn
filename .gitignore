@@ -1,0 +1,21 @@
+# Thư mục và file của Composer
+vendor/
+composer.lock
+
+# File cấu hình môi trường
+.env
+
+# File tạm thời và cache
+*.log
+*.cache
+*.tmp
+/tmp/
+/cache/
+
+# File và thư mục của IDE/Editor
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+

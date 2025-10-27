@@ -171,7 +171,7 @@ if (isset($_SESSION['account_id']) && isset($_SESSION['role']) && $_SESSION['rol
         </div>
     </footer>
 
-    <!-- Modal Đăng nhập -->
+    <!-- Modal Đăng nhập (thêm action fallback) -->
     <div id="loginModal" class="modal fade" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -181,7 +181,7 @@ if (isset($_SESSION['account_id']) && isset($_SESSION['role']) && $_SESSION['rol
                 </div>
                 <div class="modal-body">
                     <div id="loginMessage"></div>
-                    <form id="loginForm" method="POST" class="needs-validation" novalidate>
+                    <form id="loginForm" method="POST" action="/quanlydoan/auth/login" class="needs-validation" novalidate>
                         <div class="mb-3">
                             <label for="loginUsername" class="form-label">Tên đăng nhập hoặc Email</label>
                             <input type="text" class="form-control" id="loginUsername" name="username" required>
@@ -208,6 +208,77 @@ if (isset($_SESSION['account_id']) && isset($_SESSION['role']) && $_SESSION['rol
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- JavaScript tùy chỉnh cho login (MỚI: Xử lý Ajax, validation, redirect) -->
+    <script>
+        (function() {
+            'use strict';
+
+            // Kích hoạt Bootstrap validation
+            const forms = document.querySelectorAll('.needs-validation');
+            Array.from(forms).forEach(form => {
+                form.addEventListener('submit', event => {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+
+            // Xử lý submit form login qua Ajax
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) {
+                loginForm.addEventListener('submit', function(e) {
+                    e.preventDefault(); // Ngăn submit mặc định để dùng Ajax
+
+                    const form = this;
+                    if (!form.checkValidity()) {
+                        form.classList.add('was-validated');
+                        return;
+                    }
+
+                    const formData = new FormData(form);
+                    const submitButton = form.querySelector('button[type="submit"]');
+                    const spinner = submitButton.querySelector('.spinner-border');
+                    const loginMessage = document.getElementById('loginMessage');
+
+                    // Hiển thị loading
+                    submitButton.disabled = true;
+                    spinner.classList.remove('d-none');
+                    loginMessage.innerHTML = ''; // Xóa thông báo cũ
+
+                    fetch('/quanlydoan/auth/login', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            loginMessage.innerHTML = `<div class="alert alert-${data.success ? 'success' : 'danger'} alert-dismissible fade show" role="alert">
+                            ${data.message}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>`;
+
+                            if (data.success) {
+                                // Redirect dựa trên role
+                                const redirectUrl = data.role === 'admin' ? '/quanlydoan/HomeAdmin/index' : '/quanlydoan';
+                                setTimeout(() => {
+                                    window.location.href = redirectUrl;
+                                }, 1500); // Delay 1.5s để user thấy thông báo
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Lỗi Ajax:', error);
+                            loginMessage.innerHTML = '<div class="alert alert-danger">Lỗi kết nối server, vui lòng thử lại!</div>';
+                        })
+                        .finally(() => {
+                            submitButton.disabled = false;
+                            spinner.classList.add('d-none');
+                        });
+                });
+            }
+        })();
+    </script>
 </body>
 
 </html>
