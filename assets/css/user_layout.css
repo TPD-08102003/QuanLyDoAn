@@ -392,54 +392,25 @@ body {
 .footer {
     background-color: #ffffff;
     color: rgb(0, 0, 0);
-    padding: 4rem 0 2rem;
+    padding: 3rem 0 1.5rem;
 }
 
-.footer-logo {
-    display: flex;
-    align-items: center;
-    margin-bottom: 1.5rem;
-}
-
-/* SỬA LOGO FOOTER - LOẠI BỎ BO TRÒN */
 .footer-logo img {
     max-height: 50px;
     width: auto;
-    margin-right: 10px;
-    border-radius: 0;
-    /* Loại bỏ bo tròn */
-    object-fit: contain;
-    /* Giữ nguyên tỷ lệ */
-}
-
-.footer-logo span {
-    font-size: 1.5rem;
-    font-weight: 800;
+    margin-bottom: 1rem;
 }
 
 .footer-description {
     margin-bottom: 1.5rem;
     opacity: 0.8;
-    max-width: 300px;
     font-weight: 500;
 }
 
 .footer-title {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: 700;
-    margin-bottom: 1.5rem;
-    position: relative;
-    padding-bottom: 0.5rem;
-}
-
-.footer-title::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    width: 40px;
-    height: 2px;
-    background-color: var(--primary-color);
+    margin-bottom: 1rem;
 }
 
 .footer-links {
@@ -448,7 +419,7 @@ body {
 }
 
 .footer-links li {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
 }
 
 .footer-links a {
@@ -466,14 +437,13 @@ body {
 .social-links {
     display: flex;
     gap: 1rem;
-    margin-top: 1.5rem;
 }
 
 .social-link {
-    width: 40px;
-    height: 40px;
+    width: 35px;
+    height: 35px;
     border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(0, 0, 0, 0.05);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -484,13 +454,14 @@ body {
 
 .social-link:hover {
     background-color: var(--primary-color);
-    transform: translateY(-3px);
+    color: white;
+    transform: translateY(-2px);
 }
 
 .footer-bottom {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding-top: 2rem;
-    margin-top: 3rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    padding-top: 1.5rem;
+    margin-top: 2rem;
     text-align: center;
     opacity: 0.7;
     font-weight: 500;

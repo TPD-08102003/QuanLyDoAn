@@ -1,42 +1,50 @@
 <?php
-// router.php (placed in root directory, outside config/)
-// This is the main entry point for routing in the MVC structure.
+// router.php (in root)
 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-require_once __DIR__ . '/config/db.php'; // PDO connection from config/
-require_once __DIR__ . '/vendor/autoload.php'; // Composer autoload (if using Composer)
-
-use App\AccountController;
-use App\FeedbackController;
-use App\GroupController;
-use App\GroupMemberController;
-use App\HomeAdminController;
-use App\HomeController;
-use App\LecturerController;
-use App\ProjectController;
-use App\ReportController;
-use App\StudentController;
-use App\User;
-use App\UserController;
+require_once __DIR__ . '/config/db.php'; // PDO connection
+require_once __DIR__ . '/vendor/autoload.php'; // Composer autoload
+// Debug tạm thời (xóa sau khi test)
+if (!class_exists('App\Controllers\HomeController')) {
+    error_log('DEBUG: File HomeController tồn tại? ' . (file_exists(__DIR__ . '/Controllers/HomeController.php') ? 'CÓ' : 'KHÔNG'));
+    error_log('DEBUG: Các namespace đã load: ' . implode(', ', array_filter(get_declared_classes(), function ($class) {
+        return strpos($class, 'App\\') === 0;
+    })));
+} else {
+    error_log('DEBUG: HomeController đã load thành công!');
+}
+// Use full namespaces for controllers
+use App\Controllers\AccountController;
+use App\Controllers\AuthController;
+use App\Controllers\FeedbackController;
+use App\Controllers\GroupController;
+use App\Controllers\GroupMemberController;
+use App\Controllers\HomeAdminController;
+use App\Controllers\HomeController;
+use App\Controllers\LecturerController;
+use App\Controllers\ProjectController;
+use App\Controllers\ReportController;
+use App\Controllers\StudentController;
+use App\Controllers\UserController;
+// Remove 'App\User' if it's not a controller; use models separately if needed
 
 session_start();
 
-// Lấy URI và loại bỏ prefix nếu có (giả sử root là /quanlydoan)
+// Get URI (strip /quanlydoan prefix)
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$uri = trim(str_replace('/quanlydoan', '', $uri), '/'); // Adjust prefix as needed
+$uri = trim(str_replace('/quanlydoan', '', $uri), '/');
 $method = $_SERVER['REQUEST_METHOD'];
 
-// Định nghĩa các tuyến đường tĩnh (nếu cần, ví dụ: assets, etc.)
-$staticRoutes = [
-    // Ví dụ: 'assets/css/style.css' => ['method' => 'GET', 'view' => __DIR__ . '/public/assets/css/style.css', 'layout' => 'none'],
-];
+// Static routes (for assets if needed)
+$staticRoutes = [];
 
-// Định nghĩa các controller được phép (namespace App nếu dùng, nhưng giữ simple)
+// Allowed controllers map
 $allowedControllers = [
     'AccountController' => AccountController::class,
+    'AuthController' => AuthController::class,
     'FeedbackController' => FeedbackController::class,
     'GroupController' => GroupController::class,
     'GroupMemberController' => GroupMemberController::class,
@@ -49,19 +57,17 @@ $allowedControllers = [
     'UserController' => UserController::class,
 ];
 
-// Xử lý tuyến đường
+// Handle route function
 function handleRoute($uri, $method, $pdo, $staticRoutes, $allowedControllers)
 {
-    // Kiểm tra tuyến đường tĩnh
+    // Static routes check (unchanged)
     if (array_key_exists($uri, $staticRoutes)) {
         $route = $staticRoutes[$uri];
         if ($method === $route['method']) {
-            $title = $route['title'];
-            $layout = $route['layout'];
             ob_start();
             require $route['view'];
             $content = ob_get_clean();
-            require __DIR__ . '/views/layouts/' . $layout;
+            require __DIR__ . '/views/layouts/' . $route['layout'] . '.php';
             exit;
         } else {
             http_response_code(405);
@@ -71,7 +77,7 @@ function handleRoute($uri, $method, $pdo, $staticRoutes, $allowedControllers)
         }
     }
 
-    // Xử lý tuyến đường động (controller-based)
+    // Dynamic routing
     $parts = explode('/', $uri);
     $controllerName = !empty($parts[0]) ? ucfirst($parts[0]) . 'Controller' : 'HomeController';
     $action = !empty($parts[1]) ? $parts[1] : 'index';
@@ -84,7 +90,7 @@ function handleRoute($uri, $method, $pdo, $staticRoutes, $allowedControllers)
         if (class_exists($controllerClass)) {
             $controller = new $controllerClass($pdo);
             if (method_exists($controller, $action) && is_callable([$controller, $action])) {
-                if (in_array($method, ['GET', 'POST'])) {
+                if (in_array($method, ['GET', 'POST', 'PUT', 'DELETE'])) {  // Allow more methods if needed
                     ob_start();
                     call_user_func_array([$controller, $action], $params);
                     $output = ob_get_clean();
@@ -107,20 +113,17 @@ function handleRoute($uri, $method, $pdo, $staticRoutes, $allowedControllers)
         } else {
             http_response_code(500);
             header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'message' => "Controller class $controllerClass not found"]);
+            echo json_encode(['success' => false, 'message' => "Controller class $controllerClass not found. Check autoload."]);
             exit;
         }
     }
 
-    // Nếu không khớp, trả về 404
+    // 404 fallback
     http_response_code(404);
     header('Content-Type: application/json');
     echo json_encode(['success' => false, 'message' => 'Page not found']);
     exit;
 }
 
-
-
-
-// Gọi hàm xử lý tuyến đường
+// Call handler
 handleRoute($uri, $method, $pdo, $staticRoutes, $allowedControllers);
