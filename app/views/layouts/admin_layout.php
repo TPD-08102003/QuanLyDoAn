@@ -28,7 +28,6 @@ if (session_status() === PHP_SESSION_NONE) {
     <link href="/quanlydoan/assets/css/sidebar.css" rel="stylesheet">
 
 
-
     <style>
         /* Cải thiện layout tổng thể */
         :root {
@@ -40,9 +39,9 @@ if (session_status() === PHP_SESSION_NONE) {
             --text-dark: #343a40;
             --text-light: #6c757d;
             --border-color: #dee2e6;
-            --sidebar-width: 260px;
+            --sidebar-width: 290px;
             --sidebar-collapsed-width: 70px;
-            --top-navbar-height: 60px;
+            --top-navbar-height: 65px;
         }
 
         body {
@@ -255,8 +254,192 @@ if (session_status() === PHP_SESSION_NONE) {
         .footer {
             background-color: #ffffff;
             color: rgb(0, 0, 0);
-            padding: 3rem 0 1.5rem;
+            padding: 2rem 0 1.5rem;
+            width: 100%;
+            transition: all 0.3s ease;
+            margin-top: auto;
+            /* Đẩy footer xuống dưới cùng */
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
         }
+
+        /* Footer columns adjustment */
+        .footer .container {
+            transition: all 0.3s ease;
+        }
+
+        .main-content.expanded .footer .container {
+            max-width: 95%;
+            margin: 0 auto;
+        }
+
+        /* Responsive footer columns */
+        .footer .row {
+            transition: all 0.3s ease;
+        }
+
+        /* Adjust footer content when sidebar collapsed */
+        .main-content.expanded .footer-logo img {
+            max-height: 40px;
+        }
+
+        .main-content.expanded .footer-description {
+            font-size: 0.9rem;
+            line-height: 1.4;
+            margin-bottom: 1rem;
+        }
+
+        .main-content.expanded .footer-title {
+            font-size: 1rem;
+        }
+
+        .main-content.expanded .footer-links {
+            font-size: 0.85rem;
+        }
+
+        .main-content.expanded .footer-links li {
+            margin-bottom: 0.3rem;
+        }
+
+        .main-content.expanded .social-links {
+            gap: 0.5rem;
+        }
+
+        .main-content.expanded .social-link {
+            width: 30px;
+            height: 30px;
+            font-size: 0.8rem;
+        }
+
+        /* Compact footer when sidebar collapsed */
+        .footer.sidebar-collapsed {
+            padding: 1.5rem 0 1rem;
+        }
+
+        .footer.sidebar-collapsed .footer-logo img {
+            max-height: 35px;
+        }
+
+        .footer.sidebar-collapsed .footer-description {
+            font-size: 0.85rem;
+        }
+
+        .footer.sidebar-collapsed .footer-title {
+            font-size: 0.95rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .footer.sidebar-collapsed .footer-links {
+            font-size: 0.8rem;
+        }
+
+        .footer.sidebar-collapsed .footer-links li {
+            margin-bottom: 0.25rem;
+        }
+
+        .footer.sidebar-collapsed .footer-bottom {
+            padding-top: 1rem;
+            margin-top: 1.5rem;
+            font-size: 0.8rem;
+        }
+
+        .footer-logo img {
+            max-height: 50px;
+            width: auto;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .footer-description {
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .footer-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+            transition: all 0.3s ease;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .footer-links a {
+            color: rgba(0, 0, 0, 0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .footer-links a:hover {
+            color: rgb(255, 145, 0);
+            padding-left: 5px;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .social-link {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgb(0, 8, 255);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .social-link:hover {
+            background-color: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            padding-top: 1.5rem;
+            margin-top: 2rem;
+            text-align: center;
+            opacity: 0.7;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .footer {
+                margin-left: 0 !important;
+            }
+
+            .main-content.expanded .footer {
+                margin-left: 0 !important;
+            }
+
+            .footer .row {
+                text-align: center;
+            }
+
+            .social-links {
+                justify-content: center;
+            }
+        }
+
 
         .footer-logo img {
             max-height: 50px;
@@ -343,6 +526,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
         /* Responsive improvements */
         @media (max-width: 768px) {
+
             .sidebar {
                 transform: translateX(-100%);
             }
@@ -391,8 +575,12 @@ if (session_status() === PHP_SESSION_NONE) {
 <body class="bg-light">
     <!-- Top Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark top-navbar shadow-sm fixed-top">
-        <div class="container-fluid">
 
+        <div class="bg-white rounded p-2 shadow-sm mb-2 mt-2">
+            <img src="/quanlydoan/assets/images/sv_logo_dashboard.png" alt="Logo" style="height: 50px; width: auto;">
+        </div>
+
+        <div class="container-fluid">
             <!-- Sidebar Toggle -->
             <button class="sidebar-toggle btn btn-outline-light border-0" onclick="toggleSidebar()">
                 <i class="bi bi-list"></i>
@@ -453,10 +641,7 @@ if (session_status() === PHP_SESSION_NONE) {
         <!-- Logo -->
         <div class="logo-container text-center">
             <a href="/quanlydoan/HomeAdmin/index" class="text-decoration-none d-flex flex-column align-items-center">
-                <!-- Thêm wrapper với nền trắng -->
-                <div class="bg-white rounded p-2 shadow-sm mb-2">
-                    <img src="/quanlydoan/assets/images/sv_logo_dashboard.png" alt="Logo" style="height: 50px; width: auto;">
-                </div>
+
                 <div class="fw-bold text-white">QL Đồ Án Niên Luận</div>
             </a>
         </div>
@@ -469,16 +654,13 @@ if (session_status() === PHP_SESSION_NONE) {
             </a>
 
             <!-- Quản lý Tài khoản -->
-            <div class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle <?php echo strpos($_SERVER['REQUEST_URI'], '/Account/') !== false ? 'active' : ''; ?>" href="#" role="button" data-bs-toggle="dropdown">
+            <div class="nav-item">
+                <a class="nav-link 
+        <?php echo strpos($_SERVER['REQUEST_URI'], '/Account/') !== false ? 'active' : ''; ?>
+        " href="/quanlydoan/Account/manage">
                     <i class="bi bi-person-gear"></i>
                     <span>Quản lý Tài khoản</span>
                 </a>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item <?php echo strpos($_SERVER['REQUEST_URI'], '/Account/manage') !== false ? 'active' : ''; ?>" href="/quanlydoan/Account/manage"><i class="bi bi-people me-2"></i>Tất cả Tài khoản</a></li>
-                    <li><a class="dropdown-item <?php echo strpos($_SERVER['REQUEST_URI'], '/Account/create') !== false ? 'active' : ''; ?>" href="/quanlydoan/Account/create"><i class="bi bi-person-plus me-2"></i>Tạo Tài khoản</a></li>
-                    <li><a class="dropdown-item <?php echo strpos($_SERVER['REQUEST_URI'], '/Account/roles') !== false ? 'active' : ''; ?>" href="/quanlydoan/Account/roles"><i class="bi bi-shield me-2"></i>Phân quyền</a></li>
-                </ul>
             </div>
 
             <!-- Quản lý Giảng viên -->
@@ -630,50 +812,48 @@ if (session_status() === PHP_SESSION_NONE) {
                 <?php echo $content; ?>
             </div>
         </main>
+        <footer class="footer">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-5 mb-4 mb-lg-0">
+                        <div class="footer-logo">
+                            <img src="/quanlydoan/assets/images/sv_logo_dashboard.png" alt="Logo">
+                        </div>
+                        <p class="footer-description">Hệ thống quản lý đồ án toàn diện dành cho sinh viên và giảng viên trong việc quản lý, theo dõi và đánh giá đồ án học phần.</p>
+                        <div class="social-links">
+                            <a href="#" class="social-link"><i class="bi bi-facebook"></i></a>
+                            <a href="#" class="social-link"><i class="bi bi-twitter"></i></a>
+                            <a href="#" class="social-link"><i class="bi bi-linkedin"></i></a>
+                            <a href="#" class="social-link"><i class="bi bi-youtube"></i></a>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
+                        <h4 class="footer-title">Liên kết nhanh</h4>
+                        <ul class="footer-links">
+                            <li><a href="/quanlydoan/HomeAdmin/index">Dashboard</a></li>
+                            <li><a href="/quanlydoan/Account/manage">Quản lý Tài khoản</a></li>
+                            <li><a href="/quanlydoan/Project/manage">Quản lý Đồ án</a></li>
+                            <li><a href="/quanlydoan/Report/dashboard">Báo cáo & Thống kê</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="col-lg-4 col-md-6">
+                        <h4 class="footer-title">Liên hệ</h4>
+                        <ul class="footer-links">
+                            <li><i class="bi bi-geo-alt me-2"></i> Đường Phạm Hữu Lầu, Phường Cao Lãnh, Đồng Tháp</li>
+                            <li><i class="bi bi-telephone me-2"></i> (0123) 456 789</li>
+                            <li><i class="bi bi-envelope me-2"></i> contact@ql-da.edu.vn</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="footer-bottom">
+                    <p>&copy; 2025 Hệ thống Quản lý Đồ Án.</p>
+                </div>
+            </div>
+        </footer>
     </div>
-
-    <footer class="footer">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-5 mb-4 mb-lg-0">
-                    <div class="footer-logo">
-                        <img src="/quanlydoan/assets/images/sv_logo_dashboard.png" alt="Logo">
-                    </div>
-                    <p class="footer-description">Hệ thống quản lý đồ án toàn diện dành cho sinh viên và giảng viên trong việc quản lý, theo dõi và đánh giá đồ án học phần.</p>
-                    <div class="social-links">
-                        <a href="#" class="social-link"><i class="bi bi-facebook"></i></a>
-                        <a href="#" class="social-link"><i class="bi bi-twitter"></i></a>
-                        <a href="#" class="social-link"><i class="bi bi-linkedin"></i></a>
-                        <a href="#" class="social-link"><i class="bi bi-youtube"></i></a>
-                    </div>
-                </div>
-
-                <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
-                    <h4 class="footer-title">Liên kết</h4>
-                    <ul class="footer-links">
-                        <li><a href="/quanlydoan">Trang chủ</a></li>
-                        <li><a href="/quanlydoan/project">Dự án</a></li>
-                        <li><a href="/quanlydoan/group">Nhóm</a></li>
-                        <li><a href="/quanlydoan/about">Giới thiệu</a></li>
-                        <li><a href="/quanlydoan/contact">Liên hệ</a></li>
-                    </ul>
-                </div>
-
-                <div class="col-lg-4 col-md-6">
-                    <h4 class="footer-title">Liên hệ</h4>
-                    <ul class="footer-links">
-                        <li><i class="bi bi-geo-alt me-2"></i> Đường Phạm Hữu Lầu, Phường Cao Lãnh, Đồng Tháp</li>
-                        <li><i class="bi bi-telephone me-2"></i> (0123) 456 789</li>
-                        <li><i class="bi bi-envelope me-2"></i> contact@ql-da.edu.vn</li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="footer-bottom">
-                <p>&copy; 2025 Hệ thống Quản lý Đồ Án.</p>
-            </div>
-        </div>
-    </footer>
 
     <!-- Modal Đổi mật khẩu -->
     <div id="changePasswordModal" class="modal fade" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
@@ -799,12 +979,49 @@ if (session_status() === PHP_SESSION_NONE) {
         });
 
         // Sidebar toggle function
+        // Sidebar toggle function
         function toggleSidebar() {
             const sidebar = document.querySelector('.sidebar');
             const mainContent = document.querySelector('.main-content');
+            const footer = document.querySelector('.footer');
+
             sidebar.classList.toggle('collapsed');
             mainContent.classList.toggle('expanded');
+
+            // Force reflow để đảm bảo transition hoạt động
+            footer.offsetHeight;
+
+            // Thêm class expanded cho footer
+            if (mainContent.classList.contains('expanded')) {
+                footer.classList.add('sidebar-collapsed');
+            } else {
+                footer.classList.remove('sidebar-collapsed');
+            }
         }
+
+        // Initialize sidebar state từ localStorage (nếu có)
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.querySelector('.main-content');
+            const footer = document.querySelector('.footer');
+
+            // Kiểm tra trạng thái sidebar từ localStorage
+            const isSidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+
+            if (isSidebarCollapsed) {
+                sidebar.classList.add('collapsed');
+                mainContent.classList.add('expanded');
+                footer.classList.add('sidebar-collapsed');
+            }
+
+            // Lưu trạng thái sidebar khi toggle
+            document.querySelector('.sidebar-toggle').addEventListener('click', function() {
+                setTimeout(() => {
+                    const isCollapsed = sidebar.classList.contains('collapsed');
+                    localStorage.setItem('sidebarCollapsed', isCollapsed);
+                }, 300);
+            });
+        });
     </script>
 
 </body>

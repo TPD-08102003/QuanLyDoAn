@@ -4,6 +4,7 @@
 namespace App\Models;
 
 use PDO;
+use PDOException;
 
 class UserModel extends BaseModel
 {
@@ -54,5 +55,33 @@ class UserModel extends BaseModel
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(['role' => $role]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function updateByAccountId(int $accountId, array $data): bool
+    {
+        if (empty($data)) {
+            return true;
+        }
+
+        $fields = [];
+        $params = [];
+
+        foreach ($data as $key => $value) {
+            $fields[] = "$key = :$key";
+            $params[":$key"] = $value;
+        }
+
+        $params[':account_id'] = $accountId;
+
+        $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . " WHERE account_id = :account_id";
+
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            return $stmt->execute($params);
+        } catch (PDOException $e) {
+            // Ghi log lỗi hoặc xử lý (Nếu bạn có một hệ thống ghi log)
+            // error_log("UserModel update error: " . $e->getMessage());
+            return false;
+        }
     }
 }

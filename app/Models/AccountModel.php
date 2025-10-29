@@ -87,4 +87,59 @@ class AccountModel extends BaseModel
         $stmt = $this->pdo->prepare("UPDATE {$this->table} SET status = :status WHERE account_id = :id");
         return $stmt->execute(['status' => $status, 'id' => $id]);
     }
+
+    public function getCombinedUsersWithPagination(int $limit, int $offset, string $keyword = ''): array
+    {
+        $params = [];
+        $where = '1=1';
+
+        // 1. Xử lý Tìm kiếm
+        if (!empty($keyword)) {
+            $where = " (a.username LIKE :keyword1 OR a.email LIKE :keyword2 OR u.full_name LIKE :keyword3) ";
+            $search = "%" . $keyword . "%";
+            $params[':keyword1'] = $search;
+            $params[':keyword2'] = $search;
+            $params[':keyword3'] = $search;
+        }
+
+        // 2. Query lấy tổng số bản ghi
+        $countSql = "SELECT COUNT(a.account_id) FROM {$this->table} a
+                     LEFT JOIN users u ON a.account_id = u.account_id
+                     WHERE {$where}";
+
+        $countStmt = $this->pdo->prepare($countSql);
+        $countStmt->execute($params);
+        $total = $countStmt->fetchColumn();
+
+        // 3. Query lấy dữ liệu (có phân trang)
+        $sql = "SELECT a.*, u.full_name, u.date_of_birth, u.phone_number, u.address 
+                FROM {$this->table} a
+                LEFT JOIN users u ON a.account_id = u.account_id
+                WHERE {$where}
+                ORDER BY a.account_id DESC
+                LIMIT :limit OFFSET :offset";
+
+        // Thêm tham số phân trang
+        $params[':limit'] = $limit;
+        $params[':offset'] = $offset;
+
+        $stmt = $this->pdo->prepare($sql);
+
+        // Bind các tham số (cần bindParam cho limit/offset vì nó là giá trị số nguyên)
+        foreach ($params as $key => &$val) {
+            if (strpos($key, 'keyword') !== false) {
+                $stmt->bindParam($key, $val, PDO::PARAM_STR);
+            }
+        }
+        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+
+        $stmt->execute();
+        $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return [
+            'users' => $users,
+            'total' => (int)$total
+        ];
+    }
 }
