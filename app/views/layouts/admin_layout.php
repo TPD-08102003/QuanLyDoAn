@@ -655,39 +655,26 @@ if (session_status() === PHP_SESSION_NONE) {
 
             <!-- Quản lý Tài khoản -->
             <div class="nav-item">
-                <a class="nav-link 
-        <?php echo strpos($_SERVER['REQUEST_URI'], '/Account/') !== false ? 'active' : ''; ?>
-        " href="/quanlydoan/Account/manage">
+                <a class="nav-link <?php echo strpos($_SERVER['REQUEST_URI'], '/Account/') !== false ? 'active' : ''; ?> " href="/quanlydoan/Account/manage">
                     <i class="bi bi-person-gear"></i>
                     <span>Quản lý Tài khoản</span>
                 </a>
             </div>
 
             <!-- Quản lý Giảng viên -->
-            <div class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle <?php echo strpos($_SERVER['REQUEST_URI'], '/Lecturer/') !== false ? 'active' : ''; ?>" href="#" role="button" data-bs-toggle="dropdown">
+            <div class="nav-item">
+                <a class="nav-link <?php echo strpos($_SERVER['REQUEST_URI'], '/Lecturer/') !== false ? 'active' : ''; ?>" href="/quanlydoan/Lecturer/manage">
                     <i class="bi bi-person-badge"></i>
                     <span>Quản lý Giảng viên</span>
                 </a>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item <?php echo strpos($_SERVER['REQUEST_URI'], '/Lecturer/manage') !== false ? 'active' : ''; ?>" href="/quanlydoan/Lecturer/manage"><i class="bi bi-list-ul me-2"></i>Danh sách Giảng viên</a></li>
-                    <li><a class="dropdown-item <?php echo strpos($_SERVER['REQUEST_URI'], '/Lecturer/add') !== false ? 'active' : ''; ?>" href="/quanlydoan/Lecturer/add"><i class="bi bi-person-add me-2"></i>Thêm Giảng viên</a></li>
-                    <li><a class="dropdown-item <?php echo strpos($_SERVER['REQUEST_URI'], '/Lecturer/statistics') !== false ? 'active' : ''; ?>" href="/quanlydoan/Lecturer/statistics"><i class="bi bi-bar-chart me-2"></i>Thống kê</a></li>
-                </ul>
             </div>
 
             <!-- Quản lý Sinh viên -->
-            <div class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle <?php echo strpos($_SERVER['REQUEST_URI'], '/Student/') !== false ? 'active' : ''; ?>" href="#" role="button" data-bs-toggle="dropdown">
+            <div class="nav-item">
+                <a class="nav-link <?php echo strpos($_SERVER['REQUEST_URI'], '/Student/') !== false ? 'active' : ''; ?>" href="/quanlydoan/Student/manage">
                     <i class="bi bi-people-fill"></i>
                     <span>Quản lý Sinh viên</span>
                 </a>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item <?php echo strpos($_SERVER['REQUEST_URI'], '/Student/manage') !== false ? 'active' : ''; ?>" href="/quanlydoan/Student/manage"><i class="bi bi-list-ul me-2"></i>Danh sách Sinh viên</a></li>
-                    <li><a class="dropdown-item <?php echo strpos($_SERVER['REQUEST_URI'], '/Student/add') !== false ? 'active' : ''; ?>" href="/quanlydoan/Student/add"><i class="bi bi-person-add me-2"></i>Thêm Sinh viên</a></li>
-                    <li><a class="dropdown-item <?php echo strpos($_SERVER['REQUEST_URI'], '/Student/import') !== false ? 'active' : ''; ?>" href="/quanlydoan/Student/import"><i class="bi bi-upload me-2"></i>Import Excel</a></li>
-                    <li><a class="dropdown-item <?php echo strpos($_SERVER['REQUEST_URI'], '/Student/statistics') !== false ? 'active' : ''; ?>" href="/quanlydoan/Student/statistics"><i class="bi bi-bar-chart me-2"></i>Thống kê</a></li>
-                </ul>
             </div>
 
             <!-- Quản lý Đồ án -->
@@ -768,26 +755,18 @@ if (session_status() === PHP_SESSION_NONE) {
     <div class="main-content">
         <main class="content">
             <div class="container-fluid py-4">
-                <!-- Page Header -->
-                <div class="page-header">
-                    <div class="row align-items-center">
-                        <div class="col">
-                            <h1 class="page-title"><?php echo isset($page_title) ? $page_title : 'Dashboard'; ?></h1>
-                            <p class="page-subtitle text-muted mb-0"><?php echo isset($page_subtitle) ? $page_subtitle : 'Quản lý đồ án niên luận'; ?></p>
+                <div class="col-auto">
+                    <?php if (isset($page_actions)): ?>
+                        <div class="btn-group">
+                            <?php foreach ($page_actions as $action): ?>
+                                <a href="<?php echo $action['url']; ?>" class="btn <?php echo $action['class'] ?? 'btn-primary'; ?>">
+                                    <i class="<?php echo $action['icon']; ?> me-2"></i><?php echo $action['text']; ?>
+                                </a>
+                            <?php endforeach; ?>
                         </div>
-                        <div class="col-auto">
-                            <?php if (isset($page_actions)): ?>
-                                <div class="btn-group">
-                                    <?php foreach ($page_actions as $action): ?>
-                                        <a href="<?php echo $action['url']; ?>" class="btn <?php echo $action['class'] ?? 'btn-primary'; ?>">
-                                            <i class="<?php echo $action['icon']; ?> me-2"></i><?php echo $action['text']; ?>
-                                        </a>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
+                    <?php endif; ?>
                 </div>
+
 
                 <!-- Alert Messages -->
                 <?php if (isset($_SESSION['success'])): ?>

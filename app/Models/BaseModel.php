@@ -61,12 +61,31 @@ abstract class BaseModel
      * @param array $data
      * @return bool
      */
-    public function update(int $id, array $data): bool
+    public function update($id, array $data): bool
     {
-        $setClause = implode(' = :', array_keys($data)) . ' = :' . implode(', ', array_keys($data));
-        $data['id'] = $id;
-        $stmt = $this->pdo->prepare("UPDATE {$this->table} SET {$setClause} WHERE id = :id");
-        return $stmt->execute($data);
+        $set = [];
+        $params = [];
+
+        foreach ($data as $key => $value) {
+            $set[] = "$key = ?";
+            $params[] = $value;
+        }
+
+        if (empty($set)) {
+            return false;
+        }
+
+        $setClause = implode(', ', $set);
+        $sql = "UPDATE {$this->table} SET $setClause WHERE account_id = ?";
+        $params[] = $id;
+
+        $stmt = $this->pdo->prepare($sql);
+        $result = $stmt->execute($params);
+        if (!$result) {
+            $error = $stmt->errorInfo();
+            error_log("Update failed: SQL: $sql, Params: " . json_encode($params) . ", Error: " . print_r($error, true));
+        }
+        return $result;
     }
 
     /**

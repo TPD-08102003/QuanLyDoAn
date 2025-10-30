@@ -318,13 +318,13 @@ if (session_status() === PHP_SESSION_NONE) {
                 </div>
                 <div class="modal-body">
                     <div class="row">
-                        <div class="col-md-12 text-center mb-4">
+                        <!-- <div class="col-md-12 text-center mb-4">
                             <img src="/quanlydoan/assets/images/profile.png" alt="Avatar Preview" class="avatar-preview" id="addAvatarPreview">
                             <label for="add_avatar" class="form-label d-block fw-bold mb-2"><i class="fas fa-image"></i> Ảnh đại diện</label>
                             <input type="file" class="form-control d-none" id="add_avatar" name="avatar" accept="image/*">
                             <label for="add_avatar" class="custom-file-upload"><i class="bi bi-upload me-2"></i> Chọn ảnh</label>
                             <div class="form-text mt-2">Chấp nhận file JPEG, PNG, GIF. Tối đa 5MB.</div>
-                        </div>
+                        </div> -->
                         <div class="col-md-6">
                             <div class="mb-3 input-icon">
                                 <label for="username" class="form-label"><i class="fas fa-user"></i> Tên đăng nhập</label>

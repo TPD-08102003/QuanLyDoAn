@@ -68,4 +68,30 @@ class StudentModel extends BaseModel
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function getStudentsWithPagination(int $limit, int $offset, string $keyword = ''): array
+    {
+        $sql = "SELECT s.student_id, s.mssv, s.class, u.full_name, a.status 
+                FROM students s 
+                JOIN users u ON s.user_id = u.account_id 
+                JOIN accounts a ON u.account_id = a.account_id 
+                WHERE (s.mssv LIKE ? OR u.full_name LIKE ?) 
+                LIMIT ? OFFSET ?";
+        $search = "%$keyword%";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$search, $search, $limit, $offset]);
+
+        $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Đếm tổng số sinh viên
+        $countSql = "SELECT COUNT(*) FROM students s 
+                     JOIN users u ON s.user_id = u.account_id 
+                     JOIN accounts a ON u.account_id = a.account_id 
+                     WHERE s.mssv LIKE ? OR u.full_name LIKE ?";
+        $countStmt = $this->pdo->prepare($countSql);
+        $countStmt->execute([$search, $search]);
+        $total = $countStmt->fetchColumn();
+
+        return ['students' => $students, 'total' => $total];
+    }
 }

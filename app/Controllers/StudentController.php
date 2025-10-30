@@ -16,6 +16,29 @@ class StudentController extends BaseController
         $this->studentModel = new StudentModel($pdo);
     }
 
+    public function manage(): void
+    {
+        // 1. Nhận tham số tìm kiếm và phân trang
+        $page = (int)($_GET['page'] ?? 1);
+        $keyword = trim($_GET['keyword'] ?? '');
+        $limit = 10; // Số sinh viên trên mỗi trang
+        $offset = ($page - 1) * $limit;
+
+        // 2. Lấy dữ liệu
+        $result = $this->studentModel->getStudentsWithPagination($limit, $offset, $keyword);
+        $students = $result['students'];
+        $totalStudents = $result['total'];
+        $totalPages = ceil($totalStudents / $limit);
+
+        // 3. Render View
+        $this->render('students/manage', [
+            'students' => $students,
+            'page' => $page,
+            'totalPages' => $totalPages,
+            'keyword' => $keyword
+        ]);
+    }
+
     public function index(): void
     {
         $students = $this->studentModel->findAll();

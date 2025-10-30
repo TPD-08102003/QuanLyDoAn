@@ -56,12 +56,13 @@ class AccountModel extends BaseModel
      * @param array $data
      * @return array
      */
-    public function prepareData(array $data): array
+    public function prepareData(array $data, ?int $id = null): array
     {
-        if (isset($data['password'])) {
-            $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
+        $preparedData = $data; // Tạo bản sao để tránh sửa đổi mảng gốc
+        if (isset($preparedData['password']) && !empty($preparedData['password'])) {
+            $preparedData['password'] = password_hash($preparedData['password'], PASSWORD_DEFAULT);
         }
-        return $data;
+        return $preparedData;
     }
 
     /**
@@ -141,5 +142,13 @@ class AccountModel extends BaseModel
             'users' => $users,
             'total' => (int)$total
         ];
+    }
+
+    public function isUsernameExists(string $username): bool
+    {
+        $sql = "SELECT COUNT(*) FROM accounts WHERE username = :username";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(['username' => $username]);
+        return $stmt->fetchColumn() > 0;
     }
 }

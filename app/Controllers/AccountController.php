@@ -26,7 +26,7 @@ class AccountController extends BaseController
         // 1. Nhận tham số tìm kiếm và phân trang
         $page = (int)($_GET['page'] ?? 1);
         $keyword = trim($_GET['keyword'] ?? '');
-        $limit = 10; // Số lượng tài khoản trên mỗi trang
+        $limit = 5; // Số lượng tài khoản trên mỗi trang
         $offset = ($page - 1) * $limit;
 
         // 2. Lấy dữ liệu
@@ -55,7 +55,6 @@ class AccountController extends BaseController
     public function addUser(): void
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
             // --- Xử lý Upload Avatar (Tùy chọn) ---
             $avatarFileName = null;
             if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
@@ -66,10 +65,16 @@ class AccountController extends BaseController
             $accountData = [
                 'username' => $_POST['username'] ?? '',
                 'email' => $_POST['email'] ?? '',
-                'password' => $_POST['password'] ?? '', // Sẽ được hash trong Model
+                'password' => $_POST['password'] ?? '',
                 'role' => $_POST['role'] ?? 'student',
-                'avatar' => $avatarFileName // Lưu tên file avatar
             ];
+
+            // Kiểm tra xem username đã tồn tại chưa
+            if ($this->accountModel->isUsernameExists($accountData['username'])) {
+                $_SESSION['message'] = 'Tên đăng nhập "' . htmlspecialchars($accountData['username']) . '" đã tồn tại!';
+                $_SESSION['message_type'] = 'danger';
+                $this->redirect('account/manage');
+            }
 
             // Sửa tên hàm/đường dẫn redirect để phù hợp với manage
             $accountId = $this->accountModel->create($this->accountModel->prepareData($accountData));
@@ -81,20 +86,21 @@ class AccountController extends BaseController
                     'full_name' => $_POST['full_name'] ?? '',
                     'date_of_birth' => $_POST['date_of_birth'] ?? null,
                     'phone_number' => $_POST['phone_number'] ?? null,
-                    'address' => $_POST['address'] ?? null
+                    'address' => $_POST['address'] ?? null,
+                    'avatar' => $avatarFileName
                 ];
                 $this->userModel->create($userData);
 
                 $_SESSION['message'] = 'Thêm người dùng thành công!';
                 $_SESSION['message_type'] = 'success';
-                $this->redirect('account/manage');
+                $this->redirect('/quanlydoan/Account/manage');
             } else {
                 $_SESSION['message'] = 'Lỗi khi thêm tài khoản.';
                 $_SESSION['message_type'] = 'danger';
-                $this->redirect('account/manage');
+                $this->redirect('/quanlydoan/Account/manage');
             }
         }
-        $this->redirect('account/manage');
+        $this->redirect('/quanlydoan/Account/manage');
     }
 
     /**
@@ -112,7 +118,6 @@ class AccountController extends BaseController
             // --- Xử lý Upload Avatar ---
             $avatarFileName = $_POST['current_avatar'] ?? null;
             if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
-                // Xóa ảnh cũ nếu nó không phải là 'profile.png' và upload ảnh mới
                 if ($avatarFileName && $avatarFileName !== 'profile.png') {
                     unlink('assets/images/' . $avatarFileName);
                 }
@@ -124,24 +129,30 @@ class AccountController extends BaseController
                 'username' => $_POST['username'] ?? '',
                 'email' => $_POST['email'] ?? '',
                 'role' => $_POST['role'] ?? 'student',
-                'avatar' => $avatarFileName
+
             ];
 
             if (!empty($_POST['password'])) {
-                $accountData['password'] = $_POST['password']; // Sẽ được hash trong Model
+                $accountData['password'] = $_POST['password'];
             }
 
-            $isAccountUpdated = $this->accountModel->update($accountId, $this->accountModel->prepareData($accountData, $accountId));
+            try {
+                $isAccountUpdated = $this->accountModel->update($accountId, $this->accountModel->prepareData($accountData, $accountId));
+            } catch (\PDOException $e) {
+                $_SESSION['message'] = 'Lỗi khi cập nhật tài khoản: ' . $e->getMessage();
+                $_SESSION['message_type'] = 'danger';
+                $this->redirect('/quanlydoan/Account/manage');
+            }
 
             // 2. Cập nhật User (Details)
             $userData = [
                 'full_name' => $_POST['full_name'] ?? '',
                 'date_of_birth' => $_POST['date_of_birth'] ?? null,
                 'phone_number' => $_POST['phone_number'] ?? null,
-                'address' => $_POST['address'] ?? null
+                'address' => $_POST['address'] ?? null,
+                'avatar' => $avatarFileName
             ];
 
-            // Cần phương thức update chi tiết người dùng dựa trên account_id
             $isUserUpdated = $this->userModel->updateByAccountId($accountId, $userData);
 
             if ($isAccountUpdated || $isUserUpdated) {
@@ -151,9 +162,9 @@ class AccountController extends BaseController
                 $_SESSION['message'] = 'Không có thay đổi nào được thực hiện hoặc có lỗi xảy ra.';
                 $_SESSION['message_type'] = 'warning';
             }
-            $this->redirect('account/manage');
+            $this->redirect('/quanlydoan/Account/manage');
         }
-        $this->redirect('account/manage');
+        $this->redirect('/quanlydoan/Account/manage');
     }
 
     /**
@@ -167,16 +178,23 @@ class AccountController extends BaseController
 
             if ($accountId > 0) {
                 $data = ['status' => $newStatus];
-                if ($this->accountModel->update($accountId, $data)) {
-                    $action = $newStatus === 'banned' ? 'khóa' : 'mở khóa';
-                    $this->jsonResponse(['success' => true, 'message' => "Đã $action tài khoản thành công!"]);
+                try {
+                    if ($this->accountModel->update($accountId, $data)) {
+                        $action = $newStatus === 'banned' ? 'khóa' : 'mở khóa';
+                        $this->jsonResponse(['success' => true, 'message' => "Đã $action tài khoản thành công!"]);
+                        return;
+                    }
+                    $this->jsonResponse(['success' => false, 'message' => 'Không thể cập nhật trạng thái tài khoản.']);
+                } catch (\PDOException $e) {
+                    $this->jsonResponse(['success' => false, 'message' => 'Lỗi khi cập nhật trạng thái: ' . $e->getMessage()]);
                     return;
                 }
             }
-            $this->jsonResponse(['success' => false, 'message' => 'Không thể cập nhật trạng thái tài khoản.']);
+            $this->jsonResponse(['success' => false, 'message' => 'ID tài khoản không hợp lệ.']);
         }
+        // Trường hợp không phải POST
+        $this->jsonResponse(['success' => false, 'message' => 'Yêu cầu không hợp lệ.']);
     }
-
     /**
      * Hàm tiện ích để xử lý upload file.
      */

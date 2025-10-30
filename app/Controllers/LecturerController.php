@@ -16,10 +16,10 @@ class LecturerController extends BaseController
         $this->lecturerModel = new LecturerModel($pdo);
     }
 
-    public function index(): void
+    public function manage(): void
     {
         $lecturers = $this->lecturerModel->getWithProjectCount();
-        $this->render('lecturers/index', ['lecturers' => $lecturers]);
+        $this->render('lecturers/manage', ['lecturers' => $lecturers]);
     }
 
     public function create(): void
