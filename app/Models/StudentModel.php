@@ -108,56 +108,96 @@ class StudentModel extends BaseModel
      * @param string $keyword
      * @return array
      */
+    // public function getStudentsWithPagination(int $limit, int $offset, string $keyword = ''): array
+    // {
+    //     try {
+    //         $search = "%$keyword%";
+
+    //         // Câu SQL chính để lấy danh sách sinh viên
+    //         $sql = "SELECT s.student_id, s.mssv, s.class_id, s.faculty_id, s.academic_year, 
+    //                    u.full_name, u.gender, u.phone_number, u.date_of_birth, u.address,
+    //                    a.email, a.status, c.class_name, f.faculty_name
+    //             FROM students s 
+    //             JOIN users u ON s.user_id = u.user_id 
+    //             JOIN accounts a ON u.account_id = a.account_id 
+    //             JOIN classes c ON s.class_id = c.class_id
+    //             JOIN faculties f ON s.faculty_id = f.faculty_id
+    //             WHERE (s.mssv LIKE :keyword OR u.full_name LIKE :keyword) 
+    //             ORDER BY s.student_id DESC
+    //             LIMIT :limit OFFSET :offset";
+
+    //         $stmt = $this->pdo->prepare($sql);
+    //         $stmt->bindValue(':keyword', $search, PDO::PARAM_STR);
+    //         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+    //         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    //         $stmt->execute();
+
+    //         $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    //         // Đếm tổng số bản ghi
+    //         $countSql = "SELECT COUNT(*) 
+    //                  FROM students s 
+    //                  JOIN users u ON s.user_id = u.user_id 
+    //                  JOIN accounts a ON u.account_id = a.account_id 
+    //                  JOIN classes c ON s.class_id = c.class_id
+    //                  JOIN faculties f ON s.faculty_id = f.faculty_id
+    //                  WHERE (s.mssv LIKE :keyword OR u.full_name LIKE :keyword)";
+
+    //         $countStmt = $this->pdo->prepare($countSql);
+    //         $countStmt->bindValue(':keyword', $search, PDO::PARAM_STR);
+    //         $countStmt->execute();
+    //         $total = $countStmt->fetchColumn();
+
+    //         return [
+    //             'students' => $students,
+    //             'total' => $total
+    //         ];
+    //     } catch (PDOException $e) {
+    //         error_log("PDO Error in getStudentsWithPagination: " . $e->getMessage());
+    //         return [
+    //             'students' => [],
+    //             'total' => 0
+    //         ];
+    //     }
+    // }
+
     public function getStudentsWithPagination(int $limit, int $offset, string $keyword = ''): array
     {
         try {
             $search = "%$keyword%";
 
-            // Câu SQL chính để lấy danh sách sinh viên
-            $sql = "SELECT s.student_id, s.mssv, s.class_id, s.faculty_id, s.academic_year, 
-                       u.full_name, u.gender, u.phone_number, u.date_of_birth, u.address,
-                       a.email, a.status, c.class_name, f.faculty_name
-                FROM students s 
-                JOIN users u ON s.user_id = u.user_id 
-                JOIN accounts a ON u.account_id = a.account_id 
-                JOIN classes c ON s.class_id = c.class_id
-                JOIN faculties f ON s.faculty_id = f.faculty_id
-                WHERE (s.mssv LIKE :keyword OR u.full_name LIKE :keyword) 
+            $sql = "SELECT 
+                    s.student_id, s.mssv, s.class_id, s.faculty_id, s.academic_year,
+                    u.full_name, u.gender, u.phone_number, u.date_of_birth, u.address,
+                    a.email, a.status, c.class_name, f.faculty_name
+                FROM students s
+                INNER JOIN users u ON s.user_id = u.user_id
+                INNER JOIN accounts a ON u.account_id = a.account_id
+                INNER JOIN classes c ON s.class_id = c.class_id
+                INNER JOIN faculties f ON s.faculty_id = f.faculty_id
+                WHERE (s.mssv LIKE ? OR u.full_name LIKE ?)
                 ORDER BY s.student_id DESC
-                LIMIT :limit OFFSET :offset";
+                LIMIT ? OFFSET ?";
 
             $stmt = $this->pdo->prepare($sql);
-            $stmt->bindValue(':keyword', $search, PDO::PARAM_STR);
-            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-            $stmt->execute();
-
+            $stmt->execute([$search, $search, $limit, $offset]);
             $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Đếm tổng số bản ghi
+            // Count total
             $countSql = "SELECT COUNT(*) 
                      FROM students s 
                      JOIN users u ON s.user_id = u.user_id 
-                     JOIN accounts a ON u.account_id = a.account_id 
-                     JOIN classes c ON s.class_id = c.class_id
-                     JOIN faculties f ON s.faculty_id = f.faculty_id
-                     WHERE (s.mssv LIKE :keyword OR u.full_name LIKE :keyword)";
-
+                     WHERE (s.mssv LIKE ? OR u.full_name LIKE ?)";
             $countStmt = $this->pdo->prepare($countSql);
-            $countStmt->bindValue(':keyword', $search, PDO::PARAM_STR);
-            $countStmt->execute();
-            $total = $countStmt->fetchColumn();
+            $countStmt->execute([$search, $search]);
+            $total = (int)$countStmt->fetchColumn();
 
             return [
                 'students' => $students,
                 'total' => $total
             ];
         } catch (PDOException $e) {
-            error_log("PDO Error in getStudentsWithPagination: " . $e->getMessage());
-            return [
-                'students' => [],
-                'total' => 0
-            ];
+            die("SQL ERROR: " . $e->getMessage());
         }
     }
 
@@ -195,30 +235,50 @@ class StudentModel extends BaseModel
     public function update(int $id, array $data): bool
     {
         if (empty($data)) {
-            return true;
+            return false;
         }
 
         $fields = [];
         $params = [];
 
         foreach ($data as $key => $value) {
-            if ($key !== 'user_id') { // user_id should not be updated
-                $fields[] = "$key = :$key";
-                $params[":$key"] = $value;
-            }
+            $fields[] = "$key = :$key";
+            $params[":$key"] = $value;
         }
 
         $params[':id'] = $id;
+
+
         $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . " WHERE student_id = :id";
 
         try {
             $stmt = $this->pdo->prepare($sql);
             return $stmt->execute($params);
         } catch (PDOException $e) {
-            // error_log("StudentModel update error: " . $e->getMessage());
+            error_log("StudentModel update error: " . $e->getMessage());
             return false;
         }
     }
+
+    /**
+     * Find student by MSSV.
+     * @param string $mssv
+     * @return array|false
+     */
+    public function findByMssv(string $mssv): array|false
+    {
+        $sql = "SELECT s.* FROM {$this->table} s WHERE s.mssv = :mssv LIMIT 1";
+        $stmt = $this->pdo->prepare($sql);
+        try {
+            $stmt->execute([':mssv' => $mssv]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (\PDOException $e) {
+            error_log("StudentModel::findByMssv error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+
 
     /**
      * Delete a student.
@@ -256,13 +316,46 @@ class StudentModel extends BaseModel
     public function countStudentsByClass(int $classId): int
     {
         $sql = "SELECT COUNT(*) as total 
-                FROM students 
-                WHERE class_id = ? AND status = 'active'";
+        FROM students 
+        WHERE class_id = ?";
+
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([$classId]);
 
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         return $result['total'] ?? 0;
+    }
+
+    /**
+     * Kiểm tra xem Mã số sinh viên (student_code) đã tồn tại hay chưa.
+     * Dùng để validate khi thêm sinh viên mới.
+     * @param string $studentCode Mã số sinh viên
+     * @return bool Trả về TRUE nếu mã số đã tồn tại, FALSE nếu chưa.
+     */
+    public function isStudentCodeExists(string $studentCode): bool
+    {
+        // 1. Chuẩn bị câu lệnh SQL: Đếm số lượng bản ghi có student_code trùng khớp
+        $sql = "SELECT COUNT(*) FROM {$this->table} WHERE student_code = :student_code LIMIT 1";
+
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([':student_code' => $studentCode]);
+
+            // 2. Trả về true nếu count > 0 (đã tồn tại), ngược lại là false
+            return $stmt->fetchColumn() > 0;
+        } catch (PDOException $e) {
+            // Ghi log lỗi
+            error_log("StudentModel::isStudentCodeExists error: " . $e->getMessage());
+
+            // THAY ĐỔI: Thay vì return TRUE, chúng ta nên THROW lại Exception 
+            // HOẶC return FALSE (và để Controller xử lý lỗi 500)
+
+            // *** GIẢI PHÁP TỐT NHẤT: Throw lại exception và xử lý ở Controller ***
+            throw $e;
+
+            // HOẶC GIẢI PHÁP ĐƠN GIẢN HƠN: Trả về FALSE và để Controller báo lỗi chung
+            // return false; // Thường không nên làm, nhưng nếu bạn muốn tiếp tục
+        }
     }
 }

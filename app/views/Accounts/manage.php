@@ -217,7 +217,7 @@ if (session_status() === PHP_SESSION_NONE) {
             <button type="submit" class="btn btn-primary">Tìm kiếm</button>
         </div>
     </form>
-    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addUserModal"><i class="bi bi-plus-circle"></i> Thêm người dùng</button>
+    <!-- <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addUserModal"><i class="bi bi-plus-circle"></i> Thêm người dùng</button> -->
 </div>
 
 <div class="table-responsive">
@@ -310,7 +310,7 @@ if (session_status() === PHP_SESSION_NONE) {
 <?php endif; ?>
 
 <!-- Add User Modal -->
-<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+<!-- <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form method="POST" action="/quanlydoan/Account/addUser" enctype="multipart/form-data">
@@ -320,13 +320,13 @@ if (session_status() === PHP_SESSION_NONE) {
                 </div>
                 <div class="modal-body">
                     <div class="row">
-                        <!-- <div class="col-md-12 text-center mb-4">
+                        <div class="col-md-12 text-center mb-4">
                             <img src="/quanlydoan/assets/images/profile.png" alt="Avatar Preview" class="avatar-preview" id="addAvatarPreview">
                             <label for="add_avatar" class="form-label d-block fw-bold mb-2"><i class="fas fa-image"></i> Ảnh đại diện</label>
                             <input type="file" class="form-control d-none" id="add_avatar" name="avatar" accept="image/*">
                             <label for="add_avatar" class="custom-file-upload"><i class="bi bi-upload me-2"></i> Chọn ảnh</label>
                             <div class="form-text mt-2">Chấp nhận file JPEG, PNG, GIF. Tối đa 5MB.</div>
-                        </div> -->
+                        </div>
                         <div class="col-md-6">
                             <div class="mb-3 input-icon">
                                 <label for="username" class="form-label"><i class="fas fa-user"></i> Tên đăng nhập</label>
@@ -385,7 +385,7 @@ if (session_status() === PHP_SESSION_NONE) {
             </form>
         </div>
     </div>
-</div>
+</div> -->
 
 <!-- Edit User Modal -->
 <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
@@ -400,13 +400,13 @@ if (session_status() === PHP_SESSION_NONE) {
                     <input type="hidden" id="edit_account_id" name="account_id">
                     <input type="hidden" id="edit_current_avatar" name="current_avatar">
                     <div class="row">
-                        <div class="col-md-12 text-center mb-4">
+                        <!-- <div class="col-md-12 text-center mb-4">
                             <img src="/quanlydoan/assets/images/profile.png" alt="Avatar Preview" class="avatar-preview" id="editAvatarPreview">
                             <label for="edit_avatar" class="form-label d-block fw-bold mb-2"><i class="fas fa-image"></i> Ảnh đại diện</label>
                             <input type="file" class="form-control d-none" id="edit_avatar" name="avatar" accept="image/*">
                             <label for="edit_avatar" class="custom-file-upload"><i class="bi bi-upload me-2"></i> Chọn ảnh</label>
                             <div class="form-text mt-2">Chấp nhận file JPEG, PNG, GIF. Tối đa 5MB.</div>
-                        </div>
+                        </div> -->
                         <div class="col-md-6">
                             <div class="mb-3 input-icon">
                                 <label for="edit_username" class="form-label"><i class="fas fa-user"></i> Tên đăng nhập</label>
@@ -442,6 +442,7 @@ if (session_status() === PHP_SESSION_NONE) {
                                     <option value="Nữ">Nữ</option>
                                     <option value="Khác">Khác</option>
                                 </select>
+
                             </div>
                             <div class="mb-3 input-icon">
                                 <label for="edit_phone_number" class="form-label"><i class="fas fa-phone"></i> Số điện thoại</label>

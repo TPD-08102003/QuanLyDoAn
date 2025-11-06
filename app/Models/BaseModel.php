@@ -34,6 +34,8 @@ abstract class BaseModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+
+
     /**
      * Find record by ID.
      * @param int $id

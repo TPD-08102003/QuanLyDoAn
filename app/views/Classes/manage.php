@@ -4,18 +4,15 @@
 
 <div class="container-fluid">
 
-    <!-- Search Form with Action Buttons -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    <!-- Search Section (Left) -->
                     <div class="row align-items-end">
-                        <div class="col-lg-8">
+                        <div class="col-lg-7">
                             <form method="GET" action="/quanlydoan/classes/manage" class="row g-3 align-items-end">
                                 <input type="hidden" name="page" value="1">
-                                <div class="col-md-8">
-                                    <label for="keyword" class="form-label">Tìm kiếm lớp học</label>
+                                <div class="col-md-6 col-lg-8"> <label for="keyword" class="form-label">Tìm kiếm lớp học</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="bi bi-search"></i></span>
                                         <input type="text" class="form-control" id="keyword" name="keyword"
@@ -23,7 +20,7 @@
                                             placeholder="Nhập tên lớp học...">
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-6 col-lg-4">
                                     <div class="d-grid">
                                         <button type="submit" class="btn btn-primary">
                                             <i class="bi bi-search me-1"></i>Tìm kiếm
@@ -40,8 +37,7 @@
                             </form>
                         </div>
 
-                        <!-- Action Buttons Section (Right) -->
-                        <div class="col-lg-4">
+                        <div class="col-lg-5">
                             <div class="d-flex gap-2 justify-content-lg-end mt-3 mt-lg-0">
                                 <button type="button" class="btn btn-success flex-fill flex-lg-grow-0" data-bs-toggle="modal" data-bs-target="#addClassModal">
                                     <i class="bi bi-plus-circle me-1"></i>Thêm lớp học
@@ -58,7 +54,6 @@
         </div>
     </div>
 
-    <!-- Classes Table -->
     <div class="row">
         <div class="col-12">
             <div class="card">
@@ -91,10 +86,10 @@
                                         <tr>
                                             <td><?php echo (($page - 1) * $limit) + $index + 1; ?></td>
                                             <td>
-                                                <strong class="text-primary"><?php echo htmlspecialchars($class['class_name'] ?? ''); ?></strong>
+                                                <span><?php echo htmlspecialchars($class['class_name'] ?? ''); ?></span>
                                             </td>
                                             <td>
-                                                <span class="badge bg-info"><?php echo htmlspecialchars($class['faculty_name'] ?? 'Chưa xác định'); ?></span>
+                                                <span class="text-dark"><?php echo htmlspecialchars($class['faculty_name'] ?? 'Chưa xác định'); ?></span>
                                             </td>
                                             <td>
                                                 <span class="text-truncate-2" title="<?php echo htmlspecialchars($class['description'] ?? 'Không có mô tả'); ?>">
@@ -143,7 +138,6 @@
         </div>
     </div>
 
-    <!-- Pagination -->
     <?php if ($totalPages > 1): ?>
         <div class="row mt-4">
             <div class="col-12">
@@ -154,14 +148,12 @@
                     </div>
                     <nav aria-label="Phân trang lớp học">
                         <ul class="pagination justify-content-center mb-0">
-                            <!-- Previous -->
                             <li class="page-item <?php echo $page <= 1 ? 'disabled' : ''; ?>">
                                 <a class="page-link" href="?page=<?php echo $page - 1; ?>&keyword=<?php echo urlencode($keyword ?? ''); ?>&limit=<?php echo $limit; ?>">
                                     <i class="bi bi-chevron-left"></i>
                                 </a>
                             </li>
 
-                            <!-- Pages -->
                             <?php
                             $startPage = max(1, $page - 2);
                             $endPage = min($totalPages, $page + 2);
@@ -185,7 +177,6 @@
                                 <li class="page-item"><a class="page-link" href="?page=<?php echo $totalPages; ?>&keyword=<?php echo urlencode($keyword ?? ''); ?>&limit=<?php echo $limit; ?>"><?php echo $totalPages; ?></a></li>
                             <?php endif; ?>
 
-                            <!-- Next -->
                             <li class="page-item <?php echo $page >= $totalPages ? 'disabled' : ''; ?>">
                                 <a class="page-link" href="?page=<?php echo $page + 1; ?>&keyword=<?php echo urlencode($keyword ?? ''); ?>&limit=<?php echo $limit; ?>">
                                     <i class="bi bi-chevron-right"></i>
@@ -198,7 +189,6 @@
         </div>
     <?php endif; ?>
 </div>
-<!-- Add Class Modal -->
 <div class="modal fade" id="addClassModal" tabindex="-1" aria-labelledby="addClassModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -247,7 +237,6 @@
         </div>
     </div>
 </div>
-<!-- View Class Modal -->
 <div class="modal fade" id="viewClassModal" tabindex="-1" aria-labelledby="viewClassModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -266,7 +255,7 @@
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label class="form-label fw-bold">Khoa:</label>
-                            <p><span class="badge bg-info" id="view_faculty_name"></span></p>
+                            <p class="text-dark" id="view_faculty_name"></p>
                         </div>
                     </div>
                 </div>
@@ -288,11 +277,9 @@
                         </div>
                     </div>
                 </div>
-                <!-- Student List Section -->
                 <div class="mt-4">
                     <h6 class="fw-bold border-bottom pb-2">Danh sách sinh viên</h6>
                     <div id="studentList" class="mt-2">
-                        <!-- Student list will be loaded here -->
                     </div>
                 </div>
             </div>
@@ -302,7 +289,6 @@
         </div>
     </div>
 </div>
-<!-- Edit Class Modal -->
 <div class="modal fade" id="editClassModal" tabindex="-1" aria-labelledby="editClassModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -351,7 +337,6 @@
         </div>
     </div>
 </div>
-<!-- Delete Confirmation Modal -->
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -364,10 +349,6 @@
                 <p class="text-danger mb-0"><small>Hành động này không thể hoàn tác và có thể ảnh hưởng đến dữ liệu liên quan (như sinh viên).</small></p>
             </div>
             <div class="modal-footer">
-                <!-- <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
-                <a href="#" id="confirmDeleteBtn" class="btn btn-danger">
-                    <i class="bi bi-trash me-1"></i>Xác nhận xóa
-                </a> -->
                 <button class="btn btn-sm btn-danger delete-btn"
                     data-id="<?= $class['class_id'] ?>"
                     data-name="<?= $class['class_name'] ?>"
@@ -378,6 +359,7 @@
     </div>
 </div>
 <style>
+    /* ... (CSS gốc) ... */
     .text-truncate-2 {
         display: -webkit-box;
         overflow: hidden;
@@ -421,286 +403,14 @@
         width: 1rem;
         height: 1rem;
     }
+
+    /* Thêm CSS tùy chỉnh để đảm bảo chữ trong bảng là màu đen và không in đậm, nếu cần */
+    .table tbody td {
+        color: #212529 !important;
+        /* Màu đen của Bootstrap */
+        font-weight: normal !important;
+        /* Không in đậm */
+    }
 </style>
 
-<script>
-    // View Class Function
-    document.addEventListener('DOMContentLoaded', function() {
-        // View Class Details
-        document.querySelectorAll('.view-class-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const classId = this.getAttribute('data-class-id');
-                viewClass(classId);
-            });
-        });
-
-        // Edit Class
-        document.querySelectorAll('.edit-class-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const classId = this.getAttribute('data-class-id');
-                editClass(classId);
-            });
-        });
-
-        // Add Class Form Submission
-        document.getElementById('addClassForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            submitAddClassForm();
-        });
-
-        // Edit Class Form Submission
-        document.getElementById('editClassForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            submitEditClassForm();
-        });
-
-        // Reset add form when modal is hidden
-        document.getElementById('addClassModal').addEventListener('hidden.bs.modal', function() {
-            document.getElementById('addClassForm').reset();
-            clearValidationErrors('addClassForm');
-        });
-    });
-
-    function viewClass(classId) {
-        // Show loading state
-        document.getElementById('studentList').innerHTML = '<div class="text-center"><div class="spinner-border spinner-border-sm" role="status"></div> Đang tải...</div>';
-
-        fetch(`/quanlydoan/classes/getClassInfo/${classId}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const classInfo = data.data;
-
-                    // Populate modal with class information
-                    document.getElementById('view_class_name').textContent = classInfo.class_name;
-                    document.getElementById('view_faculty_name').textContent = classInfo.faculty_name;
-                    document.getElementById('view_description').textContent = classInfo.description || 'Không có mô tả';
-                    document.getElementById('view_created_at').textContent = formatDateTime(classInfo.created_at);
-                    document.getElementById('view_updated_at').textContent = formatDateTime(classInfo.updated_at);
-
-                    // Populate student list
-                    let studentListHTML = '';
-                    // Thay thế toàn bộ đoạn này trong <script>
-                    if (classInfo.students && classInfo.students.length > 0) {
-                        classInfo.students.forEach((student, index) => {
-                            studentListHTML += `
-            <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-                <div>
-                    <strong>${index + 1}. ${student.student_name || 'Chưa có tên'}</strong>
-                    <br>
-                    <small class="text-muted">MSSV: ${student.student_code || 'N/A'}</small>
-                </div>
-                <span class="badge bg-${student.status === 'active' ? 'success' : 'secondary'}">
-                    ${student.status === 'active' ? 'Đang học' : (student.status === 'inactive' ? 'Đã nghỉ' : 'Không xác định')}
-                </span>
-            </div>
-        `;
-                        });
-                    } else {
-                        studentListHTML = '<p class="text-muted text-center">Chưa có sinh viên nào trong lớp này.</p>';
-                    }
-                    document.getElementById('studentList').innerHTML = studentListHTML;
-
-                    // Show modal
-                    new bootstrap.Modal(document.getElementById('viewClassModal')).show();
-                } else {
-                    showToast('error', 'Lỗi', 'Không thể tải thông tin lớp học');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('error', 'Lỗi', 'Đã xảy ra lỗi khi tải thông tin');
-            });
-    }
-
-    function editClass(classId) {
-        fetch(`/quanlydoan/classes/getClassInfo/${classId}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const classInfo = data.data;
-
-                    // Populate edit form
-                    document.getElementById('edit_class_id').value = classInfo.class_id;
-                    document.getElementById('edit_class_name').value = classInfo.class_name;
-                    document.getElementById('edit_faculty_id').value = classInfo.faculty_id;
-                    document.getElementById('edit_description').value = classInfo.description || '';
-
-                    // Set form action
-                    document.getElementById('editClassForm').action = `/quanlydoan/classes/update/${classId}`;
-
-                    // Show modal
-                    new bootstrap.Modal(document.getElementById('editClassModal')).show();
-                } else {
-                    showToast('error', 'Lỗi', 'Không thể tải thông tin lớp học');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('error', 'Lỗi', 'Đã xảy ra lỗi khi tải thông tin');
-            });
-    }
-
-    function submitAddClassForm() {
-        const form = document.getElementById('addClassForm');
-        const formData = new FormData(form);
-
-        fetch(form.action, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showToast('success', 'Thành công', 'Thêm lớp học thành công');
-                    document.getElementById('addClassModal').querySelector('.btn-close').click();
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
-                } else {
-                    // ĐÃ SỬA: Lấy lỗi từ data.data
-                    showValidationErrors(data.data, 'addClassForm');
-                    showToast('error', 'Lỗi', 'Vui lòng kiểm tra lại thông tin');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('error', 'Lỗi', 'Đã xảy ra lỗi khi thêm lớp học');
-            });
-    }
-
-    function submitEditClassForm() {
-        const form = document.getElementById('editClassForm');
-        const formData = new FormData(form);
-
-        fetch(form.action, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showToast('success', 'Thành công', 'Cập nhật lớp học thành công');
-                    document.getElementById('editClassModal').querySelector('.btn-close').click();
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
-                } else {
-                    // ĐÃ SỬA: Lấy lỗi từ data.data
-                    showValidationErrors(data.data, 'editClassForm');
-                    showToast('error', 'Lỗi', 'Vui lòng kiểm tra lại thông tin');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('error', 'Lỗi', 'Đã xảy ra lỗi khi cập nhật lớp học');
-            });
-    }
-
-    function showValidationErrors(errors, formType) {
-        // Clear previous errors
-        clearValidationErrors(formType);
-
-        // Show new errors
-        if (errors) {
-            for (const field in errors) {
-                const input = document.querySelector(`#${formType} [name="${field}"]`);
-                const errorDiv = document.getElementById(`${formType}_${field}_error`);
-
-                if (input && errorDiv) {
-                    input.classList.add('is-invalid');
-                    errorDiv.textContent = errors[field][0];
-                }
-            }
-        }
-    }
-
-    function clearValidationErrors(formType) {
-        const form = document.getElementById(formType);
-        form.querySelectorAll('.is-invalid').forEach(element => {
-            element.classList.remove('is-invalid');
-        });
-        form.querySelectorAll('.invalid-feedback').forEach(element => {
-            element.textContent = '';
-        });
-    }
-
-    function formatDateTime(dateTimeString) {
-        if (!dateTimeString) return 'N/A';
-        const date = new Date(dateTimeString);
-        return date.toLocaleDateString('vi-VN') + ' ' + date.toLocaleTimeString('vi-VN');
-    }
-
-    function showToast(type, title, message) {
-        // You can implement a toast notification system here
-        // For now, using alert for simplicity
-        alert(`${title}: ${message}`);
-    }
-
-    // Initialize tooltips
-    document.addEventListener('DOMContentLoaded', function() {
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
-        });
-    });
-    /**
-     * Xử lý việc xác nhận trước khi xóa lớp học
-     * @param {HTMLButtonElement} element Nút Xóa được click
-     */
-    function confirmDelete(element) {
-        const classId = element.getAttribute('data-id');
-        const className = element.getAttribute('data-name');
-
-        if (confirm(`Bạn có chắc chắn muốn xóa lớp học "${className}" không?`)) {
-            deleteClass(classId);
-        }
-    }
-
-    // ... (các hàm JS khác) ...
-
-    /**
-     * Xử lý việc xác nhận trước khi xóa lớp học
-     * @param {string} classId ID của lớp học cần xóa
-     * @param {string} className Tên lớp học
-     */
-    function confirmDelete(classId, className) { // <-- ĐÃ SỬA: Nhận 2 tham số classId và className
-
-        // Đã loại bỏ: const classId = element.getAttribute('data-id');
-        // Đã loại bỏ: const className = element.getAttribute('data-name');
-
-        if (confirm(`Bạn có chắc chắn muốn xóa lớp học "${className}" không?`)) {
-            deleteClass(classId);
-        }
-    }
-
-    /**
-     * Gửi yêu cầu AJAX để xóa lớp học
-     * @param {string} classId ID của lớp học cần xóa
-     */
-    function deleteClass(classId) {
-        fetch(`/quanlydoan/classes/destroy/${classId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showToast('success', 'Thành công', data.message || 'Xóa lớp học thành công');
-                    // Tải lại trang sau khi xóa thành công
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
-                } else {
-                    // Hiển thị lỗi từ Controller (ví dụ: Lớp có sinh viên)
-                    showToast('error', 'Lỗi', data.message || 'Xóa lớp học thất bại.');
-                }
-            })
-            .catch(error => {
-                console.error('Error deleting class:', error);
-                showToast('error', 'Lỗi', 'Đã xảy ra lỗi hệ thống khi xóa.');
-            });
-    }
-</script>
+<script src="../assets/js/class_manage.js"></script>

@@ -124,4 +124,30 @@ class UserModel extends BaseModel
             'department' => $department
         ]);
     }
+
+    public function update(int $id, array $data): bool
+    {
+        if (empty($data)) {
+            return false;
+        }
+
+        $fields = [];
+        $params = [];
+
+        foreach ($data as $key => $value) {
+            $fields[] = "$key = :$key";
+            $params[":$key"] = $value;
+        }
+
+        $params[':id'] = $id;
+
+        $sql = "UPDATE users SET " . implode(', ', $fields) . " WHERE user_id = :id";
+
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            return $stmt->execute($params);
+        } catch (PDOException $e) {
+            die("❌ UserModel update error: " . $e->getMessage());
+        }
+    }
 }

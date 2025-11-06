@@ -41,9 +41,12 @@
             <div class="col-12 col-md-auto ms-md-auto">
                 <div class="d-flex gap-2 justify-content-end">
 
-                    <a href="/quanlydoan/Student/create" class="btn btn-purple text-white">
+                    <button type="button" class="btn btn-purple text-white" data-bs-toggle="modal" data-bs-target="#addStudentModal">
                         <i class="bi bi-person-add me-1"></i> Thêm SV
-                    </a>
+                    </button>
+                    <!-- <a href="/quanlydoan/Student/create" class="btn btn-purple text-white">
+                        <i class="bi bi-person-add me-1"></i> Thêm SV
+                    </a> -->
 
                     <a href="/quanlydoan/Student/export" class="btn btn-success" title="Xuất file Excel">
                         <i class="bi bi-file-earmark-excel me-1"></i> Xuất Excel
@@ -152,13 +155,16 @@
                                         </button>
 
                                         <!-- Nút Chỉnh sửa -->
-                                        <a href="/quanlydoan/Student/edit/<?php echo $student['student_id']; ?>"
+                                        <button type="button"
                                             class="btn btn-warning btn-action text-white"
                                             title="Chỉnh sửa thông tin"
-                                            data-bs-toggle="tooltip">
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#editStudentModal"
+                                            onclick="loadStudentForEdit(<?php echo $student['student_id']; ?>)">
                                             <i class="bi bi-pencil-fill"></i>
                                             <span class="btn-text">Sửa</span>
-                                        </a>
+                                        </button>
+
 
                                         <!-- Nút Xóa -->
                                         <button type="button"
@@ -191,10 +197,18 @@
                                                 </button>
                                             </li>
                                             <li>
-                                                <a class="dropdown-item" href="/quanlydoan/Student/edit/<?php echo $student['student_id']; ?>">
-                                                    <i class="bi bi-pencil-fill me-2 text-warning"></i>Chỉnh sửa
-                                                </a>
+                                                <button type="button"
+                                                    class="btn btn-warning btn-action text-white"
+                                                    title="Chỉnh sửa thông tin"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#editStudentModal"
+                                                    onclick="loadStudentForEdit(<?php echo $student['student_id']; ?>)">
+                                                    <i class="bi bi-pencil-fill"></i>
+                                                    <span class="btn-text">Sửa</span>
+                                                </button>
+
                                             </li>
+
                                             <li>
                                                 <hr class="dropdown-divider">
                                             </li>
@@ -280,6 +294,66 @@
         </div>
     </div>
 </div>
+<!-- Modal chỉnh sửa sinh viên -->
+<div class="modal fade" id="editStudentModal" tabindex="-1" aria-labelledby="editStudentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title" id="editStudentModalLabel">Chỉnh sửa thông tin sinh viên</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editStudentForm" method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="student_id" id="edit_student_id">
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">MSSV</label>
+                            <input type="text" class="form-control" id="edit_mssv" name="mssv" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Họ và tên</label>
+                            <input type="text" class="form-control" id="edit_full_name" name="full_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Giới tính</label>
+                            <select class="form-select" id="edit_gender" name="gender">
+                                <option value="">-- Chọn giới tính --</option>
+                                <option value="male">Nam</option>
+                                <option value="female">Nữ</option>
+                                <option value="other">Khác</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Ngày sinh</label>
+                            <input type="date" class="form-control" id="edit_date_of_birth" name="date_of_birth">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Số điện thoại</label>
+                            <input type="text" class="form-control" id="edit_phone_number" name="phone_number">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Địa chỉ</label>
+                            <input type="text" class="form-control" id="edit_address" name="address">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Lớp</label>
+                            <input type="text" class="form-control" id="edit_class_name" disabled>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Khoa</label>
+                            <input type="text" class="form-control" id="edit_faculty_name" disabled>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-warning text-white">Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <!-- Modal nhập Excel -->
 <div class="modal fade" id="importStudentModal" tabindex="-1" aria-labelledby="importStudentModalLabel" aria-hidden="true">
@@ -316,6 +390,117 @@
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
                 <button type="button" class="btn btn-primary" id="importButton">Nhập dữ liệu</button>
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addStudentModal" tabindex="-1" aria-labelledby="addStudentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-purple text-white">
+                <h5 class="modal-title" id="addStudentModalLabel">Thêm Sinh viên mới</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addStudentForm" class="needs-validation" novalidate>
+                <div class="modal-body row g-3">
+
+                    <div class="col-md-6">
+                        <label class="form-label">MSSV <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="add_mssv" name="mssv" required placeholder="Nhập mã số sinh viên">
+                        <div class="invalid-feedback" id="add_mssv_error"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Họ và tên <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="add_full_name" name="full_name" required placeholder="Nhập họ và tên">
+                        <div class="invalid-feedback" id="add_full_name_error"></div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Email <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control" id="add_email" name="email" required placeholder="Nhập email">
+                        <div class="invalid-feedback" id="add_email_error"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Giới tính <span class="text-danger">*</span></label>
+                        <select class="form-select" id="add_gender" name="gender" required>
+                            <option value="">-- Chọn giới tính --</option>
+                            <option value="male">Nam</option>
+                            <option value="female">Nữ</option>
+                            <option value="other">Khác</option>
+                        </select>
+                        <div class="invalid-feedback" id="add_gender_error"></div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Ngày sinh</label>
+                        <input type="date" class="form-control" id="add_date_of_birth" name="date_of_birth">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Số điện thoại</label>
+                        <input type="text" class="form-control" id="add_phone_number" name="phone_number" placeholder="Nhập số điện thoại">
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Địa chỉ</label>
+                        <input type="text" class="form-control" id="add_address" name="address" placeholder="Nhập địa chỉ">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Lớp <span class="text-danger">*</span></label>
+
+                        <select class="form-select" id="add_class_id" name="class_id" required>
+                            <option value="">-- Chọn lớp --</option>
+                            <?php
+                            // KIỂM TRA ĐIỀU KIỆN IF NÀY: 
+                            // $classes phải là mảng và không rỗng
+                            if (isset($classes) && is_array($classes)):
+                                foreach ($classes as $class):
+                            ?>
+                                    <option
+                                        value="<?php echo $class['class_id']; ?>"
+                                        data-faculty-name="<?php echo htmlspecialchars($class['faculty_name'] ?? 'N/A'); ?>">
+                                        <?php
+                                        echo htmlspecialchars($class['class_name']);
+                                        // Hiển thị tên khoa nếu có
+                                        if (!empty($class['faculty_name'])) {
+                                            echo ' (' . htmlspecialchars($class['faculty_name']) . ')';
+                                        }
+                                        ?>
+                                    </option>
+                            <?php
+                                endforeach;
+                            endif;
+                            ?>
+                        </select>
+                        <div class="invalid-feedback" id="add_class_id_error"></div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Khoa</label>
+                        <input type="text" class="form-control" id="add_faculty_name" disabled placeholder="Sẽ tự động hiển thị khi chọn lớp">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Trạng thái <span class="text-danger">*</span></label>
+                        <select class="form-select" id="add_status" name="status" required>
+                            <option value="active" selected>Hoạt động</option>
+                            <option value="inactive">Khóa</option>
+                        </select>
+                        <div class="invalid-feedback" id="add_status_error"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Năm học</label>
+                        <input type="text" class="form-control" id="add_academic_year" name="academic_year" placeholder="Ví dụ: 2023-2024">
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-purple text-white" id="submitAddStudentBtn">
+                        <i class="bi bi-floppy-fill me-1"></i> Thêm Sinh viên
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -470,23 +655,129 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Khởi tạo tooltip
+        // 1. Khởi tạo tooltip và các chức năng khác (Không sửa)
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
 
-        // Toggle chế độ xem gọn
         const toggleCompactView = document.getElementById('toggleCompactView');
         const tableContainer = document.querySelector('.table-responsive');
 
-        toggleCompactView.addEventListener('change', function() {
-            if (this.checked) {
-                tableContainer.classList.add('compact-view');
-            } else {
-                tableContainer.classList.remove('compact-view');
+        if (toggleCompactView) {
+            toggleCompactView.addEventListener('change', function() {
+                if (this.checked) {
+                    tableContainer.classList.add('compact-view');
+                } else {
+                    tableContainer.classList.remove('compact-view');
+                }
+            });
+        }
+
+        // --- BẮT ĐẦU LOGIC XỬ LÝ FORM AJAX ---
+
+        const form = document.getElementById('addStudentForm');
+        const modal = document.getElementById('addStudentModal');
+        // Sử dụng Bootstrap Modal instance để điều khiển
+        const modalInstance = modal ? new bootstrap.Modal(modal) : null;
+
+        // Vị trí hiển thị alert trong modal
+        const alertPlaceholder = document.createElement('div');
+        alertPlaceholder.className = 'mb-3'; // Thêm khoảng cách dưới
+
+        // CHÚ Ý: Phải kiểm tra form tồn tại trước khi dùng prepend
+        if (form) {
+            form.prepend(alertPlaceholder);
+
+            form.addEventListener('submit', function(e) {
+                e.preventDefault(); // Rất quan trọng: Ngăn chặn submit form truyền thống
+
+                // Reset alert
+                alertPlaceholder.innerHTML = '';
+
+                const formData = new FormData(form);
+                const submitButton = form.querySelector('button[type="submit"]');
+                const originalButtonText = submitButton.textContent;
+
+                // Hiển thị trạng thái loading
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang xử lý...';
+
+                // Gửi AJAX
+                fetch('/quanlydoan/Student/store', {
+                        // Đảm bảo đúng URL endpoint
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => {
+                        // Xử lý lỗi HTTP (400, 405, 409, 500)
+                        if (!response.ok) {
+                            return response.json().then(errorData => {
+                                throw new Error(errorData.message || 'Lỗi server không xác định.');
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            if (modalInstance) {
+                                modalInstance.hide();
+                            }
+
+                            // Hiển thị alert thành công ngay trong trang chính
+                            showAlert(data.message, 'success');
+
+                            // Tải lại trang để cập nhật bảng dữ liệu
+                            window.location.reload();
+                        } else {
+                            // Xử lý thất bại (lỗi validation, trùng lặp...)
+                            showAlertInForm(data.message, 'danger');
+                        }
+                    })
+                    .catch(error => {
+                        // Xử lý lỗi mạng/hệ thống
+                        showAlertInForm(`Lỗi hệ thống hoặc kết nối: ${error.message}`, 'danger');
+                        console.error('Error submitting form:', error);
+                    })
+                    .finally(() => {
+                        // Phục hồi nút submit
+                        submitButton.disabled = false;
+                        submitButton.textContent = originalButtonText;
+                    });
+            });
+        }
+
+        // Hàm hiển thị thông báo ngay trong modal
+        function showAlertInForm(message, type) {
+            alertPlaceholder.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        }
+
+        // Hàm hiển thị thông báo trên trang chính
+        function showAlert(message, type) {
+            const mainPlaceholder = document.querySelector('.page-title');
+            if (mainPlaceholder) {
+                // Xóa alert cũ nếu có
+                document.querySelectorAll('.alert').forEach(alert => alert.remove());
+
+                const newAlert = document.createElement('div');
+                newAlert.className = `alert alert-${type} alert-dismissible fade show`;
+                newAlert.role = 'alert';
+                newAlert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+                // Chèn alert ngay sau tiêu đề trang (Giả định .page-title tồn tại)
+                mainPlaceholder.after(newAlert);
+
+                // Tự động đóng alert sau 5s (ví dụ)
+                // setTimeout(() => newAlert.classList.remove('show'), 5000); 
             }
-        });
+        }
 
         // Xử lý nhập file Excel
         document.getElementById('importButton').addEventListener('click', function() {
@@ -513,6 +804,77 @@
             });
         }
     });
+    document.addEventListener('DOMContentLoaded', function() {
+        const classSelect = document.getElementById('add_class_id');
+        const facultyInput = document.getElementById('add_faculty_name');
+
+        function updateFacultyField() {
+            // Lấy option đang được chọn
+            const selectedOption = classSelect.options[classSelect.selectedIndex];
+
+            // Kiểm tra nếu có option được chọn (value không rỗng)
+            if (selectedOption && selectedOption.value) {
+                // Đọc giá trị từ data-faculty-name đã được PHP thêm vào
+                const facultyName = selectedOption.getAttribute('data-faculty-name');
+                facultyInput.value = facultyName || 'Không rõ khoa';
+            } else {
+                // Đặt lại giá trị mặc định nếu chọn "-- Chọn lớp --"
+                facultyInput.value = 'Sẽ tự động hiển thị khi chọn lớp';
+            }
+        }
+
+        // 1. Lắng nghe sự kiện thay đổi trên dropdown Lớp
+        classSelect.addEventListener('change', updateFacultyField);
+
+        // 2. Chạy lần đầu để thiết lập giá trị ban đầu (tránh trường hợp F5 vẫn giữ giá trị)
+        updateFacultyField();
+    });
+
+    // Hàm load thông tin sinh viên để chỉnh sửa
+    function loadStudentForEdit(studentId) {
+        fetch(`/quanlydoan/Student/getStudentDetails/${studentId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const s = data.student;
+                    document.getElementById('edit_student_id').value = s.student_id;
+                    document.getElementById('edit_mssv').value = s.mssv;
+                    document.getElementById('edit_full_name').value = s.full_name;
+                    document.getElementById('edit_gender').value = s.gender || '';
+                    document.getElementById('edit_date_of_birth').value = s.date_of_birth || '';
+                    document.getElementById('edit_phone_number').value = s.phone_number || '';
+                    document.getElementById('edit_address').value = s.address || '';
+                    document.getElementById('edit_class_name').value = s.class_name || '';
+                    document.getElementById('edit_faculty_name').value = s.faculty_name || '';
+                }
+            });
+    }
+
+    // Gửi form cập nhật
+    document.getElementById('editStudentForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const studentId = formData.get('student_id');
+
+        fetch(`/quanlydoan/Student/update/${studentId}`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Cập nhật thành công!');
+                    location.reload();
+                } else {
+                    alert('Cập nhật thất bại: ' + (data.message || 'Lỗi không xác định'));
+                }
+            })
+            .catch(err => {
+                alert('Lỗi kết nối máy chủ');
+                console.error(err);
+            });
+    });
+
 
     // Hàm load chi tiết sinh viên bằng AJAX
     function loadStudentDetails(studentId) {

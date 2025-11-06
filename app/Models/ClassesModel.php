@@ -14,6 +14,7 @@ class ClassesModel extends BaseModel
         parent::__construct($pdo, 'classes', 'class_id');
     }
 
+
     /**
      * Lấy thông tin chi tiết của một lớp học dựa trên ID, bao gồm tên Khoa (Faculty).
      * @param int $classId
@@ -194,5 +195,36 @@ class ClassesModel extends BaseModel
         $sql = "DELETE FROM classes WHERE class_id = ?";
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute([$classId]);
+    }
+
+    /**
+     * Lấy tất cả các lớp học, bao gồm cả tên Khoa (Faculty Name).
+     * Override lại phương thức findAll() của BaseModel.
+     * @return array
+     */
+    public function findAll(): array
+    {
+        $sql = "SELECT 
+                    c.class_id, 
+                    c.class_name, 
+                    c.faculty_id, 
+                    c.description, 
+                    c.created_at, 
+                    f.faculty_name
+                FROM 
+                    classes c
+                LEFT JOIN 
+                    faculties f ON c.faculty_id = f.faculty_id
+                ORDER BY 
+                    c.class_name ASC";
+
+        try {
+            // Sử dụng $this->pdo->query() vì không có tham số
+            $stmt = $this->pdo->query($sql);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Database Error in ClassesModel::findAll (Custom): " . $e->getMessage());
+            return [];
+        }
     }
 }
