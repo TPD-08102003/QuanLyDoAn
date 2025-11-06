@@ -1,0 +1,41 @@
+RewriteEngine On
+RewriteBase /quanlydoan/
+
+# Không rewrite nếu là file hoặc thư mục thực tế
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Không rewrite nếu là file trong uploads
+RewriteCond %{REQUEST_URI} !^/quanlydoan/uploads/.*\.(pdf|doc|docx|ppt|pptx)$
+
+# Rewrite tất cả các yêu cầu sang router.php
+RewriteRule ^(.*)$ router.php?url=$1 [QSA,L]
+
+
+# Bảo vệ các file nhạy cảm
+<FilesMatch "\.(ini|log|db)$">
+    Require all denied
+</FilesMatch>
+
+# Cho phép truy cập các tệp cần thiết
+<FilesMatch "\.(php|html|css|js|png|jpg|jpeg|gif|ico)$">
+    Require all granted
+</FilesMatch>
+
+# Nếu hosting shared không cho phép <Directory>, dùng FilesMatch:
+<FilesMatch "^uploads/.*\.(pdf|doc|docx|ppt|pptx)$">
+    Header always unset X-Frame-Options
+</FilesMatch>
+
+# Tắt danh sách thư mục
+Options -Indexes
+
+# Đặt header bảo mật cơ bản
+Header set X-Content-Type-Options "nosniff"
+Header set X-Frame-Options "DENY"
+Header set X-XSS-Protection "1; mode=block"
+
+# Cho phép nhúng file uploads qua iframe
+<If "%{REQUEST_URI} =~ m#^/quanlydoan/uploads/#">
+    Header always unset X-Frame-Options
+</If>
