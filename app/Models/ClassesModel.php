@@ -4,14 +4,49 @@
 namespace App\Models;
 
 use PDO;
+use PDOException;
 
 class ClassesModel extends BaseModel
 {
     public function __construct(PDO $pdo)
     {
-        $this->pdo = $pdo;
+
+        parent::__construct($pdo, 'classes', 'class_id');
     }
-    
+
+    /**
+     * Lấy thông tin chi tiết của một lớp học dựa trên ID, bao gồm tên Khoa (Faculty).
+     * @param int $classId
+     * @return array|null
+     */
+    public function findWithFaculty(int $classId): ?array
+    {
+        $sql = "
+        SELECT 
+            c.*, 
+            f.faculty_name
+        FROM 
+            classes c
+        LEFT JOIN 
+            faculties f ON c.faculty_id = f.faculty_id
+        WHERE 
+           c.class_id = ?
+    ";
+
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$classId]);
+            $result = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            // Trả về null nếu không tìm thấy, ngược lại trả về mảng dữ liệu
+            return $result ?: null;
+        } catch (\PDOException $e) {
+            // Luôn ghi log lỗi để dễ dàng debug
+            error_log("Database Error in ClassesModel::findWithFaculty: " . $e->getMessage());
+            return null;
+        }
+    }
+
     public function getClassesWithPagination(int $limit = 10, int $offset = 0, string $keyword = ''): array
     {
         $sql = "SELECT c.*, f.faculty_name 
@@ -83,27 +118,75 @@ class ClassesModel extends BaseModel
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
+
+
+    /**
+     * Create a new record.
+     * @param array $data
+     * @return int|false Inserted ID or false on failure
+     */
+    // HÀM CREATE ĐÃ SỬA
     public function create(array $data): int|false
     {
-        $sql = "INSERT INTO classes (class_name, faculty_id, description, created_at, updated_at) 
-                VALUES (:class_name, :faculty_id, :description, :created_at, :updated_at)";
+        // Câu lệnh SQL chỉ cần 3 cột, vì created_at có DEFAULT trong DB
+        $sql = "INSERT INTO classes (class_name, faculty_id, description) 
+                 VALUES (:class_name, :faculty_id, :description)";
 
-        $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute($data);
+        try {
+            $stmt = $this->pdo->prepare($sql);
+
+            // Chỉ giữ lại các khóa cần thiết (class_name, faculty_id, description)
+            $bindData = [
+                ':class_name' => $data['class_name'] ?? null,
+                ':faculty_id' => $data['faculty_id'] ?? null,
+                ':description' => $data['description'] ?? null
+            ];
+
+            // Xóa các key null để tránh lỗi PDO, mặc dù ở Controller đã kiểm tra
+            $bindData = array_filter($bindData, function ($key) {
+                return $key !== null;
+            });
+
+
+            if ($stmt->execute($bindData)) {
+                return (int) $this->pdo->lastInsertId();
+            }
+            return false;
+        } catch (PDOException $e) {
+            error_log("ClassesModel::create error: " . $e->getMessage());
+            return false;
+        }
     }
 
     public function update(int $classId, array $data): bool
     {
         $sql = "UPDATE classes 
-                SET class_name = :class_name, 
-                    faculty_id = :faculty_id, 
-                    description = :description, 
-                    updated_at = :updated_at 
-                WHERE class_id = :class_id";
+            SET class_name = :class_name, 
+                faculty_id = :faculty_id, 
+                description = :description
+               
+            WHERE class_id = :class_id";
 
+        // Thêm class_id vào mảng data để bind parameter
         $data['class_id'] = $classId;
-        $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute($data);
+
+        try {
+            $stmt = $this->pdo->prepare($sql);
+
+            // Thực thi lệnh SQL
+            $result = $stmt->execute($data);
+
+            // Trả về true nếu thành công
+            return $result;
+        } catch (\PDOException $e) {
+
+            error_log("ClassesModel::update PDO Error (Class ID $classId): " . $e->getMessage() .
+                "| SQLSTATE: " . $e->getCode() .
+                "| Data Sent: " . print_r($data, true));
+
+            // Trả về false để ClassesController bắt và báo lỗi 500 JSON
+            return false;
+        }
     }
 
     public function delete(int $classId): bool

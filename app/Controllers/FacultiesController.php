@@ -9,10 +9,13 @@ use Exception;
 class FacultiesController extends BaseController
 {
     private FacultiesModel $facultyModel;
+    protected PDO $pdo;
 
+    // Trong App/Controllers/FacultiesController
     public function __construct(PDO $pdo)
     {
         parent::__construct($pdo);
+        $this->pdo = $pdo;
         $this->facultyModel = new FacultiesModel($pdo);
     }
 
@@ -28,7 +31,7 @@ class FacultiesController extends BaseController
         $total = $result['total'];
         $totalPages = ceil($total / $limit);
 
-        $this->render('faculties/manage', [  // ĐÚNG: views/faculties/manage.php
+        $this->render('faculties/manage', [
             'title' => 'Quản lý Khoa',
             'faculties' => $faculties,
             'keyword' => $keyword,
@@ -55,137 +58,39 @@ class FacultiesController extends BaseController
         $this->render('faculties/create', ['title' => 'Thêm Khoa Mới']);
     }
 
-    // /**
-    //  * Xử lý thêm khoa mới
-    //  */
-    // public function store(): void
-    // {
-    //     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    //         $this->redirect('/faculty');
-    //     }
 
-    //     $name = trim($_POST['faculty_name'] ?? '');
-    //     $description = trim($_POST['description'] ?? '');
-
-    //     if (empty($name)) {
-    //         $_SESSION['message'] = 'Tên khoa không được để trống!';
-    //         $_SESSION['message_type'] = 'danger';
-    //         $this->redirect('/faculty/create');
-    //     }
-
-    //     if ($this->facultyModel->isNameExists($name)) {
-    //         $_SESSION['message'] = 'Tên khoa "' . htmlspecialchars($name) . '" đã tồn tại!';
-    //         $_SESSION['message_type'] = 'danger';
-    //         $this->redirect('/faculty/create');
-    //     }
-
-    //     try {
-    //         $data = [
-    //             'faculty_name' => $name,
-    //             'description' => $description
-    //         ];
-
-    //         if ($this->facultyModel->create($data)) {
-    //             $_SESSION['message'] = 'Thêm khoa thành công!';
-    //             $_SESSION['message_type'] = 'success';
-    //         } else {
-    //             $_SESSION['message'] = 'Thêm khoa thất bại!';
-    //             $_SESSION['message_type'] = 'danger';
-    //         }
-    //     } catch (Exception $e) {
-    //         $_SESSION['message'] = 'Lỗi: ' . $e->getMessage();
-    //         $_SESSION['message_type'] = 'danger';
-    //     }
-
-    //     $this->redirect('/faculty');
-    // }
-
-    // /**
-    //  * Hiển thị form chỉnh sửa khoa
-    //  */
-    // public function edit(int $id): void
-    // {
-    //     $faculty = $this->facultyModel->findById($id);
-    //     if (!$faculty || $faculty['deleted_at'] !== null) {
-    //         $_SESSION['message'] = 'Khoa không tồn tại hoặc đã bị xóa!';
-    //         $_SESSION['message_type'] = 'danger';
-    //         $this->redirect('/faculty');
-    //     }
-
-    //     $this->render('faculties/edit', [
-    //         'title' => 'Sửa Khoa',
-    //         'faculty' => $faculty
-    //     ]);
-    // }
-
-    // /**
-    //  * Xử lý cập nhật khoa
-    //  */
-    // public function update(int $id): void
-    // {
-    //     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    //         $this->redirect('/faculty');
-    //     }
-
-    //     $faculty = $this->facultyModel->findById($id);
-    //     if (!$faculty || $faculty['deleted_at'] !== null) {
-    //         $_SESSION['message'] = 'Khoa không tồn tại!';
-    //         $_SESSION['message_type'] = 'danger';
-    //         $this->redirect('/faculty');
-    //     }
-
-    //     $name = trim($_POST['faculty_name'] ?? '');
-    //     $description = trim($_POST['description'] ?? '');
-
-    //     if (empty($name)) {
-    //         $_SESSION['message'] = 'Tên khoa không được để trống!';
-    //         $_SESSION['message_type'] = 'danger';
-    //         $this->redirect("/faculty/edit/$id");
-    //     }
-
-    //     if ($name !== $faculty['faculty_name'] && $this->facultyModel->isNameExists($name, $id)) {
-    //         $_SESSION['message'] = 'Tên khoa "' . htmlspecialchars($name) . '" đã tồn tại!';
-    //         $_SESSION['message_type'] = 'danger';
-    //         $this->redirect("/faculty/edit/$id");
-    //     }
-
-    //     $data = [
-    //         'faculty_name' => $name,
-    //         'description' => $description
-    //     ];
-
-    //     if ($this->facultyModel->update($id, $data)) {
-    //         $_SESSION['message'] = 'Cập nhật khoa thành công!';
-    //         $_SESSION['message_type'] = 'success';
-    //     } else {
-    //         $_SESSION['message'] = 'Không có thay đổi hoặc cập nhật thất bại!';
-    //         $_SESSION['message_type'] = 'warning';
-    //     }
-
-    //     $this->redirect('/faculty');
-    // }
 
     /**
      * Xử lý xóa mềm khoa (AJAX)
      */
     public function delete(int $id): void
     {
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            error_log("Invalid delete method: " . $_SERVER['REQUEST_METHOD']);
             $this->jsonResponse(['success' => false, 'message' => 'Phương thức không hợp lệ.'], 405);
+            return;
         }
+
 
         $faculty = $this->facultyModel->findById($id);
         if (!$faculty || $faculty['deleted_at'] !== null) {
             $this->jsonResponse(['success' => false, 'message' => 'Khoa không tồn tại hoặc đã bị xóa.']);
+            return;
         }
 
-        // Kiểm tra xem khoa có đang được sử dụng không (có lớp học, giảng viên, sinh viên)
+
         $checkSql = "SELECT 
-                        (SELECT COUNT(*) FROM classes WHERE faculty_id = :id) AS class_count,
-                        (SELECT COUNT(*) FROM lecturers WHERE faculty_id = :id) AS lecturer_count,
-                        (SELECT COUNT(*) FROM students WHERE faculty_id = :id) AS student_count";
+                        (SELECT COUNT(*) FROM classes WHERE faculty_id = :class_id) AS class_count,
+                        (SELECT COUNT(*) FROM lecturers WHERE faculty_id = :lecturer_id) AS lecturer_count,
+                        (SELECT COUNT(*) FROM students WHERE faculty_id = :student_id) AS student_count";
         $stmt = $this->pdo->prepare($checkSql);
-        $stmt->execute([':id' => $id]);
+        // Gán cùng giá trị $id cho TẤT CẢ các tham số duy nhất
+        $stmt->execute([
+            ':class_id' => $id,
+            ':lecturer_id' => $id,
+            ':student_id' => $id
+        ]);
         $counts = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($counts['class_count'] > 0 || $counts['lecturer_count'] > 0 || $counts['student_count'] > 0) {
@@ -213,45 +118,32 @@ class FacultiesController extends BaseController
         try {
             error_log("=== GET FACULTY ID: {$id} ===");
 
-            // Sử dụng model để lấy dữ liệu
             $faculty = $this->facultyModel->findById($id);
-
             error_log("Faculty found: " . ($faculty ? 'YES' : 'NO'));
 
             if (!$faculty) {
-                error_log("Faculty not found with ID: {$id}");
                 $this->jsonResponse(['success' => false, 'message' => 'Khoa không tồn tại'], 404);
                 return;
             }
 
-            error_log("Faculty data: " . print_r($faculty, true));
-
-            // Kiểm tra nếu khoa đã bị xóa mềm
-            if ($faculty['deleted_at'] !== null) {
-                error_log("Faculty is soft deleted: {$id}");
-                $this->jsonResponse(['success' => false, 'message' => 'Khoa đã bị xóa'], 404);
-                return;
-            }
-
-            // Đảm bảo dữ liệu trả về đúng định dạng - chỉ trả về các cột có trong bảng
             $response = [
                 'success' => true,
                 'faculty' => [
                     'faculty_id' => (int)$faculty['faculty_id'],
                     'faculty_name' => $faculty['faculty_name'],
                     'description' => $faculty['description'] ?? '',
-                    'created_at' => $faculty['created_at']
-                    // Bỏ updated_at vì bảng không có cột này
+                    'created_at' => $faculty['created_at'] ?? '',
+                    'updated_at' => $faculty['updated_at'] ?? ''
                 ]
             ];
 
-            error_log("Sending response: " . json_encode($response));
             $this->jsonResponse($response);
         } catch (Exception $e) {
             error_log("Exception in get: " . $e->getMessage());
             $this->jsonResponse(['success' => false, 'message' => 'Lỗi server: ' . $e->getMessage()], 500);
         }
     }
+
 
     /**
      * Debug method to test database connection
@@ -299,24 +191,6 @@ class FacultiesController extends BaseController
         }
         exit;
     }
-    // public function get(int $id): void
-    // {
-    //     $faculty = $this->facultyModel->findById($id);
-
-    //     if (!$faculty || $faculty['deleted_at'] !== null) {
-    //         $this->jsonResponse(['success' => false, 'message' => 'Khoa không tồn tại'], 404);
-    //         return;
-    //     }
-
-    //     $this->jsonResponse([
-    //         'success' => true,
-    //         'faculty_id' => $faculty['faculty_id'],
-    //         'faculty_name' => $faculty['faculty_name'],
-    //         'description' => $faculty['description'],
-    //         'created_at' => $faculty['created_at'],
-    //         'updated_at' => $faculty['updated_at']
-    //     ]);
-    // }
 
     /**
      * Xử lý thêm khoa mới (AJAX)
@@ -357,44 +231,64 @@ class FacultiesController extends BaseController
         }
     }
 
+
+
     /**
      * Xử lý cập nhật khoa (AJAX)
      */
     public function update(int $id): void
     {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $this->jsonResponse(['success' => false, 'message' => 'Phương thức không hợp lệ.'], 405);
-            return;
-        }
+        // BỌC TOÀN BỘ LOGIC TRONG TRY...CATCH
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                $this->jsonResponse(['success' => false, 'message' => 'Phương thức không hợp lệ.'], 405);
+                return;
+            }
 
-        $faculty = $this->facultyModel->findById($id);
-        if (!$faculty || $faculty['deleted_at'] !== null) {
-            $this->jsonResponse(['success' => false, 'message' => 'Khoa không tồn tại!']);
-            return;
-        }
+            $faculty = $this->facultyModel->findById($id);
+            if (!$faculty || $faculty['deleted_at'] !== null) {
+                $this->jsonResponse(['success' => false, 'message' => 'Khoa không tồn tại!']);
+                return;
+            }
 
-        $name = trim($_POST['faculty_name'] ?? '');
-        $description = trim($_POST['description'] ?? '');
+            $name = trim($_POST['faculty_name'] ?? '');
+            $description = trim($_POST['description'] ?? '');
 
-        if (empty($name)) {
-            $this->jsonResponse(['success' => false, 'message' => 'Tên khoa không được để trống!']);
-            return;
-        }
+            if (empty($name)) {
+                $this->jsonResponse(['success' => false, 'message' => 'Tên khoa không được để trống!']);
+                return;
+            }
 
-        if ($name !== $faculty['faculty_name'] && $this->facultyModel->isNameExists($name, $id)) {
-            $this->jsonResponse(['success' => false, 'message' => 'Tên khoa "' . htmlspecialchars($name) . '" đã tồn tại!']);
-            return;
-        }
+            if ($name !== $faculty['faculty_name'] && $this->facultyModel->isNameExists($name, $id)) {
+                $this->jsonResponse(['success' => false, 'message' => 'Tên khoa "' . htmlspecialchars($name) . '" đã tồn tại!']);
+                return;
+            }
 
-        $data = [
-            'faculty_name' => $name,
-            'description' => $description
-        ];
+            // Chỉ cập nhật nếu có thay đổi
+            $dataToUpdate = [];
+            if ($name !== $faculty['faculty_name']) {
+                $dataToUpdate['faculty_name'] = $name;
+            }
+            if ($description !== ($faculty['description'] ?? null)) {
+                $dataToUpdate['description'] = $description;
+            }
 
-        if ($this->facultyModel->update($id, $data)) {
-            $this->jsonResponse(['success' => true, 'message' => 'Cập nhật khoa thành công!']);
-        } else {
-            $this->jsonResponse(['success' => false, 'message' => 'Không có thay đổi hoặc cập nhật thất bại!']);
+            if (empty($dataToUpdate)) {
+                $this->jsonResponse(['success' => true, 'message' => 'Không có gì thay đổi.']);
+                return;
+            }
+
+
+            if ($this->facultyModel->update($id, $dataToUpdate)) {
+                $this->jsonResponse(['success' => true, 'message' => 'Cập nhật khoa thành công!']);
+            } else {
+                // Lỗi này là lỗi mà Model đã ghi log (ví dụ: Lỗi SQL)
+                $this->jsonResponse(['success' => false, 'message' => 'Cập nhật thất bại! Vui lòng kiểm tra server log (Lỗi SQL).']);
+            }
+        } catch (Exception $e) {
+            // Bắt các lỗi không mong muốn (ví dụ: lỗi logic PHP)
+            error_log("!!! Exception in FacultiesController::update: " . $e->getMessage());
+            $this->jsonResponse(['success' => false, 'message' => 'Lỗi server nghiêm trọng: ' . $e->getMessage()]);
         }
     }
 }

@@ -171,7 +171,7 @@ abstract class BaseModel
      */
     public function delete(int $id): bool
     {
-        $stmt = $this->pdo->prepare("DELETE FROM {$this->table} WHERE id = :id");
+        $stmt = $this->pdo->prepare("DELETE FROM {$this->table} WHERE {$this->primaryKey} = :id");
         return $stmt->execute(['id' => $id]);
     }
 

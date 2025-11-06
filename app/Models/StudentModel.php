@@ -8,9 +8,31 @@ use PDOException;
 
 class StudentModel extends BaseModel
 {
+
     public function __construct(PDO $pdo)
     {
         parent::__construct($pdo, 'students', 'student_id');
+    }
+
+    /**
+     * Lấy danh sách sinh viên theo ID lớp học
+     * @param int $classId
+     * @return array
+     */
+    public function getStudentsByClass(int $classId): array
+    {
+        $sql = "SELECT student_id, student_code, fullname, email 
+                FROM students 
+                WHERE class_id = ?";
+
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$classId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\PDOException $e) {
+            error_log("StudentModel::getStudentsByClass error: " . $e->getMessage());
+            return []; // Trả về mảng rỗng thay vì gây lỗi
+        }
     }
 
     /**
@@ -215,18 +237,18 @@ class StudentModel extends BaseModel
         }
     }
 
-    public function getStudentsByClass(int $classId): array
-    {
-        $sql = "SELECT s.student_id, s.student_code, s.student_name, s.email, s.phone, s.status
-                FROM students s 
-                WHERE s.class_id = ? 
-                ORDER BY s.student_code";
+    // public function getStudentsByClass(int $classId): array
+    // {
+    //     $sql = "SELECT s.student_id, s.student_code, s.student_name, s.email, s.phone, s.status
+    //             FROM students s 
+    //             WHERE s.class_id = ? 
+    //             ORDER BY s.student_code";
 
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$classId]);
+    //     $stmt = $this->pdo->prepare($sql);
+    //     $stmt->execute([$classId]);
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
+    //     return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    // }
 
     /**
      * Đếm số sinh viên trong lớp

@@ -47,10 +47,10 @@ class FacultiesModel extends BaseModel
      */
     public function findByName(string $name): array|false
     {
-        $sql = "SELECT faculty_id, faculty_name, description, created_at 
-                FROM faculties 
-                WHERE faculty_name = :name AND deleted_at IS NULL 
-                LIMIT 1";
+        $sql = "SELECT faculty_id, faculty_name, description, deleted_at, created_at, updated_at 
+        FROM faculties 
+        WHERE faculty_name = :name";
+
         $result = $this->query($sql, [':name' => $name]);
         return $result[0] ?? false;
     }
@@ -76,53 +76,67 @@ class FacultiesModel extends BaseModel
     /**
      * Xóa mềm khoa (soft delete)
      */
+    // public function softDelete(int $id): bool
+    // {
+    //     $sql = "UPDATE faculties SET deleted_at = NOW() WHERE faculty_id = :id AND deleted_at IS NULL";
+    //     $stmt = $this->pdo->prepare($sql);
+    //     return $stmt->execute([':id' => $id]);
+    // }
     public function softDelete(int $id): bool
     {
-        $sql = "UPDATE faculties SET deleted_at = NOW() WHERE faculty_id = :id AND deleted_at IS NULL";
+        $sql = "UPDATE {$this->table} SET deleted_at = NOW() WHERE {$this->primaryKey} = :id";
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute([':id' => $id]);
     }
 
-    /**
-     * Lấy danh sách khoa với phân trang và tìm kiếm
-     */
-    public function getFacultiesWithPagination(int $limit, int $offset, string $keyword = ''): array
+
+    public function getFacultiesWithPagination($limit, $offset, $keyword = null)
     {
-        $params = [];
-        $where = 'deleted_at IS NULL';
+        try {
+            // Lấy danh sách faculties
+            if (!empty($keyword)) {
+                $sql = "SELECT * FROM faculties 
+                    WHERE faculty_name LIKE ? 
+                    ORDER BY created_at DESC 
+                    LIMIT ? OFFSET ?";
+                $stmt = $this->pdo->prepare($sql);
+                $stmt->execute(['%' . $keyword . '%', (int)$limit, (int)$offset]);
+                $faculties = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } else {
+                $sql = "SELECT * FROM faculties 
+                    ORDER BY created_at DESC 
+                    LIMIT ? OFFSET ?";
+                $stmt = $this->pdo->prepare($sql);
+                $stmt->execute([(int)$limit, (int)$offset]);
+                $faculties = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            }
 
-        if (!empty($keyword)) {
-            $where .= " AND (faculty_name LIKE :keyword OR description LIKE :keyword)";
-            $params[':keyword'] = "%$keyword%";
+            // Lấy tổng số records
+            if (!empty($keyword)) {
+                $countSql = "SELECT COUNT(*) as total FROM faculties WHERE faculty_name LIKE ?";
+                $countStmt = $this->pdo->prepare($countSql);
+                $countStmt->execute(['%' . $keyword . '%']);
+            } else {
+                $countSql = "SELECT COUNT(*) as total FROM faculties";
+                $countStmt = $this->pdo->prepare($countSql);
+                $countStmt->execute();
+            }
+
+            $totalResult = $countStmt->fetch(PDO::FETCH_ASSOC);
+            $total = $totalResult['total'] ?? 0;
+
+            return [
+                'faculties' => $faculties,
+                'total' => $total
+            ];
+        } catch (PDOException $e) {
+            error_log("Database error in getFacultiesWithPagination: " . $e->getMessage());
+            return [
+                'faculties' => [],
+                'total' => 0
+            ];
         }
-
-        // Đếm tổng số
-        $countSql = "SELECT COUNT(*) FROM faculties WHERE $where";
-        $countStmt = $this->pdo->prepare($countSql);
-        $countStmt->execute($params);
-        $total = (int)$countStmt->fetchColumn();
-
-        // Lấy dữ liệu
-        $sql = "SELECT faculty_id, faculty_name, description, created_at 
-                FROM faculties 
-                WHERE $where 
-                ORDER BY faculty_name 
-                LIMIT :limit OFFSET :offset";
-
-        $stmt = $this->pdo->prepare($sql);
-        foreach ($params as $key => &$value) {
-            $stmt->bindValue($key, $value, PDO::PARAM_STR);
-        }
-        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-        $stmt->execute();
-
-        return [
-            'faculties' => $stmt->fetchAll(PDO::FETCH_ASSOC),
-            'total' => $total
-        ];
     }
-
     /**
      * Tạo khoa mới
      */
@@ -167,23 +181,87 @@ class FacultiesModel extends BaseModel
     /**
      * Cập nhật khoa
      */
+    // public function update(int $id, array $data): bool
+    // {
+    //     try {
+    //         $sql = "UPDATE faculties 
+    //                 SET faculty_name = :faculty_name, 
+    //                     description = :description,
+    //                     updated_at = NOW()
+    //                 WHERE faculty_id = :id";
+    //         $stmt = $this->pdo->prepare($sql);
+    //         return $stmt->execute([
+    //             ':faculty_name' => $data['faculty_name'],
+    //             ':description' => $data['description'] ?? null,
+    //             ':id' => $id
+    //         ]);
+    //     } catch (PDOException $e) {
+    //         error_log("Error in FacultiesModel::update: " . $e->getMessage());
+    //         return false;
+    //     }
+    // }
+
+    // Trong App/Models/FacultiesModel.php
+
     public function update(int $id, array $data): bool
     {
+        // THÊM TRY...CATCH VÀO ĐÂY
         try {
-            $sql = "UPDATE faculties 
-                    SET faculty_name = :faculty_name, 
-                        description = :description,
-                        updated_at = NOW()
-                    WHERE faculty_id = :id";
+            $fields = [];
+            foreach ($data as $key => $value) {
+                $fields[] = "$key = :$key";
+            }
+
+            // Đảm bảo có gì đó để cập nhật
+            if (empty($fields)) {
+                return true; // Không có gì thay đổi, nhưng không phải lỗi
+            }
+
+            $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . " WHERE {$this->primaryKey} = :id";
+
             $stmt = $this->pdo->prepare($sql);
-            return $stmt->execute([
-                ':faculty_name' => $data['faculty_name'],
-                ':description' => $data['description'] ?? null,
-                ':id' => $id
-            ]);
+
+            // Chỉ bind các giá trị trong $data, và bind :id riêng
+            $data['id'] = $id;
+
+            return $stmt->execute($data);
         } catch (PDOException $e) {
-            error_log("Error in FacultiesModel::update: " . $e->getMessage());
+            // ĐÂY LÀ "LOG SERVER" MÀ BẠN CẦN KIỂM TRA
+            error_log("!!! PDOException in FacultiesModel::update: " . $e->getMessage());
             return false;
         }
     }
+
+    // public function update(int $id, array $data): bool
+    // {
+    //     try { // Thêm try-catch
+    //         $fields = [];
+    //         $params = []; // Dùng params riêng biệt
+
+    //         foreach ($data as $key => $value) {
+    //             // Chỉ lấy những trường hợp lệ để cập nhật
+    //             if (in_array($key, ['faculty_name', 'description'])) {
+    //                 $fields[] = "$key = :$key";
+    //                 $params[":$key"] = $value;
+    //             }
+    //         }
+
+    //         if (empty($fields)) {
+    //             // Không có trường nào để cập nhật, coi như thành công (hoặc warning)
+    //             error_log("No fields to update for faculty ID: " . $id);
+    //             return true;
+    //         }
+
+    //         $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . ", updated_at = NOW() WHERE {$this->primaryKey} = :id";
+    //         $stmt = $this->pdo->prepare($sql);
+
+    //         // Bind giá trị cho id và các trường
+    //         $params[':id'] = $id;
+
+    //         return $stmt->execute($params);
+    //     } catch (PDOException $e) {
+    //         error_log("Error in FacultiesModel::update: " . $e->getMessage()); // Ghi log lỗi
+    //         return false;
+    //     }
+    // }
 }

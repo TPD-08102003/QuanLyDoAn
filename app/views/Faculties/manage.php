@@ -4,16 +4,6 @@
             <h1 class="page-title"><?php echo $title; ?></h1>
             <p class="page-subtitle">Quản lý thông tin các khoa trong hệ thống</p>
         </div>
-        <div class="col-auto">
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createFacultyModal">
-                <i class="bi bi-plus-circle me-2"></i>Thêm Khoa Mới
-            </button>
-        </div>
-    </div>
-</div>
-
-<div class="card">
-    <div class="card-body">
         <!-- Search and Filter -->
         <div class="row mb-3">
             <div class="col-md-6">
@@ -30,7 +20,18 @@
                     <?php endif; ?>
                 </form>
             </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createFacultyModal">
+                    <i class="bi bi-plus-circle me-2"></i>Thêm Khoa Mới
+                </button>
+            </div>
         </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+
 
         <!-- Faculties Table -->
         <div class="table-responsive">
@@ -301,285 +302,105 @@
 </div>
 
 <script>
-    // Đảm bảo jQuery đã được load trước khi chạy code
-    function initializeFacultyManagement() {
-        let facultyToDelete = null;
+    document.addEventListener('DOMContentLoaded', function() {
+        // === XEM CHI TIẾT ===
+        document.querySelectorAll('.view-faculty').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.dataset.id;
+                fetch(`/quanlydoan/Faculties/get/${id}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            const f = data.faculty;
+                            document.getElementById('viewFacultyName').textContent = f.faculty_name;
+                            document.getElementById('viewFacultyDescription').textContent = f.description || 'Chưa có mô tả';
+                            document.getElementById('viewFacultyCreatedAt').textContent = f.created_at;
+                            document.getElementById('viewFacultyUpdatedAt').textContent = f.updated_at || '';
+                            new bootstrap.Modal('#viewFacultyModal').show();
+                        } else {
+                            alert(data.message);
+                        }
+                    })
+                    .catch(err => alert('Lỗi tải dữ liệu: ' + err));
+            });
+        });
 
-        // Create Faculty Form
-        $('#createFacultyForm').on('submit', function(e) {
+        // === SỬA ===
+        document.querySelectorAll('.edit-faculty').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.dataset.id;
+                fetch(`/quanlydoan/Faculties/get/${id}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            const f = data.faculty;
+                            document.getElementById('editFacultyId').value = f.faculty_id;
+                            document.getElementById('editFacultyName').value = f.faculty_name;
+                            document.getElementById('editFacultyDescription').value = f.description;
+                            new bootstrap.Modal('#editFacultyModal').show();
+                        } else {
+                            alert(data.message);
+                        }
+                    })
+                    .catch(err => alert('Lỗi tải dữ liệu: ' + err));
+            });
+        });
+
+        // Gửi form sửa (AJAX)
+        document.getElementById('editFacultyForm').addEventListener('submit', function(e) {
             e.preventDefault();
+            const id = document.getElementById('editFacultyId').value;
+            const formData = new FormData(this);
+            fetch(`/quanlydoan/Faculties/update/${id}`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.message);
+                    if (data.success) location.reload();
+                })
+                .catch(err => alert('Lỗi cập nhật: ' + err));
+        });
 
-            const form = $(this);
-            const submitBtn = form.find('button[type="submit"]');
-            const spinner = submitBtn.find('.spinner-border');
-            const messageDiv = $('#createFacultyMessage');
-
-            // Validation
-            if (!form[0].checkValidity()) {
-                form.addClass('was-validated');
-                return;
-            }
-
-            // Show loading
-            submitBtn.prop('disabled', true);
-            spinner.removeClass('d-none');
-
-            // Submit form via AJAX
-            $.ajax({
-                url: form.attr('action'),
-                type: 'POST',
-                data: form.serialize(),
-                dataType: 'json',
-                success: function(response) {
-                    if (response.success) {
-                        messageDiv.html('<div class="alert alert-success">' + response.message + '</div>');
-                        form[0].reset();
-                        form.removeClass('was-validated');
-
-                        // Reload page after 2 seconds
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 2000);
-                    } else {
-                        messageDiv.html('<div class="alert alert-danger">' + response.message + '</div>');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    messageDiv.html('<div class="alert alert-danger">Có lỗi xảy ra khi thêm khoa. Vui lòng thử lại.</div>');
-                },
-                complete: function() {
-                    submitBtn.prop('disabled', false);
-                    spinner.addClass('d-none');
-                }
+        // === XÓA ===
+        let deleteId = null;
+        document.querySelectorAll('.delete-faculty').forEach(btn => {
+            btn.addEventListener('click', function() {
+                deleteId = this.dataset.id;
+                const name = this.dataset.name;
+                document.getElementById('facultyNameToDelete').textContent = name;
+                new bootstrap.Modal('#deleteModal').show();
             });
         });
 
-        // View Faculty
-        $('.view-faculty').on('click', function() {
-            const facultyId = $(this).data('id');
-            console.log('View faculty ID:', facultyId);
-
-            // Show loading
-            $('#viewFacultyModal .modal-body').html('<div class="text-center"><div class="spinner-border" role="status"></div><p class="mt-2">Đang tải thông tin...</p></div>');
-            $('#viewFacultyModal').modal('show');
-
-            // Fetch faculty details
-            $.ajax({
-                url: '/quanlydoan/Faculties/get/' + facultyId,
-                type: 'GET',
-                dataType: 'json',
-                success: function(response) {
-                    console.log('View response:', response);
-                    if (response.success && response.faculty) {
-                        const faculty = response.faculty;
-                        $('#viewFacultyName').text(faculty.faculty_name);
-                        $('#viewFacultyDescription').text(faculty.description || 'Chưa có mô tả');
-                        $('#viewFacultyCreatedAt').text(formatDate(faculty.created_at));
-                        // Ẩn hoặc xóa phần updated_at vì bảng không có cột này
-                        $('#viewFacultyUpdatedAt').closest('.mb-3').hide();
-                    } else {
-                        $('#viewFacultyModal .modal-body').html(
-                            '<div class="alert alert-danger">' + (response.message || 'Không thể tải thông tin khoa') + '</div>'
-                        );
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('View AJAX Error:', status, error);
-                    console.error('XHR:', xhr);
-                    let errorMessage = 'Lỗi kết nối server';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMessage = xhr.responseJSON.message;
-                    }
-                    $('#viewFacultyModal .modal-body').html(
-                        '<div class="alert alert-danger">' + errorMessage + '</div>'
-                    );
-                }
-            });
+        document.getElementById('confirmDelete').addEventListener('click', function() {
+            if (!deleteId) return;
+            fetch(`/quanlydoan/Faculties/delete/${deleteId}`, {
+                    method: 'POST'
+                })
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.message);
+                    if (data.success) location.reload();
+                })
+                .catch(err => alert('Lỗi xóa: ' + err));
         });
 
-        // Edit Faculty - Load data
-        $('.edit-faculty').on('click', function() {
-            const facultyId = $(this).data('id');
-            console.log('Edit faculty ID:', facultyId);
-
-            // Show loading
-            $('#editFacultyModal .modal-body').html('<div class="text-center"><div class="spinner-border" role="status"></div><p class="mt-2">Đang tải thông tin...</p></div>');
-            $('#editFacultyModal').modal('show');
-
-            // Fetch faculty details
-            $.ajax({
-                url: '/quanlydoan/Faculties/get/' + facultyId,
-                type: 'GET',
-                dataType: 'json',
-                success: function(response) {
-                    console.log('Edit response:', response);
-                    if (response.success && response.faculty) {
-                        const faculty = response.faculty;
-                        $('#editFacultyId').val(faculty.faculty_id);
-                        $('#editFacultyName').val(faculty.faculty_name);
-                        $('#editFacultyDescription').val(faculty.description || '');
-                        $('#editFacultyMessage').empty();
-                    } else {
-                        $('#editFacultyModal .modal-body').html(
-                            '<div class="alert alert-danger">' + (response.message || 'Không thể tải thông tin khoa') + '</div>'
-                        );
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('Edit AJAX Error:', status, error);
-                    console.error('XHR:', xhr);
-                    let errorMessage = 'Lỗi kết nối server';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMessage = xhr.responseJSON.message;
-                    }
-                    $('#editFacultyModal .modal-body').html(
-                        '<div class="alert alert-danger">' + errorMessage + '</div>'
-                    );
-                }
-            });
-        });
-
-        // Edit Faculty Form
-        $('#editFacultyForm').on('submit', function(e) {
+        // === THÊM KHOA (AJAX) ===
+        document.getElementById('createFacultyForm').addEventListener('submit', function(e) {
             e.preventDefault();
-
-            const form = $(this);
-            const facultyId = $('#editFacultyId').val();
-            const submitBtn = form.find('button[type="submit"]');
-            const spinner = submitBtn.find('.spinner-border');
-            const messageDiv = $('#editFacultyMessage');
-
-            // Validation
-            if (!form[0].checkValidity()) {
-                form.addClass('was-validated');
-                return;
-            }
-
-            // Show loading
-            submitBtn.prop('disabled', true);
-            spinner.removeClass('d-none');
-
-            // Submit form via AJAX
-            $.ajax({
-                url: '/quanlydoan/Faculties/update/' + facultyId,
-                type: 'POST',
-                data: form.serialize(),
-                dataType: 'json',
-                success: function(response) {
-                    if (response.success) {
-                        messageDiv.html('<div class="alert alert-success">' + response.message + '</div>');
-
-                        // Reload page after 2 seconds
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 2000);
-                    } else {
-                        messageDiv.html('<div class="alert alert-danger">' + response.message + '</div>');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    messageDiv.html('<div class="alert alert-danger">Có lỗi xảy ra khi cập nhật khoa. Vui lòng thử lại.</div>');
-                },
-                complete: function() {
-                    submitBtn.prop('disabled', false);
-                    spinner.addClass('d-none');
-                }
-            });
+            const formData = new FormData(this);
+            fetch(`/quanlydoan/Faculties/store`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.message);
+                    if (data.success) location.reload();
+                })
+                .catch(err => alert('Lỗi thêm: ' + err));
         });
-
-        // Delete Faculty
-        $('.delete-faculty').on('click', function() {
-            const facultyId = $(this).data('id');
-            const facultyName = $(this).data('name');
-
-            facultyToDelete = facultyId;
-            $('#facultyNameToDelete').text(facultyName);
-            $('#deleteModal').modal('show');
-        });
-
-        // Confirm Delete
-        $('#confirmDelete').on('click', function() {
-            if (!facultyToDelete) return;
-
-            const $btn = $(this);
-            const spinner = $btn.find('.spinner-border');
-
-            // Show loading
-            $btn.prop('disabled', true);
-            spinner.removeClass('d-none');
-
-            // Send AJAX request
-            $.ajax({
-                url: '/quanlydoan/Faculties/delete/' + facultyToDelete,
-                type: 'POST',
-                dataType: 'json',
-                success: function(response) {
-                    if (response.success) {
-                        $('#deleteModal').modal('hide');
-                        showAlert('success', response.message);
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1500);
-                    } else {
-                        showAlert('danger', response.message);
-                        $('#deleteModal').modal('hide');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    showAlert('danger', 'Có lỗi xảy ra khi xóa khoa. Vui lòng thử lại.');
-                    $('#deleteModal').modal('hide');
-                },
-                complete: function() {
-                    $btn.prop('disabled', false);
-                    spinner.addClass('d-none');
-                    facultyToDelete = null;
-                }
-            });
-        });
-
-        // Reset modals when closed
-        $('.modal').on('hidden.bs.modal', function() {
-            $(this).find('form').removeClass('was-validated')[0]?.reset();
-            $(this).find('.alert').remove();
-        });
-
-        // Helper functions
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('vi-VN') + ' ' + date.toLocaleTimeString('vi-VN');
-        }
-
-        function showAlert(type, message) {
-            const alertHtml = `
-            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-                <i class="bi ${type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'} me-2"></i>
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        `;
-            $('.container-fluid').prepend(alertHtml);
-
-            // Auto remove alert after 5 seconds
-            setTimeout(() => {
-                $('.alert').alert('close');
-            }, 5000);
-        }
-    }
-
-    // Chờ cho đến khi DOM và jQuery đã sẵn sàng
-    if (typeof jQuery === 'undefined') {
-        // Nếu jQuery chưa được load, thử load lại sau
-        setTimeout(function() {
-            if (typeof jQuery !== 'undefined') {
-                initializeFacultyManagement();
-            } else {
-                console.error('jQuery vẫn chưa được load. Kiểm tra lại thư viện jQuery.');
-            }
-        }, 100);
-    } else {
-        // jQuery đã sẵn sàng, khởi tạo ngay
-        $(document).ready(function() {
-            initializeFacultyManagement();
-        });
-    }
+    });
 </script>

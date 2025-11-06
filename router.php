@@ -87,6 +87,10 @@ function handleRoute($uri, $method, $pdo, $staticRoutes, $allowedControllers)
     $action = !empty($parts[1]) ? $parts[1] : 'index';
     $params = array_slice($parts, 2);
 
+    // Kiểm tra nếu là request AJAX hoặc trả JSON
+    $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+    $isJsonRequest = (strpos($action, 'get') === 0 && $action !== 'get') || // getClassInfo, getStudents...
+        in_array($action, ['store', 'update', 'destroy', 'getClassInfo']);
     error_log("Processing URI: $uri, Controller: $controllerName, Action: $action");
 
     if (array_key_exists($controllerName, $allowedControllers)) {
@@ -94,6 +98,10 @@ function handleRoute($uri, $method, $pdo, $staticRoutes, $allowedControllers)
         if (class_exists($controllerClass)) {
             $controller = new $controllerClass($pdo);
             if (method_exists($controller, $action) && is_callable([$controller, $action])) {
+                if ($isAjax || $isJsonRequest || $method === 'POST' && in_array($action, ['store', 'update', 'destroy'])) {
+                    call_user_func_array([$controller, $action], $params);
+                    exit; // DỪNG HOÀN TOÀN
+                }
                 if (in_array($method, ['GET', 'POST', 'PUT', 'DELETE'])) {  // Allow more methods if needed
                     ob_start();
                     call_user_func_array([$controller, $action], $params);

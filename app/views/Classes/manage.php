@@ -364,10 +364,15 @@
                 <p class="text-danger mb-0"><small>Hành động này không thể hoàn tác và có thể ảnh hưởng đến dữ liệu liên quan (như sinh viên).</small></p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                <!-- <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
                 <a href="#" id="confirmDeleteBtn" class="btn btn-danger">
                     <i class="bi bi-trash me-1"></i>Xác nhận xóa
-                </a>
+                </a> -->
+                <button class="btn btn-sm btn-danger delete-btn"
+                    data-id="<?= $class['class_id'] ?>"
+                    data-name="<?= $class['class_name'] ?>"
+                    onclick="confirmDelete('<?= $class['class_id'] ?>', '<?= htmlspecialchars($class['class_name']) ?>')">Xóa
+                </button>
             </div>
         </div>
     </div>
@@ -475,20 +480,21 @@
 
                     // Populate student list
                     let studentListHTML = '';
+                    // Thay thế toàn bộ đoạn này trong <script>
                     if (classInfo.students && classInfo.students.length > 0) {
                         classInfo.students.forEach((student, index) => {
                             studentListHTML += `
-                            <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-                                <div>
-                                    <strong>${index + 1}. ${student.student_name}</strong>
-                                    <br>
-                                    <small class="text-muted">MSSV: ${student.student_code}</small>
-                                </div>
-                                <span class="badge bg-${student.status === 'active' ? 'success' : 'secondary'}">
-                                    ${student.status === 'active' ? 'Đang học' : 'Đã nghỉ'}
-                                </span>
-                            </div>
-                        `;
+            <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                <div>
+                    <strong>${index + 1}. ${student.student_name || 'Chưa có tên'}</strong>
+                    <br>
+                    <small class="text-muted">MSSV: ${student.student_code || 'N/A'}</small>
+                </div>
+                <span class="badge bg-${student.status === 'active' ? 'success' : 'secondary'}">
+                    ${student.status === 'active' ? 'Đang học' : (student.status === 'inactive' ? 'Đã nghỉ' : 'Không xác định')}
+                </span>
+            </div>
+        `;
                         });
                     } else {
                         studentListHTML = '<p class="text-muted text-center">Chưa có sinh viên nào trong lớp này.</p>';
@@ -552,7 +558,8 @@
                         window.location.reload();
                     }, 1500);
                 } else {
-                    showValidationErrors(data.errors, 'addClassForm');
+                    // ĐÃ SỬA: Lấy lỗi từ data.data
+                    showValidationErrors(data.data, 'addClassForm');
                     showToast('error', 'Lỗi', 'Vui lòng kiểm tra lại thông tin');
                 }
             })
@@ -579,7 +586,8 @@
                         window.location.reload();
                     }, 1500);
                 } else {
-                    showValidationErrors(data.errors, 'editClassForm');
+                    // ĐÃ SỬA: Lấy lỗi từ data.data
+                    showValidationErrors(data.data, 'editClassForm');
                     showToast('error', 'Lỗi', 'Vui lòng kiểm tra lại thông tin');
                 }
             })
@@ -636,4 +644,63 @@
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
     });
+    /**
+     * Xử lý việc xác nhận trước khi xóa lớp học
+     * @param {HTMLButtonElement} element Nút Xóa được click
+     */
+    function confirmDelete(element) {
+        const classId = element.getAttribute('data-id');
+        const className = element.getAttribute('data-name');
+
+        if (confirm(`Bạn có chắc chắn muốn xóa lớp học "${className}" không?`)) {
+            deleteClass(classId);
+        }
+    }
+
+    // ... (các hàm JS khác) ...
+
+    /**
+     * Xử lý việc xác nhận trước khi xóa lớp học
+     * @param {string} classId ID của lớp học cần xóa
+     * @param {string} className Tên lớp học
+     */
+    function confirmDelete(classId, className) { // <-- ĐÃ SỬA: Nhận 2 tham số classId và className
+
+        // Đã loại bỏ: const classId = element.getAttribute('data-id');
+        // Đã loại bỏ: const className = element.getAttribute('data-name');
+
+        if (confirm(`Bạn có chắc chắn muốn xóa lớp học "${className}" không?`)) {
+            deleteClass(classId);
+        }
+    }
+
+    /**
+     * Gửi yêu cầu AJAX để xóa lớp học
+     * @param {string} classId ID của lớp học cần xóa
+     */
+    function deleteClass(classId) {
+        fetch(`/quanlydoan/classes/destroy/${classId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('success', 'Thành công', data.message || 'Xóa lớp học thành công');
+                    // Tải lại trang sau khi xóa thành công
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    // Hiển thị lỗi từ Controller (ví dụ: Lớp có sinh viên)
+                    showToast('error', 'Lỗi', data.message || 'Xóa lớp học thất bại.');
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting class:', error);
+                showToast('error', 'Lỗi', 'Đã xảy ra lỗi hệ thống khi xóa.');
+            });
+    }
 </script>

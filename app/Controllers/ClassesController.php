@@ -8,6 +8,7 @@ use App\Models\FacultiesModel;
 use App\Models\StudentModel;
 use PDO;
 use Exception;
+use Throwable;
 
 class ClassesController extends BaseController
 {
@@ -35,7 +36,7 @@ class ClassesController extends BaseController
         $totalPages = ceil($total / $limit);
 
         // Lấy danh sách khoa cho popup
-        $faculties = $this->facultiesModel->getAll();
+        $faculties = $this->facultiesModel->findAll();
 
         $this->render('classes/manage', [
             'classes' => $classes,
@@ -61,7 +62,7 @@ class ClassesController extends BaseController
      */
     public function create(): void
     {
-        $faculties = $this->facultiesModel->getAll();
+        $faculties = $this->facultiesModel->findAll();
 
         $this->render('classes/create', [
             'faculties' => $faculties
@@ -69,50 +70,40 @@ class ClassesController extends BaseController
     }
 
     /**
-     * Lấy thông tin lớp học cho popup
+     * Lấy thông tin lớp học cho popup (AJAX/JSON)
+     * @param int $classId
      */
+    // app/Controllers/ClassesController.php
+    // ...
+
     public function getClassInfo($classId)
     {
-        try {
-            // Lấy thông tin lớp học
-            $class = $this->model->getClassById($classId);
+        header('Content-Type: application/json');
 
-            if (!$class) {
-                return $this->jsonResponse([
-                    'success' => false,
-                    'message' => 'Lớp học không tồn tại',
-                    'data' => []
-                ], 404);
+        try {
+            $classInfo = $this->model->findWithFaculty((int)$classId);
+            if (!$classInfo) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Class not found']);
+                return;
             }
 
-            // Lấy danh sách sinh viên trong lớp
-            $students = $this->studentModel->getStudentsByClass($classId);
+            // Đảm bảo StudentModel có hàm getStudentsByClass và nó trả về array
+            $students = [];
+            if (isset($this->studentModel) && method_exists($this->studentModel, 'getStudentsByClass')) {
+                $students = $this->studentModel->getStudentsByClass((int)$classId);
+            }
 
-            $classInfo = [
-                'class_id' => $class['class_id'],
-                'class_name' => $class['class_name'],
-                'faculty_id' => $class['faculty_id'],
-                'faculty_name' => $class['faculty_name'],
-                'description' => $class['description'],
-                'created_at' => $class['created_at'],
-                'updated_at' => $class['updated_at'],
-                'students' => $students
-            ];
+            $classInfo['students'] = $students;
 
-            return $this->jsonResponse([
-                'success' => true,
-                'message' => 'Lấy thông tin lớp học thành công',
-                'data' => $classInfo
-            ], 200);
-        } catch (Exception $e) {
-            return $this->jsonResponse([
-                'success' => false,
-                'message' => 'Lỗi hệ thống: ' . $e->getMessage(),
-                'data' => []
-            ], 500);
+            http_response_code(200);
+            echo json_encode(['success' => true, 'data' => $classInfo]);
+        } catch (\Throwable $e) {
+            error_log("Fatal Error in getClassInfo: " . $e->getMessage()); // Ghi log lỗi
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Internal Server Error', 'debug' => $e->getMessage()]);
         }
     }
-
     /**
      * Xử lý AJAX request để thêm lớp học
      */
@@ -151,7 +142,7 @@ class ClassesController extends BaseController
                     'success' => false,
                     'message' => 'Vui lòng kiểm tra lại thông tin',
                     'data' => $errors
-                ], 422);
+                ], 422); // HTTP 422 Unprocessable Entity
             }
 
             // Kiểm tra trùng tên lớp
@@ -165,24 +156,26 @@ class ClassesController extends BaseController
                 ], 422);
             }
 
-            // Tạo lớp học mới
+            // Dữ liệu hợp lệ để tạo lớp
             $classData = [
                 'class_name' => $class_name,
                 'faculty_id' => $faculty_id,
                 'description' => $description,
-                'created_at' => date('Y-m-d H:i:s'),
-                'updated_at' => date('Y-m-d H:i:s')
+
             ];
 
+            // Thực hiện tạo lớp học
             $result = $this->model->create($classData);
 
-            if ($result) {
+            if ($result !== false) {
+                // $result là ID (int) nếu thành công, hoặc true/false tùy thuộc vào ClassesModel::create
                 return $this->jsonResponse([
                     'success' => true,
                     'message' => 'Thêm lớp học thành công',
                     'data' => []
                 ], 200);
             } else {
+                // Lỗi DB (có thể do ClassesModel::create trả về false)
                 return $this->jsonResponse([
                     'success' => false,
                     'message' => 'Thêm lớp học thất bại',
@@ -190,6 +183,7 @@ class ClassesController extends BaseController
                 ], 500);
             }
         } catch (Exception $e) {
+            error_log("ClassesController::store error: " . $e->getMessage());
             return $this->jsonResponse([
                 'success' => false,
                 'message' => 'Lỗi hệ thống: ' . $e->getMessage(),
@@ -265,8 +259,7 @@ class ClassesController extends BaseController
             $classData = [
                 'class_name' => $class_name,
                 'faculty_id' => $faculty_id,
-                'description' => $description,
-                'updated_at' => date('Y-m-d H:i:s')
+                'description' => $description
             ];
 
             $result = $this->model->update($classId, $classData);
@@ -284,10 +277,12 @@ class ClassesController extends BaseController
                     'data' => []
                 ], 500);
             }
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
+            error_log("ClassesController::update Fatal Error: " . $e->getMessage());
+
             return $this->jsonResponse([
                 'success' => false,
-                'message' => 'Lỗi hệ thống: ' . $e->getMessage(),
+                'message' => 'Lỗi hệ thống nghiêm trọng: ' . $e->getMessage(),
                 'data' => []
             ], 500);
         }
@@ -374,7 +369,7 @@ class ClassesController extends BaseController
             return;
         }
 
-        $faculties = $this->facultiesModel->getAll();
+        $faculties = $this->facultiesModel->findAll();
 
         $this->render('classes/edit', [
             'class' => $class,
