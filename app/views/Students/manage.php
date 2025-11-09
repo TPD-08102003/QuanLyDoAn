@@ -17,19 +17,15 @@
 
 <div class="card shadow-sm mb-4">
     <div class="card-body">
-        <h5 class="card-title">Tìm kiếm & Lọc</h5>
         <div class="row g-3 align-items-center">
-
             <div class="col-12 col-md-auto me-auto">
                 <form method="GET" action="/quanlydoan/Student/manage" class="row g-3 align-items-center">
                     <div class="col-md-auto" style="width: 250px;">
                         <input type="text" class="form-control" name="keyword" placeholder="Tìm kiếm theo MSSV hoặc Họ tên" value="<?php echo htmlspecialchars($_GET['keyword'] ?? ''); ?>">
                     </div>
-
                     <div class="col-auto">
-                        <button type="submit" class="btn btn-teal text-white"><i class="bi bi-search me-1"></i> Tìm kiếm</button>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-search me-1"></i> Tìm kiếm</button>
                     </div>
-
                     <div class="col-auto">
                         <?php if (isset($_GET['keyword']) && $_GET['keyword']): ?>
                             <a href="/quanlydoan/Student/manage" class="btn btn-outline-secondary">Xóa tìm kiếm</a>
@@ -40,19 +36,13 @@
 
             <div class="col-12 col-md-auto ms-md-auto">
                 <div class="d-flex gap-2 justify-content-end">
-
-                    <button type="button" class="btn btn-purple text-white" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addStudentModal">
                         <i class="bi bi-person-add me-1"></i> Thêm SV
                     </button>
-                    <!-- <a href="/quanlydoan/Student/create" class="btn btn-purple text-white">
-                        <i class="bi bi-person-add me-1"></i> Thêm SV
-                    </a> -->
-
-                    <a href="/quanlydoan/Student/export" class="btn btn-success" title="Xuất file Excel">
+                    <a href="/quanlydoan/Student/export" class="btn btn-info text-white">
                         <i class="bi bi-file-earmark-excel me-1"></i> Xuất Excel
                     </a>
-
-                    <button class="btn btn-orange text-white" data-bs-toggle="modal" data-bs-target="#importStudentModal">
+                    <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#importStudentModal">
                         <i class="bi bi-upload me-1"></i> Nhập Excel
                     </button>
                 </div>
@@ -62,12 +52,8 @@
 </div>
 
 <div class="card shadow-sm">
-    <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+    <div class="card-header bg-white fw-bold">
         <span>Danh sách sinh viên (<?php echo $totalStudents ?? 0; ?>)</span>
-        <div class="form-check form-switch mb-0">
-            <input class="form-check-input" type="checkbox" id="toggleCompactView">
-            <label class="form-check-label" for="toggleCompactView">Chế độ xem gọn</label>
-        </div>
     </div>
     <div class="card-body">
         <div class="table-responsive">
@@ -84,53 +70,36 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if (!empty($students)): ?>
+                    <?php if (!empty($students) && is_array($students)): ?>
                         <?php foreach ($students as $student): ?>
                             <tr>
                                 <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="student-avatar-small me-2">
-                                            <?php
-                                            $nameParts = explode(' ', $student['full_name'] ?? '');
-                                            $initials = '';
-                                            if (count($nameParts) > 0) {
-                                                $initials .= substr($nameParts[0], 0, 1);
-                                                if (count($nameParts) > 1) {
-                                                    $initials .= substr($nameParts[count($nameParts) - 1], 0, 1);
-                                                }
-                                            }
-                                            echo strtoupper($initials);
-                                            ?>
-                                        </div>
-                                        <span class="badge bg-secondary"><?php echo htmlspecialchars($student['mssv'] ?? 'N/A'); ?></span>
-                                    </div>
+                                    <span class="fw-medium text-dark"><?php echo htmlspecialchars($student['mssv'] ?? 'Chưa có MSSV'); ?></span>
                                 </td>
                                 <td>
-                                    <div class="fw-medium"><?php echo htmlspecialchars($student['full_name'] ?? 'N/A'); ?></div>
+                                    <div class="fw-medium text-dark"><?php echo htmlspecialchars($student['full_name'] ?? 'N/A'); ?></div>
                                     <?php if (!empty($student['email'])): ?>
                                         <small class="text-muted"><?php echo htmlspecialchars($student['email']); ?></small>
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <?php
-                                    $gender = $student['gender'] ?? null;
-                                    $genderDisplay = match ($gender) {
-                                        'male' => ['text' => 'Nam', 'icon' => 'bi-gender-male', 'color' => 'primary'],
-                                        'female' => ['text' => 'Nữ', 'icon' => 'bi-gender-female', 'color' => 'danger'],
-                                        'other' => ['text' => 'Khác', 'icon' => 'bi-gender-ambiguous', 'color' => 'success'],
-                                        default => ['text' => 'Chưa cập nhật', 'icon' => 'bi-gender-trans', 'color' => 'secondary']
-                                    };
-                                    ?>
-                                    <span class="badge bg-<?php echo $genderDisplay['color']; ?>">
-                                        <i class="bi <?php echo $genderDisplay['icon']; ?> me-1"></i>
-                                        <?php echo $genderDisplay['text']; ?>
+                                    <span class="text-dark">
+                                        <?php
+                                        $gender = $student['gender'] ?? null;
+                                        echo match ($gender) {
+                                            'Nam' => 'Nam',
+                                            'Nữ' => 'Nữ',
+                                            'Khác' => 'Khác',
+                                            default => 'Chưa cập nhật'
+                                        };
+                                        ?>
                                     </span>
                                 </td>
                                 <td>
-                                    <span class="badge bg-light text-dark border"><?php echo htmlspecialchars($student['class_name'] ?? 'N/A'); ?></span>
+                                    <span class="text-dark"><?php echo htmlspecialchars($student['class_name'] ?? 'Chưa có lớp'); ?></span>
                                 </td>
                                 <td>
-                                    <span class="badge bg-info"><?php echo htmlspecialchars($student['faculty_name'] ?? 'N/A'); ?></span>
+                                    <span class="text-dark"><?php echo htmlspecialchars($student['faculty_name'] ?? 'Chưa có khoa'); ?></span>
                                 </td>
                                 <td>
                                     <?php
@@ -148,11 +117,12 @@
                                             title="Xem chi tiết"
                                             data-bs-toggle="modal"
                                             data-bs-target="#viewStudentModal"
-                                            data-student-id="<?php echo $student['student_id']; ?>"
-                                            onclick="loadStudentDetails(<?php echo $student['student_id']; ?>)">
+                                            data-student-id="<?php echo $student['student_id'] ?? $student['id'] ?? 0; ?>"
+                                            onclick="loadStudentDetails(<?php echo $student['student_id'] ?? $student['id'] ?? 0; ?>)">
                                             <i class="bi bi-eye-fill"></i>
                                             <span class="btn-text">Xem</span>
                                         </button>
+
 
                                         <!-- Nút Chỉnh sửa -->
                                         <button type="button"
@@ -160,11 +130,10 @@
                                             title="Chỉnh sửa thông tin"
                                             data-bs-toggle="modal"
                                             data-bs-target="#editStudentModal"
-                                            onclick="loadStudentForEdit(<?php echo $student['student_id']; ?>)">
+                                            onclick="loadStudentForEdit(<?php echo $student['student_id'] ?? $student['id'] ?? 0; ?>)">
                                             <i class="bi bi-pencil-fill"></i>
                                             <span class="btn-text">Sửa</span>
                                         </button>
-
 
                                         <!-- Nút Xóa -->
                                         <button type="button"
@@ -172,57 +141,12 @@
                                             title="Xóa sinh viên"
                                             data-bs-toggle="modal"
                                             data-bs-target="#deleteStudentModal"
-                                            data-student-id="<?php echo $student['student_id']; ?>"
+                                            data-student-id="<?php echo $student['student_id'] ?? $student['id'] ?? 0; ?>"
                                             data-student-name="<?php echo htmlspecialchars($student['full_name'] ?? ''); ?>"
                                             data-student-mssv="<?php echo htmlspecialchars($student['mssv'] ?? ''); ?>">
                                             <i class="bi bi-trash-fill"></i>
                                             <span class="btn-text">Xóa</span>
                                         </button>
-                                    </div>
-
-                                    <!-- Nút hành động nhanh (chỉ hiện trên mobile) -->
-                                    <div class="dropdown d-md-none mt-2">
-                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle w-100"
-                                            type="button"
-                                            data-bs-toggle="dropdown">
-                                            Hành động
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            <li>
-                                                <button class="dropdown-item"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#viewStudentModal"
-                                                    onclick="loadStudentDetails(<?php echo $student['student_id']; ?>)">
-                                                    <i class="bi bi-eye-fill me-2 text-primary"></i>Xem chi tiết
-                                                </button>
-                                            </li>
-                                            <li>
-                                                <button type="button"
-                                                    class="btn btn-warning btn-action text-white"
-                                                    title="Chỉnh sửa thông tin"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#editStudentModal"
-                                                    onclick="loadStudentForEdit(<?php echo $student['student_id']; ?>)">
-                                                    <i class="bi bi-pencil-fill"></i>
-                                                    <span class="btn-text">Sửa</span>
-                                                </button>
-
-                                            </li>
-
-                                            <li>
-                                                <hr class="dropdown-divider">
-                                            </li>
-                                            <li>
-                                                <button class="dropdown-item text-danger"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#deleteStudentModal"
-                                                    data-student-id="<?php echo $student['student_id']; ?>"
-                                                    data-student-name="<?php echo htmlspecialchars($student['full_name'] ?? ''); ?>"
-                                                    data-student-mssv="<?php echo htmlspecialchars($student['mssv'] ?? ''); ?>">
-                                                    <i class="bi bi-trash-fill me-2"></i>Xóa
-                                                </button>
-                                            </li>
-                                        </ul>
                                     </div>
                                 </td>
                             </tr>
@@ -255,7 +179,6 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" id="studentDetailsContent">
-                <!-- Nội dung sẽ được load bằng AJAX -->
                 <div class="text-center py-4">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>
@@ -265,8 +188,73 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                <a href="#" class="btn btn-warning text-white" id="editStudentBtn">Chỉnh sửa</a>
+                <button type="button" class="btn btn-warning text-white" onclick="switchToEditMode()">Chỉnh sửa</button>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal chỉnh sửa sinh viên -->
+<div class="modal fade" id="editStudentModal" tabindex="-1" aria-labelledby="editStudentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title" id="editStudentModalLabel">Chỉnh sửa thông tin sinh viên</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editStudentForm" method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="student_id" id="edit_student_id">
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">MSSV</label>
+                            <input type="text" class="form-control" id="edit_mssv" name="mssv" readonly style="background-color: #f8f9fa;">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Họ và tên <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="edit_full_name" name="full_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Giới tính</label>
+                            <select class="form-select" id="edit_gender" name="gender">
+                                <option value="">-- Chọn giới tính --</option>
+                                <option value="Nam">Nam</option>
+                                <option value="Nữ">Nữ</option>
+                                <option value="Khác">Khác</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Ngày sinh</label>
+                            <input type="date" class="form-control" id="edit_date_of_birth" name="date_of_birth">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Số điện thoại</label>
+                            <input type="text" class="form-control" id="edit_phone_number" name="phone_number">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="edit_email" name="email">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Địa chỉ</label>
+                            <input type="text" class="form-control" id="edit_address" name="address">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Lớp</label>
+                            <input type="text" class="form-control" id="edit_class_name" readonly style="background-color: #f8f9fa;">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Khoa</label>
+                            <input type="text" class="form-control" id="edit_faculty_name" readonly style="background-color: #f8f9fa;">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-warning text-white">Lưu thay đổi</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -289,132 +277,69 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
-                <a href="#" class="btn btn-danger" id="confirmDeleteBtn">Xác nhận xóa</a>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Xác nhận xóa</button> <!-- Thay a href thành button -->
             </div>
         </div>
     </div>
 </div>
-<!-- Modal chỉnh sửa sinh viên -->
-<div class="modal fade" id="editStudentModal" tabindex="-1" aria-labelledby="editStudentModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-warning text-white">
-                <h5 class="modal-title" id="editStudentModalLabel">Chỉnh sửa thông tin sinh viên</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="editStudentForm" method="POST">
-                <div class="modal-body">
-                    <input type="hidden" name="student_id" id="edit_student_id">
 
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">MSSV</label>
-                            <input type="text" class="form-control" id="edit_mssv" name="mssv" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Họ và tên</label>
-                            <input type="text" class="form-control" id="edit_full_name" name="full_name" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Giới tính</label>
-                            <select class="form-select" id="edit_gender" name="gender">
-                                <option value="">-- Chọn giới tính --</option>
-                                <option value="male">Nam</option>
-                                <option value="female">Nữ</option>
-                                <option value="other">Khác</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Ngày sinh</label>
-                            <input type="date" class="form-control" id="edit_date_of_birth" name="date_of_birth">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Số điện thoại</label>
-                            <input type="text" class="form-control" id="edit_phone_number" name="phone_number">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Địa chỉ</label>
-                            <input type="text" class="form-control" id="edit_address" name="address">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Lớp</label>
-                            <input type="text" class="form-control" id="edit_class_name" disabled>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Khoa</label>
-                            <input type="text" class="form-control" id="edit_faculty_name" disabled>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-warning text-white">Lưu thay đổi</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Modal nhập Excel -->
+<!-- Modal Nhập Excel -->
 <div class="modal fade" id="importStudentModal" tabindex="-1" aria-labelledby="importStudentModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header bg-orange text-white">
-                <h5 class="modal-title" id="importStudentModalLabel">Nhập sinh viên từ Excel</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header">
+                <h5 class="modal-title" id="importStudentModalLabel">Nhập Sinh viên từ Excel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="importForm" enctype="multipart/form-data">
+                <form id="importForm">
                     <div class="mb-3">
-                        <label for="excelFile" class="form-label">Chọn file Excel</label>
-                        <input class="form-control" type="file" id="excelFile" name="excelFile" accept=".xlsx, .xls">
+                        <label for="excelFile" class="form-label">Chọn file Excel (.xlsx)</label>
+                        <input type="file" class="form-control" id="excelFile" name="excelFile" accept=".xlsx, .xls" required>
+                        <small class="text-muted">File phải theo định dạng mẫu: MSSV, Họ tên, Giới tính, Lớp, Email, SĐT.</small>
                     </div>
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="updateExisting" name="updateExisting">
-                            <label class="form-check-label" for="updateExisting">
-                                Cập nhật sinh viên đã tồn tại
-                            </label>
-                        </div>
+                    <div class="form-check mb-3">
+                        <input type="checkbox" class="form-check-input" id="updateExisting" name="updateExisting">
+                        <label class="form-check-label" for="updateExisting">Cập nhật thông tin nếu sinh viên đã tồn tại (dựa trên MSSV)</label>
                     </div>
-                    <div class="alert alert-info">
-                        <small>
-                            <i class="bi bi-info-circle me-1"></i>
-                            File Excel cần có các cột: MSSV, Họ tên, Giới tính, Lớp, Email, Số điện thoại.
-                            <a href="/quanlydoan/Student/downloadTemplate" class="alert-link">Tải file mẫu</a>
-                        </small>
-                    </div>
+                    <a href="/quanlydoan/Student/downloadTemplate" class="btn btn-outline-info mb-3" target="_blank">
+                        <i class="bi bi-download me-1"></i> Tải file mẫu
+                    </a>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
                 <button type="button" class="btn btn-primary" id="importButton">Nhập dữ liệu</button>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Modal thêm sinh viên -->
 <div class="modal fade" id="addStudentModal" tabindex="-1" aria-labelledby="addStudentModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header bg-purple text-white">
+            <div class="modal-header bg-success text-white">
                 <h5 class="modal-title" id="addStudentModalLabel">Thêm Sinh viên mới</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="addStudentForm" class="needs-validation" novalidate>
                 <div class="modal-body row g-3">
-
                     <div class="col-md-6">
                         <label class="form-label">MSSV <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="add_mssv" name="mssv" required placeholder="Nhập mã số sinh viên">
                         <div class="invalid-feedback" id="add_mssv_error"></div>
+                    </div>
+                    <div class="col-md-6"> <!-- THÊM MỚI: Trường username -->
+                        <label class="form-label">Username <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="add_username" name="username" required placeholder="Nhập username (mặc định: MSSV)">
+                        <div class="invalid-feedback" id="add_username_error"></div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Họ và tên <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="add_full_name" name="full_name" required placeholder="Nhập họ và tên">
                         <div class="invalid-feedback" id="add_full_name_error"></div>
                     </div>
-
                     <div class="col-md-6">
                         <label class="form-label">Email <span class="text-danger">*</span></label>
                         <input type="email" class="form-control" id="add_email" name="email" required placeholder="Nhập email">
@@ -424,9 +349,9 @@
                         <label class="form-label">Giới tính <span class="text-danger">*</span></label>
                         <select class="form-select" id="add_gender" name="gender" required>
                             <option value="">-- Chọn giới tính --</option>
-                            <option value="male">Nam</option>
-                            <option value="female">Nữ</option>
-                            <option value="other">Khác</option>
+                            <option value="Nam">Nam</option>
+                            <option value="Nữ">Nữ</option>
+                            <option value="Khác">Khác</option>
                         </select>
                         <div class="invalid-feedback" id="add_gender_error"></div>
                     </div>
@@ -447,30 +372,20 @@
 
                     <div class="col-md-6">
                         <label class="form-label">Lớp <span class="text-danger">*</span></label>
-
                         <select class="form-select" id="add_class_id" name="class_id" required>
                             <option value="">-- Chọn lớp --</option>
-                            <?php
-                            // KIỂM TRA ĐIỀU KIỆN IF NÀY: 
-                            // $classes phải là mảng và không rỗng
-                            if (isset($classes) && is_array($classes)):
-                                foreach ($classes as $class):
-                            ?>
-                                    <option
-                                        value="<?php echo $class['class_id']; ?>"
-                                        data-faculty-name="<?php echo htmlspecialchars($class['faculty_name'] ?? 'N/A'); ?>">
+                            <?php if (isset($classes) && is_array($classes)): ?>
+                                <?php foreach ($classes as $class): ?>
+                                    <option value="<?php echo $class['class_id']; ?>" data-faculty-name="<?php echo htmlspecialchars($class['faculty_name'] ?? 'N/A'); ?>">
                                         <?php
                                         echo htmlspecialchars($class['class_name']);
-                                        // Hiển thị tên khoa nếu có
                                         if (!empty($class['faculty_name'])) {
                                             echo ' (' . htmlspecialchars($class['faculty_name']) . ')';
                                         }
                                         ?>
                                     </option>
-                            <?php
-                                endforeach;
-                            endif;
-                            ?>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </select>
                         <div class="invalid-feedback" id="add_class_id_error"></div>
                     </div>
@@ -492,11 +407,10 @@
                         <label class="form-label">Năm học</label>
                         <input type="text" class="form-control" id="add_academic_year" name="academic_year" placeholder="Ví dụ: 2023-2024">
                     </div>
-
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-purple text-white" id="submitAddStudentBtn">
+                    <button type="submit" class="btn btn-success text-white" id="submitAddStudentBtn">
                         <i class="bi bi-floppy-fill me-1"></i> Thêm Sinh viên
                     </button>
                 </div>
@@ -534,71 +448,19 @@
 <?php endif; ?>
 
 <style>
-    .student-avatar-small {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        font-size: 0.8rem;
-        border: 2px solid white;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
     .btn-action {
-        position: relative;
-        transition: all 0.3s ease;
-        border-radius: 6px;
+        border-radius: 4px;
         margin: 0 2px;
-        border: none;
+        border: 1px solid #dee2e6;
     }
 
     .btn-action:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     .btn-action .btn-text {
         margin-left: 4px;
-    }
-
-    /* Màu sắc mới cho các nút */
-    .btn-teal {
-        background-color: #20c997;
-        border-color: #20c997;
-    }
-
-    .btn-teal:hover {
-        background-color: #199d76;
-        border-color: #199d76;
-    }
-
-    .btn-purple {
-        background-color: #6f42c1;
-        border-color: #6f42c1;
-    }
-
-    .btn-purple:hover {
-        background-color: #5a359c;
-        border-color: #5a359c;
-    }
-
-    .btn-orange {
-        background-color: #fd7e14;
-        border-color: #fd7e14;
-    }
-
-    .btn-orange:hover {
-        background-color: #dc6502;
-        border-color: #dc6502;
-    }
-
-    .bg-orange {
-        background-color: #fd7e14 !important;
     }
 
     /* Ẩn text trên mobile */
@@ -612,105 +474,46 @@
         }
     }
 
-    /* Chế độ xem gọn */
-    .compact-view .student-avatar-small {
-        width: 28px;
-        height: 28px;
-        font-size: 0.7rem;
-    }
-
-    .compact-view .btn-action .btn-text {
-        display: none;
-    }
-
-    .compact-view table {
-        font-size: 0.875rem;
-    }
-
-    /* Modal styles */
-    .modal-header {
-        border-bottom: none;
-    }
-
-    .modal-content {
-        border: none;
-        border-radius: 12px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    }
-
-    .student-details-avatar {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        font-size: 1.5rem;
-        margin: 0 auto 1rem;
+    .table td {
+        color: #000;
     }
 </style>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // 1. Khởi tạo tooltip và các chức năng khác (Không sửa)
+        // Khởi tạo tooltip
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
 
-        const toggleCompactView = document.getElementById('toggleCompactView');
-        const tableContainer = document.querySelector('.table-responsive');
+        // Xử lý form thêm sinh viên
+        const addStudentForm = document.getElementById('addStudentForm');
+        const addStudentModal = document.getElementById('addStudentModal');
+        const modalInstance = addStudentModal ? new bootstrap.Modal(addStudentModal) : null;
 
-        if (toggleCompactView) {
-            toggleCompactView.addEventListener('change', function() {
-                if (this.checked) {
-                    tableContainer.classList.add('compact-view');
-                } else {
-                    tableContainer.classList.remove('compact-view');
-                }
-            });
-        }
-
-        // --- BẮT ĐẦU LOGIC XỬ LÝ FORM AJAX ---
-
-        const form = document.getElementById('addStudentForm');
-        const modal = document.getElementById('addStudentModal');
-        // Sử dụng Bootstrap Modal instance để điều khiển
-        const modalInstance = modal ? new bootstrap.Modal(modal) : null;
-
-        // Vị trí hiển thị alert trong modal
         const alertPlaceholder = document.createElement('div');
-        alertPlaceholder.className = 'mb-3'; // Thêm khoảng cách dưới
+        alertPlaceholder.className = 'mb-3';
 
-        // CHÚ Ý: Phải kiểm tra form tồn tại trước khi dùng prepend
-        if (form) {
-            form.prepend(alertPlaceholder);
+        if (addStudentForm) {
+            addStudentForm.prepend(alertPlaceholder);
 
-            form.addEventListener('submit', function(e) {
-                e.preventDefault(); // Rất quan trọng: Ngăn chặn submit form truyền thống
-
-                // Reset alert
+            addStudentForm.addEventListener('submit', function(e) {
+                e.preventDefault();
                 alertPlaceholder.innerHTML = '';
 
-                const formData = new FormData(form);
-                const submitButton = form.querySelector('button[type="submit"]');
+                const formData = new FormData(addStudentForm);
+                const submitButton = addStudentForm.querySelector('button[type="submit"]');
                 const originalButtonText = submitButton.textContent;
 
-                // Hiển thị trạng thái loading
                 submitButton.disabled = true;
                 submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang xử lý...';
 
-                // Gửi AJAX
                 fetch('/quanlydoan/Student/store', {
-                        // Đảm bảo đúng URL endpoint
                         method: 'POST',
                         body: formData
                     })
                     .then(response => {
-                        // Xử lý lỗi HTTP (400, 405, 409, 500)
                         if (!response.ok) {
                             return response.json().then(errorData => {
                                 throw new Error(errorData.message || 'Lỗi server không xác định.');
@@ -723,71 +526,41 @@
                             if (modalInstance) {
                                 modalInstance.hide();
                             }
-
-                            // Hiển thị alert thành công ngay trong trang chính
                             showAlert(data.message, 'success');
-
-                            // Tải lại trang để cập nhật bảng dữ liệu
                             window.location.reload();
                         } else {
-                            // Xử lý thất bại (lỗi validation, trùng lặp...)
                             showAlertInForm(data.message, 'danger');
                         }
                     })
                     .catch(error => {
-                        // Xử lý lỗi mạng/hệ thống
                         showAlertInForm(`Lỗi hệ thống hoặc kết nối: ${error.message}`, 'danger');
                         console.error('Error submitting form:', error);
                     })
                     .finally(() => {
-                        // Phục hồi nút submit
                         submitButton.disabled = false;
                         submitButton.textContent = originalButtonText;
                     });
             });
         }
 
-        // Hàm hiển thị thông báo ngay trong modal
-        function showAlertInForm(message, type) {
-            alertPlaceholder.innerHTML = `
-            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        `;
-        }
+        // Xử lý chọn lớp -> hiển thị khoa
+        const classSelect = document.getElementById('add_class_id');
+        const facultyInput = document.getElementById('add_faculty_name');
 
-        // Hàm hiển thị thông báo trên trang chính
-        function showAlert(message, type) {
-            const mainPlaceholder = document.querySelector('.page-title');
-            if (mainPlaceholder) {
-                // Xóa alert cũ nếu có
-                document.querySelectorAll('.alert').forEach(alert => alert.remove());
-
-                const newAlert = document.createElement('div');
-                newAlert.className = `alert alert-${type} alert-dismissible fade show`;
-                newAlert.role = 'alert';
-                newAlert.innerHTML = `
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            `;
-                // Chèn alert ngay sau tiêu đề trang (Giả định .page-title tồn tại)
-                mainPlaceholder.after(newAlert);
-
-                // Tự động đóng alert sau 5s (ví dụ)
-                // setTimeout(() => newAlert.classList.remove('show'), 5000); 
+        function updateFacultyField() {
+            const selectedOption = classSelect.options[classSelect.selectedIndex];
+            if (selectedOption && selectedOption.value) {
+                const facultyName = selectedOption.getAttribute('data-faculty-name');
+                facultyInput.value = facultyName || 'Không rõ khoa';
+            } else {
+                facultyInput.value = 'Sẽ tự động hiển thị khi chọn lớp';
             }
         }
 
-        // Xử lý nhập file Excel
-        document.getElementById('importButton').addEventListener('click', function() {
-            const fileInput = document.getElementById('excelFile');
-            if (!fileInput.files.length) {
-                alert('Vui lòng chọn file Excel để nhập!');
-                return;
-            }
-            alert('Tính năng nhập Excel sẽ được tích hợp với backend!');
-        });
+        if (classSelect) {
+            classSelect.addEventListener('change', updateFacultyField);
+            updateFacultyField();
+        }
 
         // Xử lý modal xóa
         const deleteStudentModal = document.getElementById('deleteStudentModal');
@@ -803,85 +576,93 @@
                 document.getElementById('confirmDeleteBtn').href = `/quanlydoan/Student/destroy/${studentId}`;
             });
         }
-    });
-    document.addEventListener('DOMContentLoaded', function() {
-        const classSelect = document.getElementById('add_class_id');
-        const facultyInput = document.getElementById('add_faculty_name');
 
-        function updateFacultyField() {
-            // Lấy option đang được chọn
-            const selectedOption = classSelect.options[classSelect.selectedIndex];
-
-            // Kiểm tra nếu có option được chọn (value không rỗng)
-            if (selectedOption && selectedOption.value) {
-                // Đọc giá trị từ data-faculty-name đã được PHP thêm vào
-                const facultyName = selectedOption.getAttribute('data-faculty-name');
-                facultyInput.value = facultyName || 'Không rõ khoa';
-            } else {
-                // Đặt lại giá trị mặc định nếu chọn "-- Chọn lớp --"
-                facultyInput.value = 'Sẽ tự động hiển thị khi chọn lớp';
+        // Xử lý nhập Excel
+        document.getElementById('importButton').addEventListener('click', function() {
+            const fileInput = document.getElementById('excelFile');
+            if (!fileInput.files.length) {
+                alert('Vui lòng chọn file Excel để nhập!');
+                return;
             }
-        }
-
-        // 1. Lắng nghe sự kiện thay đổi trên dropdown Lớp
-        classSelect.addEventListener('change', updateFacultyField);
-
-        // 2. Chạy lần đầu để thiết lập giá trị ban đầu (tránh trường hợp F5 vẫn giữ giá trị)
-        updateFacultyField();
+            alert('Tính năng nhập Excel sẽ được tích hợp với backend!');
+        });
     });
+
+    // Hàm hiển thị thông báo trong form
+    function showAlertInForm(message, type) {
+        const alertPlaceholder = document.querySelector('#addStudentForm .mb-3');
+        if (alertPlaceholder) {
+            alertPlaceholder.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+        }
+    }
+
+    // Hàm hiển thị thông báo trên trang chính
+    function showAlert(message, type) {
+        const mainPlaceholder = document.querySelector('.page-title');
+        if (mainPlaceholder) {
+            document.querySelectorAll('.alert').forEach(alert => alert.remove());
+
+            const newAlert = document.createElement('div');
+            newAlert.className = `alert alert-${type} alert-dismissible fade show`;
+            newAlert.role = 'alert';
+            newAlert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            mainPlaceholder.after(newAlert);
+        }
+    }
 
     // Hàm load thông tin sinh viên để chỉnh sửa
     function loadStudentForEdit(studentId) {
+        if (!studentId || studentId === 0) {
+            alert('Không tìm thấy ID sinh viên');
+            return;
+        }
+
         fetch(`/quanlydoan/Student/getStudentDetails/${studentId}`)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Không thể tải thông tin sinh viên');
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     const s = data.student;
-                    document.getElementById('edit_student_id').value = s.student_id;
-                    document.getElementById('edit_mssv').value = s.mssv;
-                    document.getElementById('edit_full_name').value = s.full_name;
+                    document.getElementById('edit_student_id').value = s.student_id || '';
+                    document.getElementById('edit_mssv').value = s.mssv || 'Chưa có MSSV';
+                    document.getElementById('edit_full_name').value = s.full_name || '';
                     document.getElementById('edit_gender').value = s.gender || '';
                     document.getElementById('edit_date_of_birth').value = s.date_of_birth || '';
                     document.getElementById('edit_phone_number').value = s.phone_number || '';
+                    document.getElementById('edit_email').value = s.email || '';
                     document.getElementById('edit_address').value = s.address || '';
-                    document.getElementById('edit_class_name').value = s.class_name || '';
-                    document.getElementById('edit_faculty_name').value = s.faculty_name || '';
-                }
-            });
-    }
-
-    // Gửi form cập nhật
-    document.getElementById('editStudentForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        const studentId = formData.get('student_id');
-
-        fetch(`/quanlydoan/Student/update/${studentId}`, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Cập nhật thành công!');
-                    location.reload();
+                    document.getElementById('edit_class_name').value = s.class_name || 'Chưa có lớp';
+                    document.getElementById('edit_faculty_name').value = s.faculty_name || 'Chưa có khoa';
                 } else {
-                    alert('Cập nhật thất bại: ' + (data.message || 'Lỗi không xác định'));
+                    alert('Không thể tải thông tin sinh viên: ' + (data.message || 'Lỗi không xác định'));
                 }
             })
             .catch(err => {
-                alert('Lỗi kết nối máy chủ');
-                console.error(err);
+                console.error('Error loading student for edit:', err);
+                alert('Lỗi kết nối máy chủ khi tải thông tin sinh viên');
             });
-    });
+    }
 
-
-    // Hàm load chi tiết sinh viên bằng AJAX
+    // Hàm load chi tiết sinh viên
     function loadStudentDetails(studentId) {
-        const contentDiv = document.getElementById('studentDetailsContent');
-        const editBtn = document.getElementById('editStudentBtn');
+        if (!studentId || studentId === 0) {
+            alert('Không tìm thấy ID sinh viên');
+            return;
+        }
 
-        // Hiển thị loading
+        const contentDiv = document.getElementById('studentDetailsContent');
         contentDiv.innerHTML = `
             <div class="text-center py-4">
                 <div class="spinner-border text-primary" role="status">
@@ -891,10 +672,6 @@
             </div>
         `;
 
-        // Cập nhật link chỉnh sửa
-        editBtn.href = `/quanlydoan/Student/edit/${studentId}`;
-
-        // Gọi AJAX để lấy thông tin chi tiết
         fetch(`/quanlydoan/Student/getStudentDetails/${studentId}`)
             .then(response => {
                 if (!response.ok) {
@@ -906,56 +683,18 @@
                 if (data.success) {
                     const student = data.student;
 
-                    // Tạo avatar từ tên
-                    const nameParts = student.full_name.split(' ');
-                    let initials = '';
-                    if (nameParts.length > 0) {
-                        initials += nameParts[0].charAt(0);
-                        if (nameParts.length > 1) {
-                            initials += nameParts[nameParts.length - 1].charAt(0);
-                        }
-                    }
-
-                    // Format ngày tháng
                     const formatDate = (dateString) => {
-                        if (!dateString) return 'N/A';
+                        if (!dateString) return 'Chưa cập nhật';
                         return new Date(dateString).toLocaleDateString('vi-VN');
                     };
 
-                    // Format giới tính với icon
-                    const getGenderDisplay = (gender) => {
-                        const genderMap = {
-                            'male': {
-                                text: 'Nam',
-                                icon: 'bi-gender-male',
-                                color: 'primary'
-                            },
-                            'female': {
-                                text: 'Nữ',
-                                icon: 'bi-gender-female',
-                                color: 'danger'
-                            },
-                            'other': {
-                                text: 'Khác',
-                                icon: 'bi-gender-ambiguous',
-                                color: 'success'
-                            },
-                            'default': {
-                                text: 'Chưa cập nhật',
-                                icon: 'bi-gender-trans',
-                                color: 'secondary'
-                            }
-                        };
-                        return genderMap[gender] || genderMap['default'];
-                    };
-
-                    const genderInfo = getGenderDisplay(student.gender);
-
                     contentDiv.innerHTML = `
                         <div class="text-center mb-4">
-                            <div class="student-details-avatar">${initials.toUpperCase()}</div>
-                            <h4 class="mb-1">${student.full_name}</h4>
-                            <span class="badge bg-secondary fs-6">${student.mssv}</span>
+                            <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                <i class="bi bi-person-fill" style="font-size: 2rem;"></i>
+                            </div>
+                            <h4 class="mb-1 mt-3">${student.full_name || 'Chưa có tên'}</h4>
+                            <span class="badge bg-secondary fs-6">${student.mssv || 'Chưa có MSSV'}</span>
                         </div>
                         
                         <div class="row">
@@ -968,20 +707,15 @@
                                         <table class="table table-sm table-borderless">
                                             <tr>
                                                 <td width="120"><strong>Giới tính:</strong></td>
-                                                <td>
-                                                    <span class="badge bg-${genderInfo.color}">
-                                                        <i class="bi ${genderInfo.icon} me-1"></i>
-                                                        ${genderInfo.text}
-                                                    </span>
-                                                </td>
+                                                <td>${student.gender || 'Chưa cập nhật'}</td>
                                             </tr>
                                             <tr>
                                                 <td><strong>Lớp:</strong></td>
-                                                <td><span class="badge bg-light text-dark">${student.class_name || 'Chưa có'}</span></td>
+                                                <td>${student.class_name || 'Chưa có lớp'}</td>
                                             </tr>
                                             <tr>
                                                 <td><strong>Khoa:</strong></td>
-                                                <td><span class="badge bg-info">${student.faculty_name || 'Chưa có'}</span></td>
+                                                <td>${student.faculty_name || 'Chưa có khoa'}</td>
                                             </tr>
                                             <tr>
                                                 <td><strong>Email:</strong></td>
@@ -1023,27 +757,6 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col-12">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <h6 class="card-title text-primary mb-3">
-                                            <i class="bi bi-calendar-event me-2"></i>Thông tin hệ thống
-                                        </h6>
-                                        <table class="table table-sm table-borderless">
-                                            <tr>
-                                                <td width="120"><strong>Ngày tạo:</strong></td>
-                                                <td>${formatDate(student.created_at)}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>Cập nhật:</strong></td>
-                                                <td>${formatDate(student.updated_at)}</td>
-                                            </tr>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     `;
                 } else {
                     contentDiv.innerHTML = `
@@ -1066,4 +779,131 @@
                 `;
             });
     }
+
+    // Hàm chuyển từ chế độ xem sang chế độ chỉnh sửa
+    function switchToEditMode() {
+        const viewModal = bootstrap.Modal.getInstance(document.getElementById('viewStudentModal'));
+        const editModal = new bootstrap.Modal(document.getElementById('editStudentModal'));
+
+        viewModal.hide();
+        const studentId = document.querySelector('#viewStudentModal [data-student-id]')?.getAttribute('data-student-id');
+        if (studentId) {
+            setTimeout(() => {
+                loadStudentForEdit(studentId);
+                editModal.show();
+            }, 500);
+        }
+    }
+
+    // Gửi form cập nhật
+    document.getElementById('editStudentForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const studentId = formData.get('student_id');
+
+        fetch(`/quanlydoan/Student/update/${studentId}`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Cập nhật thành công!');
+                    location.reload();
+                } else {
+                    alert('Cập nhật thất bại: ' + (data.message || 'Lỗi không xác định'));
+                }
+            })
+            .catch(err => {
+                alert('Lỗi kết nối máy chủ');
+                console.error(err);
+            });
+    });
+    addStudentForm.addEventListener('submit', function(e) {
+        if (!add_mssv.value.trim()) {
+            e.preventDefault();
+            add_mssv_error.textContent = 'MSSV không được để trống.';
+            add_mssv.classList.add('is-invalid');
+            return;
+        }
+        if (!add_class_id.value) {
+            e.preventDefault();
+            add_class_id_error.textContent = 'Vui lòng chọn lớp.';
+            add_class_id.classList.add('is-invalid');
+            return;
+        }
+        const usernameInput = document.getElementById('add_username');
+        if (!usernameInput.value.trim()) {
+            e.preventDefault();
+            document.getElementById('add_username_error').textContent = 'Username không được để trống.';
+            usernameInput.classList.add('is-invalid');
+            return;
+        }
+    });
+    document.getElementById('add_mssv').addEventListener('input', function() {
+        const usernameInput = document.getElementById('add_username');
+        if (!usernameInput.value.trim()) { // Chỉ điền nếu username còn rỗng
+            usernameInput.value = this.value;
+        }
+    });
+    document.getElementById('deleteStudentModal').addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        const studentId = button.getAttribute('data-student-id');
+        const studentName = button.getAttribute('data-student-name');
+        const studentMSSV = button.getAttribute('data-student-mssv');
+
+        document.getElementById('deleteStudentName').textContent = studentName;
+        document.getElementById('deleteStudentMSSV').textContent = studentMSSV;
+
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        confirmBtn.onclick = function() {
+            fetch(`/quanlydoan/Student/destroy/${studentId}`, {
+                    method: 'POST' // Hoặc GET nếu controller hỗ trợ
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert(data.message, 'success');
+                        window.location.reload(); // Reload trang để cập nhật danh sách
+                    } else {
+                        showAlert(data.message || 'Xóa thất bại', 'danger');
+                    }
+                })
+                .catch(err => {
+                    showAlert('Lỗi kết nối: ' + err.message, 'danger');
+                })
+                .finally(() => {
+                    bootstrap.Modal.getInstance(document.getElementById('deleteStudentModal')).hide();
+                });
+        };
+    });
+    document.getElementById('importButton').addEventListener('click', function() {
+        const form = document.getElementById('importForm');
+        const formData = new FormData(form);
+        const button = this;
+        button.disabled = true;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Đang nhập...';
+
+        fetch('/quanlydoan/Student/import', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                    alert(data.message || 'Lỗi nhập dữ liệu');
+                }
+            })
+            .catch(error => {
+                alert('Lỗi kết nối: ' + error.message);
+            })
+            .finally(() => {
+                button.disabled = false;
+                button.innerHTML = 'Nhập dữ liệu';
+                bootstrap.Modal.getInstance(document.getElementById('importStudentModal')).hide();
+            });
+    });
 </script>

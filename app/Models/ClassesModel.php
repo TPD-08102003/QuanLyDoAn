@@ -227,4 +227,16 @@ class ClassesModel extends BaseModel
             return [];
         }
     }
+    public function findByName(string $name): array|false
+    {
+        $sql = "SELECT * FROM classes WHERE class_name = :name LIMIT 1";
+        $stmt = $this->pdo->prepare($sql);
+        try {
+            $stmt->execute(['name' => $name]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("ClassesModel::findByName error: " . $e->getMessage());
+            return false;
+        }
+    }
 }

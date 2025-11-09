@@ -3,7 +3,6 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 ?>
-
 <style>
     .content {
         padding-top: 0;
@@ -199,9 +198,7 @@ if (session_status() === PHP_SESSION_NONE) {
         }
     }
 </style>
-
 <h1 class="mb-4 text-primary"><?php echo htmlspecialchars($title); ?></h1>
-
 <?php if (isset($_SESSION['message'])): ?>
     <div class="alert alert-<?php echo htmlspecialchars($_SESSION['message_type']); ?> alert-dismissible fade show" role="alert">
         <?php echo htmlspecialchars($_SESSION['message']); ?>
@@ -209,7 +206,6 @@ if (session_status() === PHP_SESSION_NONE) {
     </div>
     <?php unset($_SESSION['message'], $_SESSION['message_type']); ?>
 <?php endif; ?>
-
 <div class="d-flex justify-content-between align-items-center mb-4">
     <form method="GET" action="/quanlydoan/Account/manage" class="w-50">
         <div class="input-group">
@@ -219,7 +215,6 @@ if (session_status() === PHP_SESSION_NONE) {
     </form>
     <!-- <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addUserModal"><i class="bi bi-plus-circle"></i> Thêm người dùng</button> -->
 </div>
-
 <div class="table-responsive">
     <table class="table table-bordered table-striped">
         <thead>
@@ -228,7 +223,6 @@ if (session_status() === PHP_SESSION_NONE) {
                 <th>Tên đăng nhập</th>
                 <th>Email</th>
                 <th>Họ tên</th>
-                <th>Giới tính</th>
                 <th>Vai trò</th>
                 <th>Trạng thái</th>
                 <th>Hành động</th>
@@ -242,7 +236,6 @@ if (session_status() === PHP_SESSION_NONE) {
                         <td><?php echo htmlspecialchars($user['username']); ?></td>
                         <td><?php echo htmlspecialchars($user['email']); ?></td>
                         <td><?php echo htmlspecialchars($user['full_name'] ?? 'N/A'); ?></td>
-                        <td><?php echo htmlspecialchars($user['gender'] ?? 'N/A'); ?></td>
                         <td><?php echo htmlspecialchars($user['role']); ?></td>
                         <td>
                             <span class="status-<?php echo htmlspecialchars($user['status']); ?>">
@@ -280,7 +273,6 @@ if (session_status() === PHP_SESSION_NONE) {
         </tbody>
     </table>
 </div>
-
 <?php if ($totalPages > 1): ?>
     <nav aria-label="Page navigation" class="mt-3">
         <ul class="pagination justify-content-center mb-0">
@@ -308,7 +300,6 @@ if (session_status() === PHP_SESSION_NONE) {
         </ul>
     </nav>
 <?php endif; ?>
-
 <!-- Add User Modal -->
 <!-- <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -386,7 +377,6 @@ if (session_status() === PHP_SESSION_NONE) {
         </div>
     </div>
 </div> -->
-
 <!-- Edit User Modal -->
 <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -435,16 +425,6 @@ if (session_status() === PHP_SESSION_NONE) {
                                 </select>
                             </div>
                             <div class="mb-3 input-icon">
-                                <label for="edit_gender" class="form-label"><i class="fas fa-venus-mars"></i> Giới tính</label>
-                                <select class="form-select" id="edit_gender" name="gender">
-                                    <option value="">Chọn giới tính</option>
-                                    <option value="Nam">Nam</option>
-                                    <option value="Nữ">Nữ</option>
-                                    <option value="Khác">Khác</option>
-                                </select>
-
-                            </div>
-                            <div class="mb-3 input-icon">
                                 <label for="edit_phone_number" class="form-label"><i class="fas fa-phone"></i> Số điện thoại</label>
                                 <input type="text" class="form-control" id="edit_phone_number" name="phone_number">
                             </div>
@@ -467,7 +447,6 @@ if (session_status() === PHP_SESSION_NONE) {
         </div>
     </div>
 </div>
-
 <!-- View User Modal -->
 <div class="modal fade" id="viewUserModal" tabindex="-1" aria-labelledby="viewUserModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -497,10 +476,6 @@ if (session_status() === PHP_SESSION_NONE) {
                     <span id="view_full_name"></span>
                 </div>
                 <div class="info-item">
-                    <strong><i class="fas fa-venus-mars"></i> Giới tính:</strong>
-                    <span id="view_gender"></span>
-                </div>
-                <div class="info-item">
                     <strong><i class="fas fa-user-tag"></i> Vai trò:</strong>
                     <span id="view_role"></span>
                 </div>
@@ -527,19 +502,16 @@ if (session_status() === PHP_SESSION_NONE) {
         </div>
     </div>
 </div>
-
 <!-- Loading Overlay -->
 <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-spinner"></div>
 </div>
-
 <script>
     function fillEditModal(user) {
         document.getElementById('edit_account_id').value = user.account_id;
         document.getElementById('edit_username').value = user.username;
         document.getElementById('edit_email').value = user.email;
         document.getElementById('edit_full_name').value = user.full_name || '';
-        document.getElementById('edit_gender').value = user.gender || '';
         document.getElementById('edit_role').value = user.role;
         document.getElementById('edit_phone_number').value = user.phone_number || '';
         document.getElementById('edit_address').value = user.address || '';
@@ -553,14 +525,12 @@ if (session_status() === PHP_SESSION_NONE) {
         document.getElementById('view_username').textContent = user.username;
         document.getElementById('view_email').textContent = user.email;
         document.getElementById('view_full_name').textContent = user.full_name || '';
-        document.getElementById('view_gender').textContent = user.gender || '';
         document.getElementById('view_role').textContent = user.role;
         document.getElementById('view_phone_number').textContent = user.phone_number || '';
         document.getElementById('view_address').textContent = user.address || '';
         document.getElementById('view_date_of_birth').textContent = user.date_of_birth || '';
         document.getElementById('view_status').textContent = user.status;
         document.getElementById('viewAvatar').src = user.avatar ? '/quanlydoan/assets/images/' + user.avatar : '/quanlydoan/assets/images/profile.png';
-
         var viewModal = new bootstrap.Modal(document.getElementById('viewUserModal'));
         viewModal.show();
     }
@@ -588,7 +558,6 @@ if (session_status() === PHP_SESSION_NONE) {
                 });
         }
     }
-
     // Avatar preview for Add User Modal
     document.getElementById('add_avatar')?.addEventListener('change', function(event) {
         const file = event.target.files[0];
@@ -600,7 +569,6 @@ if (session_status() === PHP_SESSION_NONE) {
             reader.readAsDataURL(file);
         }
     });
-
     // Avatar preview for Edit User Modal
     document.getElementById('edit_avatar')?.addEventListener('change', function(event) {
         const file = event.target.files[0];

@@ -8,7 +8,6 @@ use PDOException;
 
 class StudentModel extends BaseModel
 {
-
     public function __construct(PDO $pdo)
     {
         parent::__construct($pdo, 'students', 'student_id');
@@ -21,9 +20,11 @@ class StudentModel extends BaseModel
      */
     public function getStudentsByClass(int $classId): array
     {
-        $sql = "SELECT student_id, student_code, fullname, email 
-                FROM students 
-                WHERE class_id = ?";
+        $sql = "SELECT s.student_id, s.mssv, u.full_name, a.email 
+                FROM students s
+                JOIN users u ON s.user_id = u.user_id
+                JOIN accounts a ON u.account_id = a.account_id
+                WHERE s.class_id = ? AND s.deleted_at IS NULL";
 
         try {
             $stmt = $this->pdo->prepare($sql);
@@ -31,7 +32,7 @@ class StudentModel extends BaseModel
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (\PDOException $e) {
             error_log("StudentModel::getStudentsByClass error: " . $e->getMessage());
-            return []; // Trả về mảng rỗng thay vì gây lỗi
+            return [];
         }
     }
 
@@ -42,7 +43,7 @@ class StudentModel extends BaseModel
      */
     public function findByUserId(int $userId): array|false
     {
-        $sql = "SELECT s.* FROM {$this->table} s WHERE s.user_id = :user_id LIMIT 1";
+        $sql = "SELECT s.* FROM {$this->table} s WHERE s.user_id = :user_id AND s.deleted_at IS NULL LIMIT 1";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(['user_id' => $userId]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
@@ -55,50 +56,23 @@ class StudentModel extends BaseModel
      */
     public function getFullStudent(int $studentId): array|false
     {
-        $sql = "SELECT s.*, 
-                   u.full_name, u.gender, u.avatar, u.date_of_birth, u.phone_number, u.address,
-                   a.username, a.email, a.status,
-                   c.class_name, 
-                   f.faculty_name 
-            FROM {$this->table} s 
-            JOIN users u ON s.user_id = u.user_id 
-            JOIN accounts a ON u.account_id = a.account_id 
-            JOIN classes c ON s.class_id = c.class_id
-            JOIN faculties f ON s.faculty_id = f.faculty_id
-            WHERE s.student_id = :id LIMIT 1";
+        $sql = "SELECT COALESCE(s.student_id, 0) as student_id, 
+                u.user_id,
+               COALESCE(s.mssv, 'Chưa có MSSV') as mssv, 
+               u.full_name, u.gender, u.avatar, u.date_of_birth, u.phone_number, u.address,
+               a.username, a.email, a.status,
+               COALESCE(c.class_name, 'Chưa có lớp') as class_name, 
+               COALESCE(f.faculty_name, 'Chưa có khoa') as faculty_name 
+        FROM accounts a 
+        INNER JOIN users u ON a.account_id = u.account_id 
+        LEFT JOIN students s ON u.user_id = s.user_id 
+        LEFT JOIN classes c ON s.class_id = c.class_id
+        LEFT JOIN faculties f ON s.faculty_id = f.faculty_id
+        WHERE COALESCE(s.student_id, 0) = :id AND a.role = 'student' AND s.deleted_at IS NULL LIMIT 1";
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(['id' => $studentId]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
-
-    /**
-     * Find students by class ID.
-     * @param int $classId
-     * @return array
-     */
-    public function findByClassId(int $classId): array
-    {
-        $sql = "SELECT s.* FROM {$this->table} s WHERE s.class_id = :class_id";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(['class_id' => $classId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    /**
-     * Find students not in any group.
-     * @return array
-     */
-    public function findAvailableStudents(): array
-    {
-        $sql = "SELECT s.* FROM {$this->table} s 
-                WHERE s.student_id NOT IN (
-                    SELECT gm.student_id FROM group_members gm 
-                    JOIN groups g ON gm.group_id = g.group_id
-                )";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
@@ -108,76 +82,31 @@ class StudentModel extends BaseModel
      * @param string $keyword
      * @return array
      */
-    // public function getStudentsWithPagination(int $limit, int $offset, string $keyword = ''): array
-    // {
-    //     try {
-    //         $search = "%$keyword%";
-
-    //         // Câu SQL chính để lấy danh sách sinh viên
-    //         $sql = "SELECT s.student_id, s.mssv, s.class_id, s.faculty_id, s.academic_year, 
-    //                    u.full_name, u.gender, u.phone_number, u.date_of_birth, u.address,
-    //                    a.email, a.status, c.class_name, f.faculty_name
-    //             FROM students s 
-    //             JOIN users u ON s.user_id = u.user_id 
-    //             JOIN accounts a ON u.account_id = a.account_id 
-    //             JOIN classes c ON s.class_id = c.class_id
-    //             JOIN faculties f ON s.faculty_id = f.faculty_id
-    //             WHERE (s.mssv LIKE :keyword OR u.full_name LIKE :keyword) 
-    //             ORDER BY s.student_id DESC
-    //             LIMIT :limit OFFSET :offset";
-
-    //         $stmt = $this->pdo->prepare($sql);
-    //         $stmt->bindValue(':keyword', $search, PDO::PARAM_STR);
-    //         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-    //         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-    //         $stmt->execute();
-
-    //         $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    //         // Đếm tổng số bản ghi
-    //         $countSql = "SELECT COUNT(*) 
-    //                  FROM students s 
-    //                  JOIN users u ON s.user_id = u.user_id 
-    //                  JOIN accounts a ON u.account_id = a.account_id 
-    //                  JOIN classes c ON s.class_id = c.class_id
-    //                  JOIN faculties f ON s.faculty_id = f.faculty_id
-    //                  WHERE (s.mssv LIKE :keyword OR u.full_name LIKE :keyword)";
-
-    //         $countStmt = $this->pdo->prepare($countSql);
-    //         $countStmt->bindValue(':keyword', $search, PDO::PARAM_STR);
-    //         $countStmt->execute();
-    //         $total = $countStmt->fetchColumn();
-
-    //         return [
-    //             'students' => $students,
-    //             'total' => $total
-    //         ];
-    //     } catch (PDOException $e) {
-    //         error_log("PDO Error in getStudentsWithPagination: " . $e->getMessage());
-    //         return [
-    //             'students' => [],
-    //             'total' => 0
-    //         ];
-    //     }
-    // }
-
     public function getStudentsWithPagination(int $limit, int $offset, string $keyword = ''): array
     {
         try {
             $search = "%$keyword%";
 
             $sql = "SELECT 
-                    s.student_id, s.mssv, s.class_id, s.faculty_id, s.academic_year,
-                    u.full_name, u.gender, u.phone_number, u.date_of_birth, u.address,
-                    a.email, a.status, c.class_name, f.faculty_name
-                FROM students s
-                INNER JOIN users u ON s.user_id = u.user_id
-                INNER JOIN accounts a ON u.account_id = a.account_id
-                INNER JOIN classes c ON s.class_id = c.class_id
-                INNER JOIN faculties f ON s.faculty_id = f.faculty_id
-                WHERE (s.mssv LIKE ? OR u.full_name LIKE ?)
-                ORDER BY s.student_id DESC
-                LIMIT ? OFFSET ?";
+                COALESCE(s.student_id, 0) as student_id, 
+                COALESCE(s.mssv, 'Chưa có MSSV') as mssv, 
+                COALESCE(s.class_id, 0) as class_id, 
+                COALESCE(s.faculty_id, 0) as faculty_id, 
+                COALESCE(s.academic_year, 'Chưa có') as academic_year,
+                u.full_name, u.gender, u.phone_number, u.date_of_birth, u.address,
+                a.email, a.status, 
+                COALESCE(c.class_name, 'Chưa có lớp') as class_name, 
+                COALESCE(f.faculty_name, 'Chưa có khoa') as faculty_name
+            FROM accounts a
+            INNER JOIN users u ON a.account_id = u.account_id
+            LEFT JOIN students s ON u.user_id = s.user_id
+            LEFT JOIN classes c ON s.class_id = c.class_id
+            LEFT JOIN faculties f ON s.faculty_id = f.faculty_id
+            WHERE a.role = 'student' 
+              AND (COALESCE(s.mssv, '') LIKE ? OR u.full_name LIKE ?)
+              AND s.deleted_at IS NULL
+            ORDER BY COALESCE(s.student_id, 0) DESC
+            LIMIT ? OFFSET ?";
 
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([$search, $search, $limit, $offset]);
@@ -185,9 +114,12 @@ class StudentModel extends BaseModel
 
             // Count total
             $countSql = "SELECT COUNT(*) 
-                     FROM students s 
-                     JOIN users u ON s.user_id = u.user_id 
-                     WHERE (s.mssv LIKE ? OR u.full_name LIKE ?)";
+                 FROM accounts a
+                 INNER JOIN users u ON a.account_id = u.account_id
+                 LEFT JOIN students s ON u.user_id = s.user_id
+                 WHERE a.role = 'student' 
+                   AND (COALESCE(s.mssv, '') LIKE ? OR u.full_name LIKE ?)
+                   AND s.deleted_at IS NULL";
             $countStmt = $this->pdo->prepare($countSql);
             $countStmt->execute([$search, $search]);
             $total = (int)$countStmt->fetchColumn();
@@ -197,7 +129,41 @@ class StudentModel extends BaseModel
                 'total' => $total
             ];
         } catch (PDOException $e) {
-            die("SQL ERROR: " . $e->getMessage());
+            error_log("StudentModel::getStudentsWithPagination error: " . $e->getMessage());
+            return [
+                'students' => [],
+                'total' => 0
+            ];
+        }
+    }
+
+    /**
+     * Lấy tất cả sinh viên có role là student (bao gồm cả những sinh viên chưa có lớp/khoa)
+     * @return array
+     */
+    public function getAllStudentsWithRole(): array
+    {
+        $sql = "SELECT 
+                s.student_id, s.mssv, s.class_id, s.faculty_id, s.academic_year,
+                u.full_name, u.gender, u.phone_number, u.date_of_birth, u.address,
+                a.email, a.status, a.role,
+                c.class_name, 
+                f.faculty_name
+            FROM accounts a
+            JOIN users u ON a.account_id = u.account_id
+            LEFT JOIN students s ON u.user_id = s.user_id
+            LEFT JOIN classes c ON s.class_id = c.class_id
+            LEFT JOIN faculties f ON s.faculty_id = f.faculty_id
+            WHERE a.role = 'student' AND s.deleted_at IS NULL
+            ORDER BY s.student_id DESC";
+
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("StudentModel::getAllStudentsWithRole error: " . $e->getMessage());
+            return [];
         }
     }
 
@@ -208,20 +174,40 @@ class StudentModel extends BaseModel
      */
     public function create(array $data): int|false
     {
+        // Debug: ghi log dữ liệu đầu vào
+        error_log("StudentModel::create - Input data: " . json_encode($data));
+
         $sql = "INSERT INTO {$this->table} (user_id, mssv, class_id, faculty_id, academic_year) 
-                VALUES (:user_id, :mssv, :class_id, :faculty_id, :academic_year)";
+            VALUES (:user_id, :mssv, :class_id, :faculty_id, :academic_year)";
+
+        error_log("StudentModel::create - SQL: " . $sql);
+
         $stmt = $this->pdo->prepare($sql);
         try {
-            $stmt->execute([
+            $result = $stmt->execute([
                 'user_id' => $data['user_id'],
                 'mssv' => $data['mssv'],
                 'class_id' => $data['class_id'],
                 'faculty_id' => $data['faculty_id'],
                 'academic_year' => $data['academic_year'] ?? '2021-2025'
             ]);
-            return (int)$this->pdo->lastInsertId();
+            if (empty($data['class_id']) || empty($data['faculty_id'])) {
+                error_log("StudentModel::create - Error: class_id hoặc faculty_id không được để trống.");
+                return false;
+            }
+
+            if ($result) {
+                $lastId = (int)$this->pdo->lastInsertId();
+                error_log("StudentModel::create - Success, ID: " . $lastId);
+                return $lastId;
+            } else {
+                $errorInfo = $stmt->errorInfo();
+                error_log("StudentModel::create - Execute failed: " . json_encode($errorInfo));
+                return false;
+            }
         } catch (PDOException $e) {
-            // error_log("StudentModel create error: " . $e->getMessage());
+            error_log("StudentModel::create PDO Error: " . $e->getMessage());
+            error_log("StudentModel::create Error Info: " . json_encode($stmt->errorInfo()));
             return false;
         }
     }
@@ -248,8 +234,7 @@ class StudentModel extends BaseModel
 
         $params[':id'] = $id;
 
-
-        $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . " WHERE student_id = :id";
+        $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . " WHERE student_id = :id AND deleted_at IS NULL";
 
         try {
             $stmt = $this->pdo->prepare($sql);
@@ -267,7 +252,7 @@ class StudentModel extends BaseModel
      */
     public function findByMssv(string $mssv): array|false
     {
-        $sql = "SELECT s.* FROM {$this->table} s WHERE s.mssv = :mssv LIMIT 1";
+        $sql = "SELECT s.* FROM {$this->table} s WHERE s.mssv = :mssv AND s.deleted_at IS NULL LIMIT 1";
         $stmt = $this->pdo->prepare($sql);
         try {
             $stmt->execute([':mssv' => $mssv]);
@@ -278,37 +263,41 @@ class StudentModel extends BaseModel
         }
     }
 
-
-
     /**
-     * Delete a student.
-     * @param int $ClassId
-     * @return bool
+     * Kiểm tra xem Mã số sinh viên (mssv) đã tồn tại hay chưa.
+     * @param string $mssv Mã số sinh viên
+     * @return bool Trả về TRUE nếu mã số đã tồn tại, FALSE nếu chưa.
      */
-    public function delete(int $ClassId): bool
+    public function isStudentCodeExists(string $mssv): bool
     {
-        $sql = "DELETE FROM {$this->table} WHERE student_id = :id";
-        $stmt = $this->pdo->prepare($sql);
+        $sql = "SELECT COUNT(*) FROM {$this->table} WHERE mssv = :mssv AND deleted_at IS NULL LIMIT 1";
+
         try {
-            return $stmt->execute(['id' => $ClassId]);
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([':mssv' => $mssv]);
+            return $stmt->fetchColumn() > 0;
         } catch (PDOException $e) {
-            // error_log("StudentModel delete error: " . $e->getMessage());
-            return false;
+            error_log("StudentModel::isStudentCodeExists error: " . $e->getMessage());
+            throw $e;
         }
     }
 
-    // public function getStudentsByClass(int $classId): array
-    // {
-    //     $sql = "SELECT s.student_id, s.student_code, s.student_name, s.email, s.phone, s.status
-    //             FROM students s 
-    //             WHERE s.class_id = ? 
-    //             ORDER BY s.student_code";
-
-    //     $stmt = $this->pdo->prepare($sql);
-    //     $stmt->execute([$classId]);
-
-    //     return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    // }
+    /**
+     * Soft delete a student by setting deleted_at.
+     * @param int $studentId
+     * @return bool
+     */
+    public function delete(int $studentId): bool
+    {
+        $sql = "UPDATE {$this->table} SET deleted_at = NOW() WHERE student_id = :id AND deleted_at IS NULL";
+        $stmt = $this->pdo->prepare($sql);
+        try {
+            return $stmt->execute(['id' => $studentId]) && $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            error_log("StudentModel::delete (soft) error: " . $e->getMessage());
+            return false;
+        }
+    }
 
     /**
      * Đếm số sinh viên trong lớp
@@ -316,9 +305,8 @@ class StudentModel extends BaseModel
     public function countStudentsByClass(int $classId): int
     {
         $sql = "SELECT COUNT(*) as total 
-        FROM students 
-        WHERE class_id = ?";
-
+                FROM students 
+                WHERE class_id = ? AND deleted_at IS NULL";
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([$classId]);
@@ -328,34 +316,31 @@ class StudentModel extends BaseModel
     }
 
     /**
-     * Kiểm tra xem Mã số sinh viên (student_code) đã tồn tại hay chưa.
-     * Dùng để validate khi thêm sinh viên mới.
-     * @param string $studentCode Mã số sinh viên
-     * @return bool Trả về TRUE nếu mã số đã tồn tại, FALSE nếu chưa.
+     * Find students by class ID.
+     * @param int $classId
+     * @return array
      */
-    public function isStudentCodeExists(string $studentCode): bool
+    public function findByClassId(int $classId): array
     {
-        // 1. Chuẩn bị câu lệnh SQL: Đếm số lượng bản ghi có student_code trùng khớp
-        $sql = "SELECT COUNT(*) FROM {$this->table} WHERE student_code = :student_code LIMIT 1";
+        $sql = "SELECT s.* FROM {$this->table} s WHERE s.class_id = :class_id AND s.deleted_at IS NULL";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(['class_id' => $classId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 
-        try {
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([':student_code' => $studentCode]);
-
-            // 2. Trả về true nếu count > 0 (đã tồn tại), ngược lại là false
-            return $stmt->fetchColumn() > 0;
-        } catch (PDOException $e) {
-            // Ghi log lỗi
-            error_log("StudentModel::isStudentCodeExists error: " . $e->getMessage());
-
-            // THAY ĐỔI: Thay vì return TRUE, chúng ta nên THROW lại Exception 
-            // HOẶC return FALSE (và để Controller xử lý lỗi 500)
-
-            // *** GIẢI PHÁP TỐT NHẤT: Throw lại exception và xử lý ở Controller ***
-            throw $e;
-
-            // HOẶC GIẢI PHÁP ĐƠN GIẢN HƠN: Trả về FALSE và để Controller báo lỗi chung
-            // return false; // Thường không nên làm, nhưng nếu bạn muốn tiếp tục
-        }
+    /**
+     * Find students not in any group.
+     * @return array
+     */
+    public function findAvailableStudents(): array
+    {
+        $sql = "SELECT s.* FROM {$this->table} s 
+                WHERE s.student_id NOT IN (
+                    SELECT gm.student_id FROM group_members gm 
+                    JOIN groups g ON gm.group_id = g.group_id
+                ) AND s.deleted_at IS NULL";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

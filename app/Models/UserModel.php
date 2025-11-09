@@ -111,7 +111,8 @@ class UserModel extends BaseModel
         return $stmt->execute([
             'user_id' => $userId,
             'mssv' => $mssv,
-            'class_id' => $classId  // Thêm param này
+            'class_id' => $classId,
+              // Thêm param này
         ]);
     }
 

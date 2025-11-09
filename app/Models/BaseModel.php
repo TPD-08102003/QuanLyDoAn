@@ -41,23 +41,6 @@ abstract class BaseModel
      * @param int $id
      * @return array|false
      */
-    // public function findById(int $id): array|false
-    // {
-    //     $stmt = $this->pdo->prepare("SELECT * FROM {$this->table} WHERE id = :id LIMIT 1");
-    //     $stmt->execute(['id' => $id]);
-    //     return $stmt->fetch(PDO::FETCH_ASSOC);
-    // }
-
-    // Trong BaseModel
-    // public function findById(int $id): array|false
-    // {
-    //     // Sử dụng $this->primaryKey thay vì 'id'
-    //     $sql = "SELECT * FROM {$this->table} WHERE {$this->primaryKey} = :id";
-    //     $stmt = $this->pdo->prepare($sql);
-    //     $stmt->execute([':id' => $id]);
-    //     return $stmt->fetch(PDO::FETCH_ASSOC);
-    // }
-    // Trong BaseModel
     public function findById(int $id): array|false
     {
         try {
@@ -85,46 +68,6 @@ abstract class BaseModel
         $stmt->execute($data);
         return $this->pdo->lastInsertId();
     }
-
-    /**
-     * Update record by ID.
-     * @param int $id
-     * @param array $data
-     * @return bool
-     */
-    // public function update(int $id, array $data): bool
-    // {
-    //     if (empty($data)) {
-    //         return false;
-    //     }
-
-    //     $fields = [];
-    //     $params = [];
-
-    //     foreach ($data as $key => $value) {
-    //         if ($value !== null) { // Bỏ qua null nếu không muốn cập nhật
-    //             $fields[] = "$key = :$key";
-    //             $params[":$key"] = $value;
-    //         }
-    //     }
-
-    //     if (empty($fields)) {
-    //         return false;
-    //     }
-
-    //     $params[':id'] = $id;
-
-    //     $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . " WHERE account_id = :id";
-
-    //     try {
-    //         $stmt = $this->pdo->prepare($sql);
-    //         return $stmt->execute($params);
-    //     } catch (PDOException $e) {
-    //         error_log("AccountModel update error: " . $e->getMessage());
-    //         return false; // hoặc throw $e nếu muốn bắt ở controller
-    //     }
-    // }
-
     // Trong BaseModel
     /**
      * Update record by ID.
