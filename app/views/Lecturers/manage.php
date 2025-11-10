@@ -375,9 +375,37 @@
         </div>
     </div>
 </div>
-
-<!-- Modal nhập Excel -->
 <div class="modal fade" id="importLecturerModal" tabindex="-1" aria-labelledby="importLecturerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importLecturerModalLabel">Nhập Giảng Viên Từ File (.xlsx, .csv)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="importForm" method="POST" enctype="multipart/form-data" action="/quanlydoan/Lecturer/import">
+                <div class="modal-body">
+                    <p>Tải lên file Excel (.xlsx) hoặc CSV đã chuẩn bị theo mẫu.</p>
+                    <div class="mb-3">
+                        <label for="fileInput" class="form-label">Chọn File Giảng Viên:</label>
+                        <input class="form-control" type="file" id="fileInput" name="file" required accept=".xlsx, .xls, .csv">
+                    </div>
+                    <div class="alert alert-info small" role="alert">
+                        Chỉ chấp nhận file có cấu trúc 9 cột theo mẫu: MSGV, Họ tên, Giới tính, Khoa, Chức vụ, Chuyên ngành, Kinh nghiệm (năm), Email, Số điện thoại.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a href="/quanlydoan/Lecturer/downloadTemplate" class="btn btn-outline-secondary mb-3">Tải mẫu Excel</a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary" id="importSubmitBtn">
+                        <i class="fas fa-upload me-1"></i> Tải lên và Nhập
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- Modal nhập Excel -->
+<!-- <div class="modal fade" id="importLecturerModal" tabindex="-1" aria-labelledby="importLecturerModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -400,11 +428,15 @@
             </div>
         </div>
     </div>
-</div>
+</div> -->
 
 
 <script>
-    // Hàm format ngày
+    // ========================================================
+    // 🕓 1. HÀM TIỆN ÍCH CHUNG
+    // ========================================================
+
+    // Hàm định dạng ngày theo kiểu Việt Nam
     function formatDate(dateStr) {
         if (!dateStr) return 'Chưa có';
         const date = new Date(dateStr);
@@ -415,7 +447,10 @@
         });
     }
 
-    // Load chi tiết giảng viên
+    // ========================================================
+    // 👁 2. XEM CHI TIẾT GIẢNG VIÊN
+    // ========================================================
+
     function loadLecturerDetails(id) {
         const contentDiv = document.getElementById('viewLecturerContent');
         contentDiv.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
@@ -425,108 +460,83 @@
             .then(data => {
                 if (data.success && data.lecturer) {
                     const lecturer = data.lecturer;
+
+                    // Hiển thị thông tin giảng viên
                     contentDiv.innerHTML = `
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="card mb-3">
-                                    <div class="card-body">
-                                        <h6 class="card-title text-primary mb-3">
-                                            <i class="bi bi-info-circle me-2"></i>Thông tin cơ bản
-                                        </h6>
-                                        <table class="table table-sm table-borderless">
-                                            <tr>
-                                                <td width="120"><strong>MSGV:</strong></td>
-                                                <td>${lecturer.lecturer_code || 'Chưa có'}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>Giới tính:</strong></td>
-                                                <td>${lecturer.gender || 'Chưa cập nhật'}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>Khoa:</strong></td>
-                                                <td>${lecturer.faculty_name || 'Chưa có khoa'}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>Chức vụ:</strong></td>
-                                                <td>${lecturer.position || 'Chưa có'}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>Chuyên ngành:</strong></td>
-                                                <td>${lecturer.specialization || 'Chưa có'}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>Kinh nghiệm:</strong></td>
-                                                <td>${lecturer.years_of_experience || 0} năm</td>
-                                            </tr>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="card mb-3">
-                                    <div class="card-body">
-                                        <h6 class="card-title text-primary mb-3">
-                                            <i class="bi bi-telephone me-2"></i>Liên hệ & Khác
-                                        </h6>
-                                        <table class="table table-sm table-borderless">
-                                            <tr>
-                                                <td width="120"><strong>Email:</strong></td>
-                                                <td>${lecturer.email || 'Chưa có'}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>SĐT:</strong></td>
-                                                <td>${lecturer.phone_number || 'Chưa có'}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>Địa chỉ:</strong></td>
-                                                <td>${lecturer.address || 'Chưa có'}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>Ngày sinh:</strong></td>
-                                                <td>${lecturer.date_of_birth ? formatDate(lecturer.date_of_birth) : 'Chưa có'}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>Trạng thái:</strong></td>
-                                                <td>
-                                                    <span class="badge ${lecturer.status === 'active' ? 'bg-success' : 'bg-danger'}">
-                                                        ${lecturer.status === 'active' ? 'Hoạt động' : 'Khóa'}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </div>
+                    <div class="row">
+                        <!-- Cột trái: thông tin cơ bản -->
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-title text-primary mb-3">
+                                        <i class="bi bi-info-circle me-2"></i>Thông tin cơ bản
+                                    </h6>
+                                    <table class="table table-sm table-borderless">
+                                        <tr><td><strong>MSGV:</strong></td><td>${lecturer.lecturer_code || 'Chưa có'}</td></tr>
+                                        <tr><td><strong>Giới tính:</strong></td><td>${lecturer.gender || 'Chưa cập nhật'}</td></tr>
+                                        <tr><td><strong>Khoa:</strong></td><td>${lecturer.faculty_name || 'Chưa có khoa'}</td></tr>
+                                        <tr><td><strong>Chức vụ:</strong></td><td>${lecturer.position || 'Chưa có'}</td></tr>
+                                        <tr><td><strong>Chuyên ngành:</strong></td><td>${lecturer.specialization || 'Chưa có'}</td></tr>
+                                        <tr><td><strong>Kinh nghiệm:</strong></td><td>${lecturer.years_of_experience || 0} năm</td></tr>
+                                    </table>
                                 </div>
                             </div>
                         </div>
-                    `;
+
+                        <!-- Cột phải: liên hệ -->
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-title text-primary mb-3">
+                                        <i class="bi bi-telephone me-2"></i>Liên hệ & Khác
+                                    </h6>
+                                    <table class="table table-sm table-borderless">
+                                        <tr><td><strong>Email:</strong></td><td>${lecturer.email || 'Chưa có'}</td></tr>
+                                        <tr><td><strong>SĐT:</strong></td><td>${lecturer.phone_number || 'Chưa có'}</td></tr>
+                                        <tr><td><strong>Địa chỉ:</strong></td><td>${lecturer.address || 'Chưa có'}</td></tr>
+                                        <tr><td><strong>Ngày sinh:</strong></td><td>${lecturer.date_of_birth ? formatDate(lecturer.date_of_birth) : 'Chưa có'}</td></tr>
+                                        <tr>
+                                            <td><strong>Trạng thái:</strong></td>
+                                            <td>
+                                                <span class="badge ${lecturer.status === 'active' ? 'bg-success' : 'bg-danger'}">
+                                                    ${lecturer.status === 'active' ? 'Hoạt động' : 'Khóa'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
                 } else {
                     contentDiv.innerHTML = `
-                        <div class="text-center text-danger py-4">
-                            <i class="bi bi-exclamation-triangle display-4 d-block mb-2"></i>
-                            <p>Không thể tải thông tin giảng viên.</p>
-                            <small class="text-muted">${data.message || 'Đã xảy ra lỗi'}</small>
-                        </div>
-                    `;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                contentDiv.innerHTML = `
                     <div class="text-center text-danger py-4">
                         <i class="bi bi-exclamation-triangle display-4 d-block mb-2"></i>
-                        <p>Lỗi kết nối máy chủ.</p>
-                        <small class="text-muted">Vui lòng thử lại sau.</small>
-                    </div>
-                `;
+                        <p>Không thể tải thông tin giảng viên.</p>
+                        <small class="text-muted">${data.message || 'Đã xảy ra lỗi'}</small>
+                    </div>`;
+                }
+            })
+            .catch(() => {
+                contentDiv.innerHTML = `
+                <div class="text-center text-danger py-4">
+                    <i class="bi bi-exclamation-triangle display-4 d-block mb-2"></i>
+                    <p>Lỗi kết nối máy chủ.</p>
+                    <small class="text-muted">Vui lòng thử lại sau.</small>
+                </div>`;
             });
     }
 
-    // Chuyển sang edit mode
+    // ========================================================
+    // ✏️ 3. CHỈNH SỬA GIẢNG VIÊN
+    // ========================================================
+
+    // Chuyển từ view sang edit modal
     function switchToEditModeLecturer() {
         const viewModal = bootstrap.Modal.getInstance(document.getElementById('viewLecturerModal'));
         const editModal = new bootstrap.Modal(document.getElementById('editLecturerModal'));
-
         viewModal.hide();
+
         const lecturerId = document.querySelector('#viewLecturerModal [data-lecturer-id]')?.getAttribute('data-lecturer-id');
         if (lecturerId) {
             setTimeout(() => {
@@ -536,244 +546,225 @@
         }
     }
 
-    // Load dữ liệu cho edit
+    // Load dữ liệu lên form edit
     function loadLecturerForEdit(id) {
         fetch(`/quanlydoan/Lecturer/show/${id}`)
-            .then(response => response.json())
+            .then(res => res.json())
             .then(data => {
                 if (data.success && data.lecturer) {
-                    const lecturer = data.lecturer;
-                    document.getElementById('edit_lecturer_id').value = lecturer.lecturer_id;
-                    document.getElementById('edit_lecturer_code').value = lecturer.lecturer_code || '';
-                    document.getElementById('edit_full_name').value = lecturer.full_name || '';
-                    document.getElementById('edit_gender').value = lecturer.gender || 'Khác';
-                    document.getElementById('edit_faculty_id').value = lecturer.faculty_id || '';
-                    document.getElementById('edit_position').value = lecturer.position || '';
-                    document.getElementById('edit_specialization').value = lecturer.specialization || '';
-                    document.getElementById('edit_years_of_experience').value = lecturer.years_of_experience || 0;
-                    document.getElementById('edit_email').value = lecturer.email || '';
-                    document.getElementById('edit_phone_number').value = lecturer.phone_number || '';
-                    document.getElementById('edit_date_of_birth').value = lecturer.date_of_birth || '';
-                    document.getElementById('edit_address').value = lecturer.address || '';
-                } else {
-                    alert('Không thể tải dữ liệu giảng viên.');
-                }
+                    const l = data.lecturer;
+                    document.getElementById('edit_lecturer_id').value = l.lecturer_id;
+                    document.getElementById('edit_lecturer_code').value = l.lecturer_code || '';
+                    document.getElementById('edit_full_name').value = l.full_name || '';
+                    document.getElementById('edit_gender').value = l.gender || 'Khác';
+                    document.getElementById('edit_faculty_id').value = l.faculty_id || '';
+                    document.getElementById('edit_position').value = l.position || '';
+                    document.getElementById('edit_specialization').value = l.specialization || '';
+                    document.getElementById('edit_years_of_experience').value = l.years_of_experience || 0;
+                    document.getElementById('edit_email').value = l.email || '';
+                    document.getElementById('edit_phone_number').value = l.phone_number || '';
+                    document.getElementById('edit_date_of_birth').value = l.date_of_birth || '';
+                    document.getElementById('edit_address').value = l.address || '';
+                } else alert('Không thể tải dữ liệu giảng viên.');
             })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Lỗi kết nối máy chủ.');
-            });
+            .catch(() => alert('Lỗi kết nối máy chủ.'));
     }
 
-    // Submit edit form
-    document.getElementById('editLecturerForm').addEventListener('submit', function(e) {
+    // Gửi form edit - SỬA LẠI DÙNG JSON
+    document.getElementById('editLecturerForm').addEventListener('submit', e => {
         e.preventDefault();
-        const formData = new FormData(this);
-        const lecturerId = formData.get('lecturer_id');
 
-        fetch(`/quanlydoan/Lecturer/update/${lecturerId}`, {
+        const form = e.target;
+        const formData = new FormData(form);
+        const jsonData = {};
+
+        // Chuyển FormData thành object JSON
+        for (let [key, value] of formData.entries()) {
+            jsonData[key] = value;
+        }
+
+        const id = jsonData.lecturer_id;
+
+        fetch(`/quanlydoan/Lecturer/update/${id}`, {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                },
+                body: JSON.stringify(jsonData)
             })
-            .then(response => response.json())
+            .then(res => res.json())
             .then(data => {
-                if (data.success) {
-                    alert('Cập nhật thành công!');
-                    location.reload();
-                } else {
-                    alert('Cập nhật thất bại: ' + (data.message || 'Lỗi không xác định'));
-                }
+                alert(data.message || (data.success ? 'Cập nhật thành công!' : 'Cập nhật thất bại.'));
+                if (data.success) location.reload();
             })
-            .catch(err => {
-                alert('Lỗi kết nối máy chủ');
-                console.error(err);
-            });
+            .catch(() => alert('Lỗi kết nối máy chủ.'));
     });
 
-    // Add form validation
+    // ========================================================
+    // ➕ 4. THÊM GIẢNG VIÊN - SỬA LẠI DÙNG JSON
+    // ========================================================
+
     const addLecturerForm = document.getElementById('addLecturerForm');
-    addLecturerForm.addEventListener('submit', function(e) {
-        let valid = true;
-        const lecturerCode = document.getElementById('add_lecturer_code');
-        const username = document.getElementById('add_username');
-        const facultyId = document.getElementById('add_faculty_id');
-
-        if (!lecturerCode.value.trim()) {
-            valid = false;
-            lecturerCode.classList.add('is-invalid');
-            document.getElementById('add_lecturer_code_error').textContent = 'MSGV không được để trống.';
-        } else {
-            lecturerCode.classList.remove('is-invalid');
-        }
-
-        if (!username.value.trim()) {
-            valid = false;
-            username.classList.add('is-invalid');
-            document.getElementById('add_username_error').textContent = 'Username không được để trống.';
-        } else {
-            username.classList.remove('is-invalid');
-        }
-
-        if (!facultyId.value) {
-            valid = false;
-            facultyId.classList.add('is-invalid');
-            document.getElementById('add_faculty_id_error').textContent = 'Vui lòng chọn khoa.';
-        } else {
-            facultyId.classList.remove('is-invalid');
-        }
-
-        if (!valid) {
+    if (addLecturerForm) {
+        addLecturerForm.addEventListener('submit', function(e) {
             e.preventDefault();
-        }
-    });
 
-    // Auto fill username from lecturer_code
-    document.getElementById('add_lecturer_code').addEventListener('input', function() {
-        const usernameInput = document.getElementById('add_username');
-        if (!usernameInput.value.trim()) {
-            usernameInput.value = this.value;
-        }
-    });
+            // Validation
+            let valid = true;
+            const code = document.getElementById('add_lecturer_code');
+            const username = document.getElementById('add_username');
+            const faculty = document.getElementById('add_faculty_id');
+            const fullName = document.getElementById('add_full_name');
+            const email = document.getElementById('add_email');
 
-    // Delete modal
-    document.getElementById('deleteLecturerModal').addEventListener('show.bs.modal', function(event) {
-        const button = event.relatedTarget;
-        const lecturerId = button.getAttribute('data-lecturer-id');
-        const lecturerName = button.getAttribute('data-lecturer-name');
-        const lecturerMSGV = button.getAttribute('data-lecturer-msgv');
+            [code, username, faculty, fullName, email].forEach(i => {
+                if (i) i.classList.remove('is-invalid');
+            });
 
-        document.getElementById('deleteLecturerName').textContent = lecturerName;
-        document.getElementById('deleteLecturerMSGV').textContent = lecturerMSGV;
+            if (!code || !code.value.trim()) {
+                valid = false;
+                if (code) code.classList.add('is-invalid');
+            }
+            if (!username || !username.value.trim()) {
+                valid = false;
+                if (username) username.classList.add('is-invalid');
+            }
+            if (!faculty || !faculty.value) {
+                valid = false;
+                if (faculty) faculty.classList.add('is-invalid');
+            }
+            if (!fullName || !fullName.value.trim()) {
+                valid = false;
+                if (fullName) fullName.classList.add('is-invalid');
+            }
+            if (!email || !email.value.trim() || !email.checkValidity()) {
+                valid = false;
+                if (email) email.classList.add('is-invalid');
+            }
 
-        const confirmBtn = document.getElementById('confirmDeleteLecturerBtn');
-        confirmBtn.onclick = function() {
-            fetch(`/quanlydoan/Lecturer/destroy/${lecturerId}`, {
-                    method: 'POST'
+            if (!valid) return;
+
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang thêm...';
+
+            // Chuyển thành JSON data
+            const formData = new FormData(this);
+            const jsonData = {};
+            for (let [key, value] of formData.entries()) {
+                jsonData[key] = value;
+            }
+
+            fetch('/quanlydoan/Lecturer/store', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    },
+                    body: JSON.stringify(jsonData)
                 })
-                .then(response => response.json())
+                .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        alert(data.message);
+                        alert('Thêm thành công!');
+                        bootstrap.Modal.getInstance(document.getElementById('addLecturerModal')).hide();
                         location.reload();
                     } else {
-                        alert(data.message || 'Xóa thất bại');
+                        alert(data.message || 'Thêm thất bại.');
                     }
                 })
-                .catch(err => {
-                    alert('Lỗi kết nối: ' + err.message);
-                })
+                .catch(() => alert('Lỗi kết nối máy chủ.'))
                 .finally(() => {
-                    bootstrap.Modal.getInstance(document.getElementById('deleteLecturerModal')).hide();
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Thêm giảng viên';
                 });
-        };
-    });
+        });
 
-    // Import button
-    document.getElementById('importLecturerButton').addEventListener('click', function() {
-        const form = document.getElementById('importLecturerForm');
-        const formData = new FormData(form);
-        const button = this;
-        button.disabled = true;
-        button.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Đang nhập...';
-
-        fetch('/quanlydoan/Lecturer/import', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message);
-                    location.reload();
-                } else {
-                    alert(data.message || 'Lỗi nhập dữ liệu');
-                }
-            })
-            .catch(error => {
-                alert('Lỗi kết nối: ' + error.message);
-            })
-            .finally(() => {
-                button.disabled = false;
-                button.innerHTML = 'Nhập dữ liệu';
-                bootstrap.Modal.getInstance(document.getElementById('importLecturerModal')).hide();
+        // Tự động điền username = MSGV
+        const lecturerCodeInput = document.getElementById('add_lecturer_code');
+        const usernameInput = document.getElementById('add_username');
+        if (lecturerCodeInput && usernameInput) {
+            lecturerCodeInput.addEventListener('input', function() {
+                if (!usernameInput.value.trim()) usernameInput.value = this.value;
             });
-    });
-    document.getElementById('addLecturerForm').addEventListener('submit', function(e) {
-        e.preventDefault(); // Ngăn submit form thông thường để tránh reload trang
-
-        // Kiểm tra validation thủ công (nếu cần, vì đã có ở trên)
-        let valid = true;
-        const lecturerCode = document.getElementById('add_lecturer_code');
-        const username = document.getElementById('add_username');
-        const facultyId = document.getElementById('add_faculty_id');
-        const fullName = document.getElementById('add_full_name');
-        const email = document.getElementById('add_email');
-
-        // Reset lỗi
-        lecturerCode.classList.remove('is-invalid');
-        username.classList.remove('is-invalid');
-        facultyId.classList.remove('is-invalid');
-        fullName.classList.remove('is-invalid');
-        email.classList.remove('is-invalid');
-
-        if (!lecturerCode.value.trim()) {
-            valid = false;
-            lecturerCode.classList.add('is-invalid');
-            document.getElementById('add_lecturer_code_error').textContent = 'MSGV không được để trống.';
         }
-        if (!username.value.trim()) {
-            valid = false;
-            username.classList.add('is-invalid');
-            document.getElementById('add_username_error').textContent = 'Username không được để trống.';
-        }
-        if (!facultyId.value) {
-            valid = false;
-            facultyId.classList.add('is-invalid');
-            document.getElementById('add_faculty_id_error').textContent = 'Vui lòng chọn khoa.';
-        }
-        if (!fullName.value.trim()) {
-            valid = false;
-            fullName.classList.add('is-invalid');
-            // Thêm invalid-feedback cho full_name nếu chưa có
-            // (Bạn có thể thêm <div class="invalid-feedback" id="add_full_name_error"></div> vào HTML form nếu cần)
-        }
-        if (!email.value.trim() || !email.checkValidity()) {
-            valid = false;
-            email.classList.add('is-invalid');
-            // Tương tự, thêm invalid-feedback nếu cần
-        }
+    }
 
-        if (!valid) {
-            return;
-        }
+    // ========================================================
+    // ❌ 5. XÓA GIẢNG VIÊN
+    // ========================================================
 
-        // Gửi AJAX
-        const formData = new FormData(this);
-        const submitButton = this.querySelector('button[type="submit"]');
-        submitButton.disabled = true;
-        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang thêm...';
+    const deleteModal = document.getElementById('deleteLecturerModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', e => {
+            const btn = e.relatedTarget;
+            const id = btn.getAttribute('data-lecturer-id');
+            const name = btn.getAttribute('data-lecturer-name');
+            const msgv = btn.getAttribute('data-lecturer-msgv');
 
-        fetch('/quanlydoan/Lecturer/store', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message);
-                    bootstrap.Modal.getInstance(document.getElementById('addLecturerModal')).hide();
-                    location.reload(); // Reload trang để cập nhật danh sách giảng viên
-                } else {
-                    alert(data.message || 'Thêm thất bại. Vui lòng kiểm tra dữ liệu.');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Lỗi kết nối máy chủ. Vui lòng thử lại.');
-            })
-            .finally(() => {
-                submitButton.disabled = false;
-                submitButton.innerHTML = 'Thêm giảng viên';
-            });
-    });
+            document.getElementById('deleteLecturerName').textContent = name;
+            document.getElementById('deleteLecturerMSGV').textContent = msgv;
+
+            const confirmBtn = document.getElementById('confirmDeleteLecturerBtn');
+            if (confirmBtn) {
+                confirmBtn.onclick = () => {
+                    fetch(`/quanlydoan/Lecturer/destroy/${id}`, {
+                            method: 'POST'
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            alert(data.message);
+                            if (data.success) location.reload();
+                        })
+                        .finally(() => {
+                            bootstrap.Modal.getInstance(document.getElementById('deleteLecturerModal')).hide();
+                        });
+                };
+            }
+        });
+    }
+
+    // ========================================================
+    // 📂 6. IMPORT FILE EXCEL GIẢNG VIÊN - SỬA LỖI
+    // ========================================================
+
+    // Form import bằng AJAX - CHỈ GIỮ LẠI PHẦN NÀY
+    const importForm = document.getElementById('importForm');
+    if (importForm) {
+        importForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const submitBtn = document.getElementById('importSubmitBtn');
+
+            if (!formData.get('file')?.name) {
+                alert('Vui lòng chọn file cần nhập.');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang xử lý...';
+
+            fetch(this.action, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.message || 'Lỗi không xác định.');
+                    if (data.success) {
+                        bootstrap.Modal.getInstance(document.getElementById('importLecturerModal')).hide();
+                        location.reload();
+                    }
+                })
+                .catch(() => alert('Lỗi kết nối máy chủ.'))
+                .finally(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-upload me-1"></i> Tải lên và Nhập';
+                });
+        });
+    }
+
+    // XÓA PHẦN NÀY VÌ NÚT KHÔNG TỒN TẠI
+    // document.getElementById('importLecturerButton').addEventListener('click', function() { ... });
 </script>

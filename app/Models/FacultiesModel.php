@@ -45,16 +45,25 @@ class FacultiesModel extends BaseModel
     /**
      * Tìm khoa theo tên
      */
+    // public function findByName(string $name): array|false
+    // {
+    //     $sql = "SELECT faculty_id, faculty_name, description, deleted_at, created_at, updated_at 
+    //     FROM faculties 
+    //     WHERE faculty_name = :name";
+
+    //     $result = $this->query($sql, [':name' => $name]);
+    //     return $result[0] ?? false;
+    // }
+
     public function findByName(string $name): array|false
     {
         $sql = "SELECT faculty_id, faculty_name, description, deleted_at, created_at, updated_at 
-        FROM faculties 
-        WHERE faculty_name = :name";
+            FROM faculties 
+            WHERE TRIM(faculty_name) = :name AND deleted_at IS NULL";
 
-        $result = $this->query($sql, [':name' => $name]);
+        $result = $this->query($sql, [':name' => trim($name)]);
         return $result[0] ?? false;
     }
-
     /**
      * Kiểm tra tên khoa đã tồn tại chưa
      */

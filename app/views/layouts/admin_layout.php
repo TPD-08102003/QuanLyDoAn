@@ -693,17 +693,11 @@ if (session_status() === PHP_SESSION_NONE) {
             </div>
 
             <!-- Quản lý Đồ án -->
-            <div class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle <?php echo strpos($_SERVER['REQUEST_URI'], '/Project/') !== false ? 'active' : ''; ?>" href="#" role="button" data-bs-toggle="dropdown">
+            <div class="nav-item ">
+                <a class="nav-link <?php echo strpos($_SERVER['REQUEST_URI'], '/Projects/') !== false ? 'active' : ''; ?>" href="/quanlydoan/Project/manage">
                     <i class="bi bi-folder"></i>
                     <span>Quản lý Đồ án</span>
                 </a>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item <?php echo strpos($_SERVER['REQUEST_URI'], '/Project/manage') !== false ? 'active' : ''; ?>" href="/quanlydoan/Project/manage"><i class="bi bi-list-task me-2"></i>Danh sách Đồ án</a></li>
-                    <li><a class="dropdown-item <?php echo strpos($_SERVER['REQUEST_URI'], '/Project/create') !== false ? 'active' : ''; ?>" href="/quanlydoan/Project/create"><i class="bi bi-plus-circle me-2"></i>Tạo Đồ án</a></li>
-                    <li><a class="dropdown-item <?php echo strpos($_SERVER['REQUEST_URI'], '/Project/categories') !== false ? 'active' : ''; ?>" href="/quanlydoan/Project/categories"><i class="bi bi-tags me-2"></i>Danh mục Đồ án</a></li>
-                    <li><a class="dropdown-item <?php echo strpos($_SERVER['REQUEST_URI'], '/Project/approval') !== false ? 'active' : ''; ?>" href="/quanlydoan/Project/approval"><i class="bi bi-check-circle me-2"></i>Duyệt Đồ án</a></li>
-                </ul>
             </div>
 
             <!-- Quản lý Nhóm & Phân công -->

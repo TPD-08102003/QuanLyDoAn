@@ -8,11 +8,31 @@ use PDOException;
 
 class LecturerModel extends BaseModel
 {
+
+
     public function __construct(PDO $pdo)
     {
         parent::__construct($pdo, 'lecturers', 'lecturer_id');
     }
-
+    public function findByName(string $name): array|false
+    {
+        // Tìm giảng viên bằng họ tên (sử dụng LIKE để tìm kiếm gần đúng)
+        $sql = "SELECT l.*, u.full_name, u.gender, a.email
+                FROM {$this->table} l
+                JOIN users u ON l.user_id = u.user_id
+                JOIN accounts a ON u.account_id = a.account_id
+                WHERE u.full_name LIKE :name AND l.deleted_at IS NULL";
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([':name' => "%$name%"]);
+            // Trả về một mảng các kết quả, vì có thể nhiều người trùng tên
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            // Sửa cả error log
+            error_log("Error in LecturerModel::findByName: " . $e->getMessage());
+            return false;
+        }
+    }
     /**
      * Lấy tất cả giảng viên có role teacher (bao gồm cả những chưa có khoa)
      * @return array
@@ -211,4 +231,68 @@ class LecturerModel extends BaseModel
         $stmt->execute(['id' => $id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+    public function getFullLecturerByCode(string $lecturerCode): array|false
+    {
+        $sql = "
+        SELECT 
+            l.lecturer_id, 
+            l.lecturer_code, 
+            l.faculty_id,
+            u.user_id,
+            u.full_name,
+            a.account_id,
+            a.username,
+            a.email,
+            a.role
+        FROM 
+            lecturers l
+        JOIN 
+            users u ON l.user_id = u.user_id
+        JOIN 
+            accounts a ON u.account_id = a.account_id
+        WHERE 
+            l.lecturer_code = :code AND l.deleted_at IS NULL
+        LIMIT 1
+    ";
+
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([':code' => $lecturerCode]);
+            return $stmt->fetch(\PDO::FETCH_ASSOC);
+        } catch (\PDOException $e) {
+            error_log("Database Error in LecturerModel::getFullLecturerByCode: " . $e->getMessage());
+            return false;
+        }
+    }
+    public function getById(int $id): array|false
+    {
+        $sql = "
+            SELECT 
+                l.*,
+                u.full_name
+            FROM {$this->table} l
+            LEFT JOIN users u ON l.user_id = u.user_id
+            WHERE l.lecturer_id = :id
+            LIMIT 1
+        ";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':id' => $id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    // // Các method khác (nếu có), ví dụ findByName() từ code gốc
+    // public function findByName(string $name): array|false
+    // {
+    //     $sql = "
+    //         SELECT l.*
+    //         FROM lecturers l
+    //         LEFT JOIN users u ON l.user_id = u.user_id
+    //         WHERE u.full_name = :name
+    //         LIMIT 1
+    //     ";
+    //     $stmt = $this->pdo->prepare($sql);
+    //     $stmt->execute([':name' => $name]);
+    //     return $stmt->fetch(PDO::FETCH_ASSOC);
+    // }
 }
