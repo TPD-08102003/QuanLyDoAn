@@ -1,328 +1,197 @@
 <?php
-// helpers/status_helper.php (Hoặc định nghĩa trực tiếp ở đây vì nó private trong Controller)
-// Bạn nên tạo một file helper chung và include vào, nhưng để đơn giản, tôi định nghĩa ở đây.
+// views/project/manage.php
 
-if (!function_exists('getStatusBadgeClass')) {
-    function getStatusBadgeClass(string $status): string
-    {
-        $classes = [
-            'ChoDuyet' => 'bg-warning text-dark',
-            'DaDuyet' => 'bg-info text-dark',
-            'DangThucHien' => 'bg-primary',
-            'DaNopBaoCao' => 'bg-secondary',
-            'DaBaoVe' => 'bg-success',
-            'HoanThanh' => 'bg-success',
-            'Huy' => 'bg-danger'
-        ];
-        return $classes[$status] ?? 'bg-secondary';
-    }
-}
-
-if (!function_exists('getStatusText')) {
-    function getStatusText(string $status): string
-    {
-        $texts = [
-            'ChoDuyet' => 'Chờ duyệt',
-            'DaDuyet' => 'Đã duyệt',
-            'DangThucHien' => 'Đang thực hiện',
-            'DaNopBaoCao' => 'Đã nộp báo cáo',
-            'DaBaoVe' => 'Đã bảo vệ',
-            'HoanThanh' => 'Hoàn thành',
-            'Huy' => 'Hủy'
-        ];
-        return $texts[$status] ?? $status;
-    }
-}
-
-$statusOptions = [
-    'ChoDuyet' => 'Chờ duyệt',
-    'DaDuyet' => 'Đã duyệt',
-    'DangThucHien' => 'Đang thực hiện',
-    'DaNopBaoCao' => 'Đã nộp báo cáo',
-    'DaBaoVe' => 'Đã bảo vệ',
-    'HoanThanh' => 'Hoàn thành',
-    'Huy' => 'Hủy'
+$statusMapping = [
+    'ChoDuyet' => ['class' => 'bg-warning text-dark', 'text' => 'Chờ Duyệt'],
+    'DaDuyet' => ['class' => 'bg-info text-dark', 'text' => 'Đã Duyệt'],
+    'DangThucHien' => ['class' => 'bg-primary', 'text' => 'Đang Thực Hiện'],
+    'DaNopBaoCao' => ['class' => 'bg-secondary', 'text' => 'Đã Nộp Báo Cáo'],
+    'DaBaoVe' => ['class' => 'bg-success', 'text' => 'Đã Bảo Vệ'],
+    'HoanThanh' => ['class' => 'bg-success', 'text' => 'Hoàn Thành'],
+    'Huy' => ['class' => 'bg-danger', 'text' => 'Hủy']
 ];
-
 ?>
 
-<div class="page-header d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h2 class="page-title">Quản lý Đồ án</h2>
-        <p class="page-subtitle">Quản lý, thêm, sửa, xóa và nhập/xuất danh sách đồ án.</p>
-    </div>
-    <div class="btn-toolbar gap-2">
-        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addProjectModal">
-            <i class="bi bi-plus-lg me-2"></i> Thêm Đồ án
-        </button>
-        <div class="btn-group">
-            <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="bi bi-gear me-2"></i> Tùy chọn
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-                <li>
-                    <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#importProjectModal">
-                        <i class="bi bi-upload me-2"></i> Nhập từ Excel
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item" href="/quanlydoan/Project/export">
-                        <i class="bi bi-download me-2"></i> Xuất ra Excel
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item" href="/quanlydoan/Project/downloadTemplate">
-                        <i class="bi bi-file-earmark-arrow-down me-2"></i> Tải file mẫu
-                    </a>
-                </li>
-            </ul>
+<h1 class="page-title h2">Quản lý Đồ Án</h1>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <div class="row g-3 align-items-center">
+            <div class="col-12 col-md-auto me-auto">
+                <form method="GET" action="/quanlydoan/Project/manage" class="row g-3 align-items-center">
+                    <div class="col-md-auto" style="width: 300px;">
+                        <input type="text" class="form-control" name="keyword"
+                            placeholder="Tìm kiếm theo Tên đồ án, Mã ĐA, Tên GV"
+                            value="<?php echo htmlspecialchars($keyword ?? ''); ?>">
+                    </div>
+                    <div class="col-md-auto">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Tìm kiếm</button>
+                    </div>
+                </form>
+            </div>
+            <div class="col-12 col-md-auto">
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addEditProjectModal" data-mode="add" id="addProjectBtn"><i class="bi bi-plus-lg"></i> Thêm Đồ án</button>
+                <button class="btn btn-info text-dark" data-bs-toggle="modal" data-bs-target="#importProjectModal"><i class="bi bi-cloud-upload"></i> Import</button>
+                <a href="/quanlydoan/Project/export" class="btn btn-secondary"><i class="bi bi-cloud-download"></i> Export</a>
+            </div>
         </div>
     </div>
 </div>
-
-<div class="card shadow-sm border-0">
-    <div class="card-header bg-white border-0">
-        <form method="GET" action="/quanlydoan/Project/manage" class="d-flex">
-            <input type="text" class="form-control me-2" name="keyword" placeholder="Tìm kiếm theo tiêu đề, giảng viên..." value="<?php echo htmlspecialchars($keyword ?? ''); ?>">
-            <button type="submit" class="btn btn-primary">
-                <i class="bi bi-search"></i>
-            </button>
-        </form>
-    </div>
-    <div class="card-body p-0">
+<div class="card shadow-sm">
+    <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
+            <table class="table table-hover align-middle">
+                <thead>
                     <tr>
-                        <th scope="col">ID</th>
-                        <th scope="col">Tiêu đề</th>
-                        <th scope="col">Giảng viên</th>
+                        <th scope="col">Mã ĐA</th>
+                        <th scope="col">Tên Đồ Án</th>
+                        <th scope="col">GV Hướng Dẫn</th>
                         <th scope="col">Khoa</th>
-                        <th scope="col">Trạng thái</th>
-                        <th scope="col">Ngày tạo</th>
-                        <th scope="col">Hành động</th>
+                        <th scope="col">Trạng Thái</th>
+                        <th scope="col">Ngày Tạo</th>
+                        <th scope="col">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if (empty($projects)): ?>
-                        <tr>
-                            <td colspan="7" class="text-center text-muted py-4">
-                                Không tìm thấy đồ án nào.
-                            </td>
-                        </tr>
-                    <?php else: ?>
+                    <?php if (!empty($projects)): ?>
                         <?php foreach ($projects as $project): ?>
                             <tr>
-                                <td><?php echo $project['project_id']; ?></td>
-                                <td class="fw-bold"><?php echo htmlspecialchars($project['title']); ?></td>
+                                <td><?php echo htmlspecialchars($project['project_id']); ?></td>
+                                <td><?php echo htmlspecialchars($project['title']); ?></td>
                                 <td><?php echo htmlspecialchars($project['lecturer_name'] ?? 'Chưa phân công'); ?></td>
                                 <td><?php echo htmlspecialchars($project['faculty_name'] ?? 'N/A'); ?></td>
                                 <td>
-                                    <span class="badge <?php echo getStatusBadgeClass($project['status']); ?>">
-                                        <?php echo getStatusText($project['status']); ?>
-                                    </span>
+                                    <?php
+                                    $status = $project['status'];
+                                    $badge = $statusMapping[$status] ?? ['class' => 'bg-light text-dark', 'text' => $status];
+                                    ?>
+                                    <span class="badge <?php echo $badge['class']; ?>"><?php echo $badge['text']; ?></span>
                                 </td>
                                 <td><?php echo date('d/m/Y', strtotime($project['created_at'])); ?></td>
                                 <td>
-                                    <button class="btn btn-sm btn-primary btn-edit" data-id="<?php echo $project['project_id']; ?>" title="Sửa">
-                                        <i class="bi bi-pencil-square"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-danger btn-delete" data-id="<?php echo $project['project_id']; ?>" title="Xóa">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
+                                    <button class="btn btn-sm btn-outline-info view-btn"
+                                        data-id="<?php echo $project['project_id']; ?>"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#addEditProjectModal"
+                                        data-mode="view"
+                                        title="Xem chi tiết"><i class="bi bi-eye"></i></button>
+
+                                    <button class="btn btn-sm btn-outline-warning edit-btn"
+                                        data-id="<?php echo $project['project_id']; ?>"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#addEditProjectModal"
+                                        data-mode="edit"
+                                        title="Chỉnh sửa"><i class="bi bi-pencil"></i></button>
+
+                                    <button class="btn btn-sm btn-outline-danger delete-btn"
+                                        data-id="<?php echo $project['project_id']; ?>"
+                                        data-title="<?php echo htmlspecialchars($project['title']); ?>"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteProjectModal"
+                                        title="Xóa"><i class="bi bi-trash"></i></button>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="7" class="text-center">
+                                <?php if (!empty($keyword)): ?>
+                                    Không tìm thấy đồ án nào khớp với từ khóa "<?php echo htmlspecialchars($keyword); ?>".
+                                <?php else: ?>
+                                    Không tìm thấy đồ án nào.
+                                <?php endif; ?>
+                            </td>
+                        </tr>
                     <?php endif; ?>
                 </tbody>
             </table>
         </div>
-    </div>
 
-    <?php if ($totalPages > 1): ?>
-        <div class="card-footer bg-white">
-            <nav aria-label="Page navigation">
-                <ul class="pagination justify-content-center mb-0">
+        <?php
+        // Logic Pagination (giữ nguyên)
+        if (isset($totalPages) && $totalPages > 1):
+        ?>
+            <nav>
+                <ul class="pagination justify-content-center">
                     <li class="page-item <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
-                        <a class="page-link" href="?page=<?php echo $page - 1; ?>&keyword=<?php echo urlencode($keyword); ?>">Trước</a>
+                        <a class="page-link" href="?page=<?php echo $page - 1; ?>&keyword=<?php echo htmlspecialchars($keyword ?? ''); ?>">Trước</a>
                     </li>
-
                     <?php for ($i = 1; $i <= $totalPages; $i++): ?>
                         <li class="page-item <?php echo ($i == $page) ? 'active' : ''; ?>">
-                            <a class="page-link" href="?page=<?php echo $i; ?>&keyword=<?php echo urlencode($keyword); ?>"><?php echo $i; ?></a>
+                            <a class="page-link" href="?page=<?php echo $i; ?>&keyword=<?php echo htmlspecialchars($keyword ?? ''); ?>"><?php echo $i; ?></a>
                         </li>
                     <?php endfor; ?>
-
                     <li class="page-item <?php echo ($page >= $totalPages) ? 'disabled' : ''; ?>">
-                        <a class="page-link" href="?page=<?php echo $page + 1; ?>&keyword=<?php echo urlencode($keyword); ?>">Sau</a>
+                        <a class="page-link" href="?page=<?php echo $page + 1; ?>&keyword=<?php echo htmlspecialchars($keyword ?? ''); ?>">Sau</a>
                     </li>
                 </ul>
             </nav>
-        </div>
-    <?php endif; ?>
+        <?php endif; ?>
+
+    </div>
 </div>
 
-<div class="modal fade" id="addProjectModal" tabindex="-1" aria-labelledby="addProjectModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
+<div class="modal fade" id="addEditProjectModal" tabindex="-1" aria-labelledby="addEditProjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <form id="addProjectForm">
+            <form id="projectForm">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addProjectModalLabel">Thêm Đồ án mới</h5>
+                    <h5 class="modal-title" id="addEditProjectModalLabel">Thêm Đồ án mới</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div id="addProjectAlert" class="alert alert-danger d-none" role="alert"></div>
+                    <input type="hidden" name="project_id" id="projectId">
 
-                    <div class="mb-3">
-                        <label for="title" class="form-label">Tiêu đề Đồ án <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="title" name="title" required>
-                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label for="title" class="form-label">Tên Đồ Án (*)</label>
+                            <input type="text" class="form-control" id="title" name="title" required>
+                        </div>
 
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Mô tả</label>
-                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="lecturer_id" class="form-label">Giảng viên hướng dẫn <span class="text-danger">*</span></label>
-                            <select class="form-select select2-add" id="lecturer_id" name="lecturer_id" style="width: 100%;" required>
-                                <option value="">-- Chọn giảng viên --</option>
-                                <?php foreach ($lecturers as $lecturer): ?>
-                                    <option value="<?php echo $lecturer['lecturer_id']; ?>">
-                                        <?php echo htmlspecialchars($lecturer['full_name'] . ' (' . $lecturer['email'] . ')'); ?>
+                        <div class="col-md-6">
+                            <label for="faculty_id" class="form-label">Khoa/Ngành (*)</label>
+                            <select class="form-select" id="faculty_id" name="faculty_id" required>
+                                <option value="">-- Chọn Khoa/Ngành --</option>
+                                <?php foreach ($faculties as $faculty): ?>
+                                    <option value="<?php echo htmlspecialchars($faculty['faculty_id']); ?>">
+                                        <?php echo htmlspecialchars($faculty['faculty_name']); ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="status" class="form-label">Trạng thái</label>
-                            <select class="form-select" id="status" name="status">
-                                <?php foreach ($statusOptions as $value => $text): ?>
-                                    <option value="<?php echo $value; ?>" <?php echo ($value === 'ChoDuyet') ? 'selected' : ''; ?>>
-                                        <?php echo $text; ?>
+
+                        <div class="col-md-6">
+                            <label for="lecturer_id" class="form-label">GV Hướng Dẫn (*)</label>
+                            <select class="form-select" id="lecturer_id" name="lecturer_id" required disabled>
+                                <option value="">-- Chọn Khoa/Ngành trước --</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="status" class="form-label">Trạng Thái (*)</label>
+                            <select class="form-select" id="status" name="status" required>
+                                <?php foreach ($statusMapping as $key => $status): ?>
+                                    <option value="<?php echo htmlspecialchars($key); ?>">
+                                        <?php echo htmlspecialchars($status['text']); ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                    <button type="submit" class="btn btn-primary" id="addProjectSubmitBtn">
-                        <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
-                        Lưu
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
-<div class="modal fade" id="editProjectModal" tabindex="-1" aria-labelledby="editProjectModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <form id="editProjectForm">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="editProjectModalLabel">Cập nhật Đồ án</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" id="edit_project_id" name="project_id">
-                    <div id="editProjectAlert" class="alert alert-danger d-none" role="alert"></div>
-
-                    <div class="mb-3">
-                        <label for="edit_title" class="form-label">Tiêu đề Đồ án <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="edit_title" name="title" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="edit_description" class="form-label">Mô tả</label>
-                        <textarea class="form-control" id="edit_description" name="description" rows="3"></textarea>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="edit_lecturer_id" class="form-label">Giảng viên hướng dẫn <span class="text-danger">*</span></label>
-                            <select class="form-select select2-edit" id="edit_lecturer_id" name="lecturer_id" style="width: 100%;" required>
-                                <option value="">-- Chọn giảng viên --</option>
-                                <?php foreach ($lecturers as $lecturer): ?>
-                                    <option value="<?php echo $lecturer['lecturer_id']; ?>">
-                                        <?php echo htmlspecialchars($lecturer['full_name'] . ' (' . $lecturer['email'] . ')'); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
+                        <div class="col-md-6">
+                            <label for="max_students" class="form-label">Số SV Tối đa</label>
+                            <input type="number" class="form-control" id="max_students" name="max_students" value="1" min="1" max="5">
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="edit_status" class="form-label">Trạng thái</label>
-                            <select class="form-select" id="edit_status" name="status">
-                                <?php foreach ($statusOptions as $value => $text): ?>
-                                    <option value="<?php echo $value; ?>"><?php echo $text; ?></option>
-                                <?php endforeach; ?>
-                            </select>
+
+                        <div class="col-md-12">
+                            <label for="description" class="form-label">Mô tả Đồ Án</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                    <button type="submit" class="btn btn-primary" id="editProjectSubmitBtn">
-                        <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
-                        Cập nhật
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="deleteProjectModal" tabindex="-1" aria-labelledby="deleteProjectModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteProjectModalLabel">Xác nhận Xóa Đồ án</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                Bạn có chắc chắn muốn xóa đồ án này? Hành động này không thể hoàn tác.
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Xóa</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="importProjectModal" tabindex="-1" aria-labelledby="importProjectModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <form id="importProjectForm" enctype="multipart/form-data">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="importProjectModalLabel">Nhập Đồ án từ Excel</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="importProjectAlert" class="alert alert-danger d-none" role="alert"></div>
-                    <div class="mb-3">
-                        <label for="excelFile" class="form-label">Chọn file (.xlsx, .xls) <span class="text-danger">*</span></label>
-                        <input class="form-control" type="file" id="excelFile" name="excelFile" accept=".xlsx, .xls" required>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" value="on" id="updateExisting" name="updateExisting">
-                        <label class="form-check-label" for="updateExisting">
-                            Cập nhật đồ án nếu đã tồn tại (dựa theo tiêu đề)
-                        </label>
-                    </div>
-                    <div class="mt-3">
-                        <a href="/quanlydoan/Project/downloadTemplate">Tải file mẫu tại đây</a>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                    <button type="submit" class="btn btn-primary" id="importProjectSubmitBtn">
-                        <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
-                        Nhập
-                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary" id="saveProjectBtn">Lưu</button>
                 </div>
             </form>
         </div>
@@ -330,213 +199,292 @@ $statusOptions = [
 </div>
 
 <script>
+    // Hàm hiển thị thông báo dùng chung (giữ nguyên)
+    function showAlert(message, type = 'success') {
+        const alertHtml = `
+            <div class="alert alert-${type} alert-dismissible fade show fixed-top-alert" role="alert" style="z-index: 2000; top: 10px; right: 10px; width: 350px;">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('afterbegin', alertHtml);
+        setTimeout(() => {
+            const alert = document.querySelector('.fixed-top-alert');
+            if (alert) {
+                bootstrap.Alert.getInstance(alert)?.close();
+            }
+        }, 5000);
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
+        const addEditModal = document.getElementById('addEditProjectModal');
+        const deleteModal = document.getElementById('deleteProjectModal');
+        const importModal = document.getElementById('importProjectModal');
+        const projectForm = document.getElementById('projectForm');
+        const importForm = document.getElementById('importForm');
+        const saveProjectBtn = document.getElementById('saveProjectBtn');
+        const importButton = document.getElementById('importButton');
+        const confirmDeleteBtn = document.getElementById('confirmDeleteProject');
+        let projectIdToDelete = null;
 
-        // Khởi tạo Select2 cho các modal
-        // Phải chỉ định dropdownParent là modal chứa nó
-        $('.select2-add').select2({
-            theme: 'bootstrap-5',
-            dropdownParent: $('#addProjectModal')
-        });
+        const facultySelect = document.getElementById('faculty_id');
+        const lecturerSelect = document.getElementById('lecturer_id');
 
-        $('.select2-edit').select2({
-            theme: 'bootstrap-5',
-            dropdownParent: $('#editProjectModal')
-        });
-
-        // Hàm hiển thị spinner
-        function toggleSpinner(btnId, show) {
-            const btn = document.getElementById(btnId);
-            if (!btn) return;
-            const spinner = btn.querySelector('.spinner-border');
-            if (show) {
-                btn.disabled = true;
-                spinner.classList.remove('d-none');
-            } else {
-                btn.disabled = false;
-                spinner.classList.add('d-none');
+        /**
+         * **HÀM MỚI:** Fetch danh sách giảng viên theo khoa và cập nhật dropdown
+         * @param {string|int} facultyId ID của khoa
+         * @param {string|int|null} lecturerToSelect ID của giảng viên cần chọn (dùng cho chế độ edit)
+         */
+        /**
+         * *** THAY ĐỔI: Thêm isViewMode ***
+         * Hàm Fetch giảng viên
+         * @param {string|int} facultyId ID của khoa
+         * @param {string|int|null} lecturerToSelect ID của giảng viên cần chọn
+         * @param {boolean} isViewMode Chế độ chỉ xem (sẽ vô hiệu hóa dropdown sau khi tải)
+         */
+        function fetchLecturers(facultyId, lecturerToSelect = null, isViewMode = false) {
+            if (!facultyId || facultyId === '') {
+                lecturerSelect.innerHTML = '<option value="">-- Chọn Khoa/Ngành trước --</option>';
+                lecturerSelect.disabled = true;
+                return;
             }
-        }
 
-        // Hàm hiển thị thông báo lỗi
-        function showAlert(alertId, message) {
-            const alertBox = document.getElementById(alertId);
-            if (!alertBox) return;
-            alertBox.innerHTML = message;
-            alertBox.classList.remove('d-none');
-        }
+            lecturerSelect.disabled = true;
+            lecturerSelect.innerHTML = '<option value="">-- Đang tải GV... --</option>';
 
-        // Hàm ẩn thông báo lỗi
-        function hideAlert(alertId) {
-            const alertBox = document.getElementById(alertId);
-            if (alertBox) {
-                alertBox.classList.add('d-none');
-            }
-        }
+            fetch('/quanlydoan/Project/getLecturersByFaculty/' + facultyId)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.lecturers) {
+                        lecturerSelect.innerHTML = '<option value="">-- Chọn GVHD --</option>';
+                        data.lecturers.forEach(lecturer => {
+                            const option = new Option(lecturer.full_name, lecturer.lecturer_id);
+                            lecturerSelect.add(option);
+                        });
 
-        // 1. Xử lý Thêm Đồ án (Add Project)
-        const addForm = document.getElementById('addProjectForm');
-        if (addForm) {
-            addForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                toggleSpinner('addProjectSubmitBtn', true);
-                hideAlert('addProjectAlert');
-
-                fetch('/quanlydoan/Project/store', {
-                        method: 'POST',
-                        body: new FormData(addForm)
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Đóng modal và tải lại trang để cập nhật
-                            const modal = bootstrap.Modal.getInstance(document.getElementById('addProjectModal'));
-                            modal.hide();
-                            location.reload();
-                        } else {
-                            showAlert('addProjectAlert', data.message || 'Đã xảy ra lỗi.');
+                        if (lecturerToSelect) {
+                            lecturerSelect.value = lecturerToSelect;
                         }
-                    })
-                    .catch(error => {
-                        showAlert('addProjectAlert', 'Lỗi kết nối. Vui lòng thử lại.');
-                    })
-                    .finally(() => {
-                        toggleSpinner('addProjectSubmitBtn', false);
-                    });
-            });
+
+                        // *** THAY ĐỔI: Chỉ enable khi KHÔNG PHẢI view mode ***
+                        if (!isViewMode) {
+                            lecturerSelect.disabled = false;
+                        }
+                        // Nếu là view mode, nó sẽ giữ nguyên trạng thái disabled
+                    } else {
+                        lecturerSelect.innerHTML = '<option value="">-- Lỗi tải GV --</option>';
+                        // Vẫn vô hiệu hóa nếu là view mode
+                        lecturerSelect.disabled = isViewMode;
+                    }
+                })
+                .catch(err => {
+                    lecturerSelect.innerHTML = '<option value="">-- Lỗi kết nối --</option>';
+                    lecturerSelect.disabled = isViewMode;
+                });
         }
 
-        // 2. Xử lý Sửa Đồ án (Edit Project)
+        /**
+         * Sự kiện MỚI: Xử lý khi chọn Khoa
+         * (Không đổi so với lần trước)
+         */
+        facultySelect.addEventListener('change', function() {
+            const selectedFacultyId = this.value;
+            fetchLecturers(selectedFacultyId, null, false); // Khi tự chọn thì không phải view mode
+        });
 
-        // 2a. Lấy thông tin khi nhấn nút "Sửa"
-        const editModal = new bootstrap.Modal(document.getElementById('editProjectModal'));
-        document.querySelectorAll('.btn-edit').forEach(button => {
-            button.addEventListener('click', function() {
-                const projectId = this.getAttribute('data-id');
-                hideAlert('editProjectAlert');
 
+        // ====================================================================
+        // A. Xử lý Modal Thêm/Sửa/Xem (Cập nhật logic)
+        // ====================================================================
+
+        addEditModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const projectId = button.getAttribute('data-id');
+            // *** THAY ĐỔI: Lấy mode từ nút ***
+            const mode = button.getAttribute('data-mode'); // 'view', 'edit', hoặc null (cho nút Add)
+
+            const modalTitle = addEditModal.querySelector('#addEditProjectModalLabel');
+            const saveProjectBtn = addEditModal.querySelector('#saveProjectBtn');
+            const formElements = projectForm.querySelectorAll('input, select, textarea');
+
+            // Reset form
+            projectForm.reset();
+            document.getElementById('projectId').value = '';
+
+            // Reset trạng thái (mặc định cho 'Add')
+            modalTitle.textContent = 'Thêm Đồ án mới';
+            saveProjectBtn.style.display = 'block'; // Hiển thị nút lưu
+            formElements.forEach(el => el.disabled = false); // Kích hoạt mọi trường
+            lecturerSelect.innerHTML = '<option value="">-- Chọn Khoa/Ngành trước --</option>';
+            lecturerSelect.disabled = true; // Vô hiệu hóa GV cho đến khi chọn khoa
+
+
+            if (mode === 'edit' || mode === 'view') {
+                // Chế độ Sửa hoặc Xem
+                modalTitle.textContent = (mode === 'edit') ? 'Chỉnh sửa Đồ án' : 'Xem Chi tiết Đồ án';
+
+                if (mode === 'view') {
+                    // *** LOGIC MỚI: Chế độ XEM ***
+                    saveProjectBtn.style.display = 'none'; // Ẩn nút lưu
+                    formElements.forEach(el => el.disabled = true); // Vô hiệu hóa tất cả
+                } else {
+                    // *** LOGIC CŨ: Chế độ SỬA ***
+                    saveProjectBtn.style.display = 'block';
+                    // Đã kích hoạt ở trên, nhưng giữ GV disabled
+                    lecturerSelect.disabled = true;
+                }
+
+                // *** SỬA LỖI: LOGIC NÀY SẼ CHẠY ĐÚNG KHI CÓ HÀM getByIdWithDetails ***
                 fetch('/quanlydoan/Project/getProjectDetails/' + projectId)
                     .then(response => response.json())
                     .then(data => {
-                        if (data.success) {
+                        if (data.success && data.project) {
                             const project = data.project;
-                            document.getElementById('edit_project_id').value = project.project_id;
-                            document.getElementById('edit_title').value = project.title;
-                            document.getElementById('edit_description').value = project.description;
-                            document.getElementById('edit_status').value = project.status;
+                            document.getElementById('projectId').value = project.project_id;
+                            document.getElementById('title').value = project.title;
+                            document.getElementById('description').value = project.description || '';
+                            document.getElementById('status').value = project.status;
+                            document.getElementById('max_students').value = project.max_students || 1;
 
-                            // Cập nhật Select2
-                            $('#edit_lecturer_id').val(project.lecturer_id).trigger('change');
+                            // *** ĐÂY LÀ PHẦN SỬA LỖI ***
+                            // 1. Điền faculty_id (sẽ hoạt động vì model đã trả về)
+                            document.getElementById('faculty_id').value = project.faculty_id || '';
 
-                            editModal.show();
+                            const selectedFacultyId = project.faculty_id || '';
+                            const originalLecturerId = project.lecturer_id || null;
+
+                            // 2. Tải GV cho khoa đó, chọn sẵn GV, và báo cho hàm biết đây có phải view mode không
+                            fetchLecturers(selectedFacultyId, originalLecturerId, (mode === 'view'));
+
                         } else {
-                            alert(data.message || 'Không thể tải dữ liệu đồ án.');
+                            showAlert(data.message || 'Không thể tải dữ liệu đồ án.', 'danger');
+                            bootstrap.Modal.getInstance(addEditModal).hide();
                         }
                     })
-                    .catch(() => {
-                        alert('Lỗi kết nối. Không thể tải dữ liệu.');
+                    .catch(err => {
+                        showAlert('Lỗi kết nối khi tải dữ liệu đồ án: ' + err.message, 'danger');
+                        bootstrap.Modal.getInstance(addEditModal).hide();
                     });
-            });
+            }
+            // Không cần 'else' cho mode 'add' vì trạng thái reset ban đầu đã là 'add'
         });
 
-        // 2b. Gửi form cập nhật
-        const editForm = document.getElementById('editProjectForm');
-        if (editForm) {
-            editForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                toggleSpinner('editProjectSubmitBtn', true);
-                hideAlert('editProjectAlert');
+        // Xử lý submit form Add/Edit (Không đổi)
+        projectForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const projectId = document.getElementById('projectId').value;
+            const isEditing = !!projectId;
+            const url = isEditing ? '/quanlydoan/Project/update/' + projectId : '/quanlydoan/Project/store';
 
-                const projectId = document.getElementById('edit_project_id').value;
+            saveProjectBtn.disabled = true;
+            saveProjectBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Đang lưu...';
 
-                fetch('/quanlydoan/Project/update/' + projectId, {
-                        method: 'POST',
-                        body: new FormData(editForm)
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            editModal.hide();
-                            location.reload();
-                        } else {
-                            showAlert('editProjectAlert', data.message || 'Cập nhật thất bại.');
-                        }
-                    })
-                    .catch(error => {
-                        showAlert('editProjectAlert', 'Lỗi kết nối. Vui lòng thử lại.');
-                    })
-                    .finally(() => {
-                        toggleSpinner('editProjectSubmitBtn', false);
-                    });
-            });
-        }
+            const formData = new FormData(projectForm);
 
-        // 3. Xử lý Xóa Đồ án (Delete Project)
-        const deleteModal = new bootstrap.Modal(document.getElementById('deleteProjectModal'));
-        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-        let projectIdToDelete = null;
-
-        document.querySelectorAll('.btn-delete').forEach(button => {
-            button.addEventListener('click', function() {
-                projectIdToDelete = this.getAttribute('data-id');
-                deleteModal.show();
-            });
+            fetch(url, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert(data.message, 'success');
+                        bootstrap.Modal.getInstance(addEditModal).hide();
+                        window.location.reload();
+                    } else {
+                        showAlert(data.message || 'Lỗi xử lý dữ liệu.', 'danger');
+                    }
+                })
+                .catch(err => {
+                    showAlert('Lỗi kết nối: ' + err.message, 'danger');
+                })
+                .finally(() => {
+                    saveProjectBtn.disabled = false;
+                    saveProjectBtn.innerHTML = 'Lưu';
+                });
         });
 
-        if (confirmDeleteBtn) {
-            confirmDeleteBtn.addEventListener('click', function() {
-                if (projectIdToDelete) {
-                    fetch('/quanlydoan/Project/destroy/' + projectIdToDelete, {
-                            method: 'POST' // Hoặc 'DELETE' nếu server hỗ trợ
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                deleteModal.hide();
-                                location.reload();
-                            } else {
-                                alert(data.message || 'Xóa thất bại.');
-                            }
-                        })
-                        .catch(() => {
-                            alert('Lỗi kết nối. Không thể xóa.');
-                        });
-                }
-            });
-        }
+        // ====================================================================
+        // B. Xử lý Modal Xóa (giữ nguyên)
+        // ====================================================================
 
-        // 4. Xử lý Nhập (Import Project)
-        const importForm = document.getElementById('importProjectForm');
-        if (importForm) {
-            importForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                toggleSpinner('importProjectSubmitBtn', true);
-                hideAlert('importProjectAlert');
+        // 1. Xử lý hiển thị modal xóa
+        deleteModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            projectIdToDelete = button.getAttribute('data-id');
+            const projectTitle = button.getAttribute('data-title');
 
-                const formData = new FormData(importForm);
+            deleteModal.querySelector('#projectTitleToDelete').textContent = projectTitle;
+            deleteModal.querySelector('#projectIdToDelete').textContent = projectIdToDelete;
+        });
 
-                fetch('/quanlydoan/Project/import', {
-                        method: 'POST',
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            const modal = bootstrap.Modal.getInstance(document.getElementById('importProjectModal'));
-                            modal.hide();
-                            location.reload();
-                            // Bạn có thể dùng một alert session (như trong layout) để thông báo thành công
-                        } else {
-                            showAlert('importProjectAlert', data.message || 'Nhập file thất bại.');
-                        }
-                    })
-                    .catch(error => {
-                        showAlert('importProjectAlert', 'Lỗi kết nối hoặc file quá lớn. Vui lòng thử lại.');
-                    })
-                    .finally(() => {
-                        toggleSpinner('importProjectSubmitBtn', false);
-                    });
-            });
-        }
+        // 2. Xử lý xác nhận xóa
+        confirmDeleteBtn.onclick = function() {
+            if (!projectIdToDelete) return;
+
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Đang xóa...';
+
+            fetch('/quanlydoan/Project/destroy/' + projectIdToDelete, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('Xóa đồ án thành công!', 'success');
+                        bootstrap.Modal.getInstance(deleteModal).hide();
+                        window.location.reload();
+                    } else {
+                        showAlert(data.message || 'Lỗi xóa đồ án.', 'danger');
+                    }
+                })
+                .catch(err => {
+                    showAlert('Lỗi kết nối: ' + err.message, 'danger');
+                })
+                .finally(() => {
+                    this.disabled = false;
+                    this.innerHTML = 'Xóa';
+                });
+        };
+
+        // ====================================================================
+        // C. Xử lý Modal Import (giữ nguyên)
+        // ====================================================================
+        importForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const fileInput = document.getElementById('excelFile');
+            if (!fileInput.files.length) {
+                showAlert('Vui lòng chọn tệp Excel.', 'warning');
+                return;
+            }
+
+            const formData = new FormData(importForm);
+
+            importButton.disabled = true;
+            importButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Đang nhập...';
+
+            fetch('/quanlydoan/Project/import', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert(data.message, 'success');
+                        bootstrap.Modal.getInstance(importModal).hide();
+                        window.location.reload();
+                    } else {
+                        showAlert(data.message || 'Lỗi nhập dữ liệu.', 'danger');
+                    }
+                })
+                .catch(error => {
+                    showAlert('Lỗi kết nối: ' + error.message, 'danger');
+                })
+                .finally(() => {
+                    importButton.disabled = false;
+                    importButton.innerHTML = 'Nhập dữ liệu';
+                });
+        });
     });
 </script>

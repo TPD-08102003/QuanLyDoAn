@@ -693,11 +693,15 @@ if (session_status() === PHP_SESSION_NONE) {
             </div>
 
             <!-- Quản lý Đồ án -->
-            <div class="nav-item ">
-                <a class="nav-link <?php echo strpos($_SERVER['REQUEST_URI'], '/Projects/') !== false ? 'active' : ''; ?>" href="/quanlydoan/Project/manage">
+            <div class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle <?php echo strpos($_SERVER['REQUEST_URI'], '/Projects/') !== false ? 'active' : ''; ?>" href="/quanlydoan/Project/manage" role="button" data-bs-toggle="dropdown">
                     <i class="bi bi-folder"></i>
                     <span>Quản lý Đồ án</span>
                 </a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item <?php echo strpos($_SERVER['REQUEST_URI'], '/Project/manage') !== false ? 'active' : ''; ?>" href="/quanlydoan/Project/manage"><i class="bi bi-list-check me-2"></i>Danh sách Đồ án</a></li>
+                    <li><a class="dropdown-item <?php echo strpos($_SERVER['REQUEST_URI'], '/Project/approve') !== false ? 'active' : ''; ?>" href="/quanlydoan/Project/approve"><i class="bi bi-clipboard-check me-2"></i>Duyệt Đồ án</a></li>
+                </ul>
             </div>
 
             <!-- Quản lý Nhóm & Phân công -->

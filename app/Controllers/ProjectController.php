@@ -35,6 +35,7 @@ class ProjectController extends BaseController
             $limit = 10;
             $offset = ($page - 1) * $limit;
 
+
             if (empty($keyword)) {
                 $allProjects = $this->projectModel->getAllWithDetails();
                 $totalProjects = count($allProjects);
@@ -48,8 +49,10 @@ class ProjectController extends BaseController
                 $totalPages = ceil($totalProjects / $limit);
             }
 
-            $lecturers = $this->projectModel->getAvailableLecturers();
+            // $lecturers = $this->projectModel->getAvailableLecturers(); // Lấy tất cả
             $faculties = $this->facultiesModel->getActiveFaculties();
+            // $lecturers = $this->projectModel->getAvailableLecturers();
+            // $faculties = $this->facultiesModel->getActiveFaculties();
 
             $this->render('projects/manage', [
                 'projects' => $projects,
@@ -57,7 +60,7 @@ class ProjectController extends BaseController
                 'totalPages' => $totalPages,
                 'page' => $page,
                 'keyword' => $keyword,
-                'lecturers' => $lecturers,
+                // 'lecturers' => $lecturers,
                 'faculties' => $faculties,
             ]);
         } catch (Exception $e) {
@@ -145,26 +148,24 @@ class ProjectController extends BaseController
             $description = trim($data['description'] ?? '');
             $lecturer_id = (int)($data['lecturer_id'] ?? 0);
             $status = trim($data['status'] ?? 'ChoDuyet');
-            $faculty_id = (int)($data['faculty_id'] ?? 0); // Note: faculty_id không được sử dụng ở đây, có thể là code thừa
+            $faculty_id = (int)($data['faculty_id'] ?? 0); // Sử dụng để validate lecturer thuộc faculty
 
             if (empty($title) || $lecturer_id <= 0) {
                 $this->jsonResponse(['success' => false, 'message' => 'Vui lòng điền đủ các trường bắt buộc.'], 400);
                 return;
             }
 
-            // Sửa: Từ ID giảng viên lấy ra thông tin và tên, kiểm tra tồn tại
-            $lecturer = $this->lecturerModel->getById($lecturer_id); // Giả sử method getById tồn tại (xem phần thêm method bên dưới)
+            // Kiểm tra lecturer tồn tại và thuộc faculty nếu có chọn
+            $lecturer = $this->lecturerModel->getById($lecturer_id);
             if (!$lecturer) {
                 $this->jsonResponse(['success' => false, 'message' => 'Giảng viên không tồn tại.'], 400);
                 return;
             }
-            $lecturer_name = $lecturer['full_name']; // Giả sử field full_name từ users join
-
-            // Kiểm tra trùng tiêu đề nếu cần
-            // if ($this->projectModel->isTitleExists($title)) {
-            //     $this->jsonResponse(['success' => false, 'message' => "Tiêu đề '{$title}' đã tồn tại."], 409);
-            //     return;
-            // }
+            if ($faculty_id > 0 && $lecturer['faculty_id'] != $faculty_id) {
+                $this->jsonResponse(['success' => false, 'message' => 'Giảng viên không thuộc khoa đã chọn.'], 400);
+                return;
+            }
+            $lecturer_name = $lecturer['full_name'];
 
             $this->pdo->beginTransaction();
 
@@ -186,7 +187,6 @@ class ProjectController extends BaseController
 
             $this->pdo->commit();
 
-            // Sửa: Sử dụng tên giảng viên trong message để xác nhận
             $this->jsonResponse([
                 'success' => true,
                 'message' => "Thêm đồ án '{$title}' cho giảng viên '{$lecturer_name}' thành công!",
@@ -207,6 +207,29 @@ class ProjectController extends BaseController
             ], 500);
         }
     }
+
+    // Thêm endpoint mới để lấy giảng viên theo khoa (cho AJAX)
+    public function getLecturersByFaculty(int $facultyId): void
+    {
+        $lecturers = $this->projectModel->getAvailableLecturers($facultyId);
+        $this->jsonResponse(['success' => true, 'lecturers' => $lecturers]);
+    }
+    public function getProjectDetails(int $id): void
+    {
+        $project = $this->projectModel->getByIdWithDetails($id);
+        if ($project) {
+            $this->jsonResponse([
+                'success' => true,
+                'project' => $project,
+            ]);
+        } else {
+            $this->jsonResponse([
+                'success' => false,
+                'message' => 'Không tìm thấy đồ án.'
+            ], 404);
+        }
+    }
+
 
     public function update(int $id): void
     {
@@ -261,22 +284,99 @@ class ProjectController extends BaseController
             $this->handleError($e, 'update');
         }
     }
-    public function getProjectDetails(int $id): void
-    {
-        $project = $this->projectModel->getByIdWithDetails($id);
-        if ($project) {
-            $this->jsonResponse([
-                'success' => true,
-                'project' => $project,
 
-            ]);
-        } else {
-            $this->jsonResponse([
-                'success' => false,
-                'message' => 'Không tìm thấy đồ án.'
-            ], 404);
-        }
-    }
+    // // Thêm endpoint mới để lấy giảng viên theo khoa (cho AJAX)
+    // public function getLecturersByFaculty(int $facultyId): void
+    // {
+    //     $lecturers = $this->projectModel->getAvailableLecturers($facultyId);
+    //     $this->jsonResponse(['success' => true, 'lecturers' => $lecturers]);
+    // }
+    // public function getProjectDetails(int $id): void
+    // {
+    //     $project = $this->projectModel->getByIdWithDetails($id);
+    //     if ($project) {
+    //         $this->jsonResponse([
+    //             'success' => true,
+    //             'project' => $project,
+    //         ]);
+    //     } else {
+    //         $this->jsonResponse([
+    //             'success' => false,
+    //             'message' => 'Không tìm thấy đồ án.'
+    //         ], 404);
+    //     }
+    // }
+
+
+    // public function update(int $id): void
+    // {
+    //     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    //         $this->jsonResponse(['success' => false, 'message' => 'Phương thức không hợp lệ.'], 405);
+    //         return;
+    //     }
+
+    //     try {
+    //         $project = $this->projectModel->getByIdWithDetails($id);
+    //         if (!$project) {
+    //             $this->jsonResponse(['success' => false, 'message' => 'Không tìm thấy đồ án'], 404);
+    //             return;
+    //         }
+
+    //         $data = [];
+    //         if (isset($_POST['title']) && !empty($_POST['title'])) $data['title'] = $_POST['title'];
+    //         if (isset($_POST['description'])) $data['description'] = $_POST['description'];
+    //         if (isset($_POST['lecturer_id']) && !empty($_POST['lecturer_id'])) $data['lecturer_id'] = (int)$_POST['lecturer_id'];
+    //         if (isset($_POST['status']) && !empty($_POST['status'])) $data['status'] = $_POST['status'];
+
+    //         // Sửa: Nếu có lecturer_id mới, từ ID lấy tên và kiểm tra tồn tại; nếu không, dùng tên cũ từ project
+    //         $lecturer_name = $project['lecturer_name'] ?? 'Chưa phân công'; // Tên cũ
+    //         if (isset($data['lecturer_id'])) {
+    //             $lecturer_id = $data['lecturer_id'];
+    //             if ($lecturer_id <= 0) {
+    //                 $this->jsonResponse(['success' => false, 'message' => 'Giảng viên không hợp lệ.'], 400);
+    //                 return;
+    //             }
+    //             $lecturer = $this->lecturerModel->getById($lecturer_id);
+    //             if (!$lecturer) {
+    //                 $this->jsonResponse(['success' => false, 'message' => 'Giảng viên không tồn tại.'], 400);
+    //                 return;
+    //             }
+    //             $lecturer_name = $lecturer['full_name'];
+    //         }
+
+    //         if (!empty($data)) {
+    //             $updated = $this->projectModel->updateProject($id, $data);
+    //             if ($updated) {
+    //                 // Sửa: Sử dụng tên giảng viên (mới hoặc cũ) trong message
+    //                 $this->jsonResponse(['success' => true, 'message' => "Cập nhật đồ án thành công cho giảng viên '{$lecturer_name}'"]);
+    //                 return;
+    //             }
+    //         } else {
+    //             $this->jsonResponse(['success' => true, 'message' => 'Không có thay đổi']);
+    //             return;
+    //         }
+
+    //         $this->jsonResponse(['success' => false, 'message' => 'Cập nhật thất bại']);
+    //     } catch (Exception $e) {
+    //         $this->handleError($e, 'update');
+    //     }
+    // }
+    // public function getProjectDetails(int $id): void
+    // {
+    //     $project = $this->projectModel->getByIdWithDetails($id);
+    //     if ($project) {
+    //         $this->jsonResponse([
+    //             'success' => true,
+    //             'project' => $project,
+
+    //         ]);
+    //     } else {
+    //         $this->jsonResponse([
+    //             'success' => false,
+    //             'message' => 'Không tìm thấy đồ án.'
+    //         ], 404);
+    //     }
+    // }
 
     // public function update(int $id): void
     // {

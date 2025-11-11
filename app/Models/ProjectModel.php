@@ -205,7 +205,32 @@ class ProjectModel extends BaseModel
      * Get available lecturers for assignment
      * @return array
      */
-    public function getAvailableLecturers(): array
+    // public function getAvailableLecturers(): array
+    // {
+    //     $sql = "
+    //         SELECT 
+    //             l.lecturer_id,
+    //             u.full_name,
+    //             f.faculty_name,
+    //             COUNT(p.project_id) AS project_count
+    //         FROM lecturers l
+    //         LEFT JOIN users u ON l.user_id = u.user_id
+    //         LEFT JOIN faculties f ON l.faculty_id = f.faculty_id
+    //         LEFT JOIN projects p ON l.lecturer_id = p.lecturer_id
+    //         WHERE l.deleted_at IS NULL
+    //         GROUP BY l.lecturer_id
+    //         HAVING project_count < 10  -- Giả sử giới hạn 10 đồ án/giảng viên
+    //         ORDER BY u.full_name
+    //     ";
+
+    //     return $this->query($sql);
+    // }
+    /**
+     * Get available lecturers (with project count)
+     * @param int|null $facultyId
+     * @return array
+     */
+    public function getAvailableLecturers(?int $facultyId = null): array
     {
         $sql = "
             SELECT 
@@ -218,12 +243,21 @@ class ProjectModel extends BaseModel
             LEFT JOIN faculties f ON l.faculty_id = f.faculty_id
             LEFT JOIN projects p ON l.lecturer_id = p.lecturer_id
             WHERE l.deleted_at IS NULL
-            GROUP BY l.lecturer_id
+        ";
+        $params = [];
+        if ($facultyId !== null && $facultyId > 0) {
+            $sql .= " AND l.faculty_id = :faculty_id";
+            $params[':faculty_id'] = $facultyId;
+        }
+        $sql .= "
+            GROUP BY l.lecturer_id, u.full_name, f.faculty_name
             HAVING project_count < 10  -- Giả sử giới hạn 10 đồ án/giảng viên
             ORDER BY u.full_name
         ";
 
-        return $this->query($sql);
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
