@@ -150,6 +150,7 @@ class ProjectController extends BaseController
             $status = trim($data['status'] ?? 'ChoDuyet');
             $faculty_id = (int)($data['faculty_id'] ?? 0); // Sử dụng để validate lecturer thuộc faculty
 
+
             if (empty($title) || $lecturer_id <= 0) {
                 $this->jsonResponse(['success' => false, 'message' => 'Vui lòng điền đủ các trường bắt buộc.'], 400);
                 return;
@@ -237,6 +238,7 @@ class ProjectController extends BaseController
             $this->jsonResponse(['success' => false, 'message' => 'Phương thức không hợp lệ.'], 405);
             return;
         }
+
 
         try {
             $project = $this->projectModel->getByIdWithDetails($id);
@@ -470,6 +472,72 @@ class ProjectController extends BaseController
         }
     }
 
+    // public function import(): void
+    // {
+    //     if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_FILES['excelFile'])) {
+    //         $this->jsonResponse(['success' => false, 'message' => 'Yêu cầu không hợp lệ'], 400);
+    //         return;
+    //     }
+
+    //     try {
+    //         $file = $_FILES['excelFile']['tmp_name'];
+    //         $updateExisting = isset($_POST['updateExisting']) && $_POST['updateExisting'] === 'on';
+
+    //         $spreadsheet = IOFactory::load($file);
+    //         $sheet = $spreadsheet->getActiveSheet();
+    //         $rows = $sheet->toArray(null, true, true, true);
+
+    //         array_shift($rows);  // Bỏ header
+
+    //         $this->pdo->beginTransaction();
+    //         $countSuccess = 0;
+
+    //         foreach ($rows as $row) {
+    //             $title = trim($row['A'] ?? '');
+    //             $description = trim($row['B'] ?? '');
+    //             $lecturer_name = trim($row['C'] ?? '');
+    //             $status = trim($row['D'] ?? 'ChoDuyet');
+
+    //             if (empty($title)) continue;
+
+    //             $lecturer = $this->lecturerModel->findByName($lecturer_name); // Giả sử có method findByName
+    //             if (!$lecturer) continue;
+    //             $lecturer_id = $lecturer['lecturer_id'];
+
+    //             $existing = $this->projectModel->findByTitle($title); // Giả sử có findByTitle
+    //             if ($existing) {
+    //                 if (!$updateExisting) continue;
+    //                 $this->projectModel->updateProject($existing['project_id'], [
+    //                     'description' => $description,
+    //                     'lecturer_id' => $lecturer_id,
+    //                     'status' => $status
+    //                 ]);
+    //                 $countSuccess++;
+    //                 continue;
+    //             }
+
+    //             // Tạo mới
+    //             $projectId = $this->projectModel->createProject([
+    //                 'title' => $title,
+    //                 'description' => $description,
+    //                 'lecturer_id' => $lecturer_id,
+    //                 'status' => $status
+    //             ]);
+
+    //             if ($projectId) {
+    //                 $this->createDefaultReportTypes($projectId);
+    //                 $countSuccess++;
+    //             }
+    //         }
+
+    //         $this->pdo->commit();
+    //         $this->jsonResponse(['success' => true, 'message' => "Nhập thành công $countSuccess đồ án."]);
+    //     } catch (Exception $e) {
+    //         $this->pdo->rollBack();
+    //         $this->jsonResponse(['success' => false, 'message' => 'Lỗi: ' . $e->getMessage()], 500);
+    //     }
+    // }
+
     public function import(): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_FILES['excelFile'])) {
@@ -479,36 +547,65 @@ class ProjectController extends BaseController
 
         try {
             $file = $_FILES['excelFile']['tmp_name'];
-            $updateExisting = isset($_POST['updateExisting']) && $_POST['updateExisting'] === 'on';
+            $updateExisting = !empty($_POST['update_existing']);
 
             $spreadsheet = IOFactory::load($file);
             $sheet = $spreadsheet->getActiveSheet();
             $rows = $sheet->toArray(null, true, true, true);
 
-            array_shift($rows);  // Bỏ header
+            array_shift($rows); // Bỏ header
 
             $this->pdo->beginTransaction();
             $countSuccess = 0;
+            $errors = [];
 
-            foreach ($rows as $row) {
+            foreach ($rows as $index => $row) {
                 $title = trim($row['A'] ?? '');
                 $description = trim($row['B'] ?? '');
                 $lecturer_name = trim($row['C'] ?? '');
                 $status = trim($row['D'] ?? 'ChoDuyet');
+                //$max_students = (int)($row['E'] ?? 1) ?: 1;
 
-                if (empty($title)) continue;
+                if (empty($title)) {
+                    $errors[] = "Dòng " . ($index + 1) . ": Thiếu tiêu đề";
+                    continue;
+                }
+                if (empty($lecturer_name)) {
+                    $errors[] = "Dòng " . ($index + 1) . ": Thiếu tên giảng viên";
+                    continue;
+                }
 
-                $lecturer = $this->lecturerModel->findByName($lecturer_name); // Giả sử có method findByName
-                if (!$lecturer) continue;
+                // Tìm lecturer bằng query trực tiếp (không cần method findByName)
+                $stmt = $this->pdo->prepare("
+                SELECT l.lecturer_id 
+                FROM lecturers l 
+                JOIN users u ON l.user_id = u.user_id 
+                WHERE u.full_name = :full_name 
+                LIMIT 1
+            ");
+                $stmt->execute([':full_name' => $lecturer_name]);
+                $lecturer = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if (!$lecturer) {
+                    $errors[] = "Dòng " . ($index + 1) . ": Không tìm thấy giảng viên '$lecturer_name'";
+                    continue;
+                }
                 $lecturer_id = $lecturer['lecturer_id'];
 
-                $existing = $this->projectModel->findByTitle($title); // Giả sử có findByTitle
+                // Kiểm tra đồ án đã tồn tại chưa
+                $existing = $this->projectModel->findByTitle($title);
+
                 if ($existing) {
-                    if (!$updateExisting) continue;
+                    if (!$updateExisting) {
+                        $errors[] = "Dòng " . ($index + 1) . ": Đồ án '$title' đã tồn tại (bỏ qua)";
+                        continue;
+                    }
+                    // Cập nhật
                     $this->projectModel->updateProject($existing['project_id'], [
                         'description' => $description,
                         'lecturer_id' => $lecturer_id,
-                        'status' => $status
+                        'status' => $status,
+                        // 'max_students' => $max_students
                     ]);
                     $countSuccess++;
                     continue;
@@ -519,17 +616,26 @@ class ProjectController extends BaseController
                     'title' => $title,
                     'description' => $description,
                     'lecturer_id' => $lecturer_id,
-                    'status' => $status
+                    'status' => $status,
+                    //'max_students' => $max_students
                 ]);
 
                 if ($projectId) {
                     $this->createDefaultReportTypes($projectId);
                     $countSuccess++;
+                } else {
+                    $errors[] = "Dòng " . ($index + 1) . ": Tạo đồ án thất bại";
                 }
             }
 
             $this->pdo->commit();
-            $this->jsonResponse(['success' => true, 'message' => "Nhập thành công $countSuccess đồ án."]);
+
+            $message = "Nhập thành công $countSuccess đồ án.";
+            if (!empty($errors)) {
+                $message .= " Một số lỗi: " . implode('; ', $errors);
+            }
+
+            $this->jsonResponse(['success' => true, 'message' => $message]);
         } catch (Exception $e) {
             $this->pdo->rollBack();
             $this->jsonResponse(['success' => false, 'message' => 'Lỗi: ' . $e->getMessage()], 500);
@@ -618,5 +724,77 @@ class ProjectController extends BaseController
             'Huy' => 'Hủy'
         ];
         return $texts[$status] ?? $status;
+    }
+
+
+
+    public function approve(): void
+    {
+        // Giữ lại try/catch để bắt lỗi (nếu có)
+        try {
+            // 1. TẠM THỜI COMMENT OUT (VÔ HIỆU HÓA)
+            // $page = (int)($_GET['page'] ?? 1);
+            // $keyword = trim($_GET['keyword'] ?? '');
+            // $limit = 10;
+            // $offset = ($page - 1) * $limit;
+            // $result = $this->projectModel->getPendingProjectsWithPagination($limit, $offset, $keyword); 
+            // $projects = $result['projects'];
+            // $totalProjects = $result['total'];
+            // $totalPages = ceil($totalProjects / $limit);
+
+            // Tạo biến ảo (Dữ liệu giả)
+            $projects = []; // Gán $projects là mảng rỗng
+            $totalProjects = 0;
+            $totalPages = 1;
+            $page = 1;
+            $keyword = '';
+            // $faculties = $this->facultiesModel->getActiveFaculties(); // Vô hiệu hóa luôn
+
+            // 2. CHỈ RENDER VIEW
+            $this->render('projects/approve', [
+                'projects' => $projects,
+                'totalProjects' => $totalProjects,
+                'totalPages' => $totalPages,
+                'page' => $page,
+                'keyword' => $keyword,
+                // 'faculties' => $faculties, // Bỏ nếu bạn đã vô hiệu hóa ở trên
+            ]);
+        } catch (Exception $e) {
+            $this->handleError($e, 'approve');
+        }
+    }
+
+    // Thêm hàm changeStatus (đã có trong model, nhưng implement ở controller nếu cần)
+    public function changeStatus(int $id): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->jsonResponse(['success' => false, 'message' => 'Phương thức không hợp lệ.'], 405);
+            return;
+        }
+
+        $status = $_POST['status'] ?? 'DaDuyet';
+        $success = $this->projectModel->changeStatus($id, $status);
+        $this->jsonResponse(['success' => $success, 'message' => $success ? 'Duyệt thành công' : 'Duyệt thất bại']);
+    }
+
+    // Hàm changeStatusBatch cho duyệt nhiều
+    public function changeStatusBatch(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->jsonResponse(['success' => false, 'message' => 'Phương thức không hợp lệ.'], 405);
+            return;
+        }
+
+        $ids = $_POST['ids'] ?? [];
+        $status = $_POST['status'] ?? 'DaDuyet';
+        $successCount = 0;
+
+        foreach ($ids as $id) {
+            if ($this->projectModel->changeStatus((int)$id, $status)) {
+                $successCount++;
+            }
+        }
+
+        $this->jsonResponse(['success' => $successCount > 0, 'message' => "Đã duyệt $successCount đồ án."]);
     }
 }

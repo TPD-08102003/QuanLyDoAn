@@ -40,10 +40,10 @@
                         <i class="bi bi-person-add me-1"></i> Thêm GV
                     </button>
                     <a href="/quanlydoan/Lecturer/export" class="btn btn-info text-white">
-                        <i class="bi bi-file-earmark-excel me-1"></i> Xuất Excel
+                        <i class="bi bi-cloud-download"></i> Xuất Excel
                     </a>
                     <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#importLecturerModal">
-                        <i class="bi bi-upload me-1"></i> Nhập Excel
+                        <i class="bi bi-cloud-upload"></i> Nhập Excel
                     </button>
                 </div>
             </div>

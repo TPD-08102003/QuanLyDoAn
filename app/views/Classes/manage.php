@@ -44,7 +44,7 @@
                                 </button>
                                 <button type="button" class="btn btn-outline-success flex-fill flex-lg-grow-0"
                                     onclick="exportToExcel()" <?php echo empty($classes) ? 'disabled' : ''; ?>>
-                                    <i class="bi bi-download me-1"></i>Xuất Excel
+                                    <i class="bi bi-cloud-download"></i> Xuất Excel
                                 </button>
                             </div>
                         </div>

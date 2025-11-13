@@ -12,6 +12,7 @@ class ProjectModel extends BaseModel
         parent::__construct($pdo, 'projects', 'project_id');
     }
 
+
     /**
      * Get all projects with lecturer information
      * @return array
@@ -274,5 +275,66 @@ class ProjectModel extends BaseModel
         }
 
         return $this->update($id, ['status' => $status]);
+    }
+
+    /**
+     * Get pending projects (status = 'ChoDuyet') with pagination and search
+     * @param int $limit
+     * @param int $offset
+     * @param string $keyword
+     * @return array
+     */
+    public function getPendingProjectsWithPagination(int $limit, int $offset, string $keyword): array
+    {
+        $sql = "
+        SELECT 
+            p.project_id,
+            p.title,
+            p.description,
+            p.status,
+            p.created_at,
+            l.lecturer_id,
+            u.full_name AS lecturer_name,
+            f.faculty_name
+        FROM {$this->table} p
+        LEFT JOIN lecturers l ON p.lecturer_id = l.lecturer_id
+        LEFT JOIN users u ON l.user_id = u.user_id
+        LEFT JOIN faculties f ON l.faculty_id = f.faculty_id
+     
+        WHERE p.status = 'ChoDuyet'
+          AND (p.title LIKE :keyword 
+               OR p.description LIKE :keyword 
+               OR u.full_name LIKE :keyword
+               OR f.faculty_name LIKE :keyword)
+        ORDER BY p.created_at DESC
+        LIMIT :limit OFFSET :offset
+    ";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':keyword', "%$keyword%");
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $countSql = "
+        SELECT COUNT(*) as total
+        FROM {$this->table} p
+        LEFT JOIN lecturers l ON p.lecturer_id = l.lecturer_id
+        LEFT JOIN users u ON l.user_id = u.user_id
+        LEFT JOIN faculties f ON l.faculty_id = f.faculty_id
+        WHERE p.status = 'ChoDuyet'
+          AND (p.title LIKE :keyword 
+               OR p.description LIKE :keyword 
+               OR u.full_name LIKE :keyword
+               OR f.faculty_name LIKE :keyword)
+    ";
+
+        $countStmt = $this->pdo->prepare($countSql);
+        $countStmt->bindValue(':keyword', "%$keyword%");
+        $countStmt->execute();
+        $total = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
+
+        return ['projects' => $projects, 'total' => $total];
     }
 }

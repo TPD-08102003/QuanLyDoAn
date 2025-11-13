@@ -31,8 +31,8 @@ $statusMapping = [
             </div>
             <div class="col-12 col-md-auto">
                 <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addEditProjectModal" data-mode="add" id="addProjectBtn"><i class="bi bi-plus-lg"></i> Thêm Đồ án</button>
-                <button class="btn btn-info text-dark" data-bs-toggle="modal" data-bs-target="#importProjectModal"><i class="bi bi-cloud-upload"></i> Import</button>
-                <a href="/quanlydoan/Project/export" class="btn btn-secondary"><i class="bi bi-cloud-download"></i> Export</a>
+                <!-- <button class="btn btn-info text-dark" data-bs-toggle="modal" data-bs-target="#importProjectModal"><i class="bi bi-cloud-upload"></i> Import</button> -->
+                <a href="/quanlydoan/Project/export" class="btn btn-secondary"><i class="bi bi-cloud-upload"></i> Export</a>
             </div>
         </div>
     </div>
@@ -130,7 +130,37 @@ $statusMapping = [
 
     </div>
 </div>
-
+<div class="modal fade" id="importProjectModal" tabindex="-1" aria-labelledby="importProjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="importForm" enctype="multipart/form-data">
+                <div class="modal-header bg-info text-dark">
+                    <h5 class="modal-title" id="importProjectModalLabel">Import Đồ án từ Excel</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="excelFile" class="form-label">Chọn file Excel (.xlsx)</label>
+                        <input type="file" class="form-control" id="excelFile" name="excelFile" accept=".xlsx,.xls" required>
+                        <div class="form-text">
+                            File mẫu: <a href="/quanlydoan/Project/downloadTemplate" class="text-decoration-underline">Tải về</a>
+                        </div>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="update_existing" id="updateExisting">
+                        <label class="form-check-label" for="updateExisting">
+                            Cập nhật đồ án nếu tiêu đề đã tồn tại
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-info text-dark" id="importButton">Nhập dữ liệu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 <div class="modal fade" id="addEditProjectModal" tabindex="-1" aria-labelledby="addEditProjectModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -197,7 +227,42 @@ $statusMapping = [
         </div>
     </div>
 </div>
-
+<!-- <div class="modal fade" id="deleteProjectModal" tabindex="-1" aria-labelledby="deleteProjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteProjectModalLabel">Xác nhận xóa đồ án</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Bạn có chắc chắn muốn xóa đồ án <strong id="projectTitleToDelete"></strong> (ID: <span id="projectIdToDelete"></span>) không?<br>
+                <small class="text-danger">Hành động này không thể hoàn tác.</small>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteProject">Xóa ngay</button>
+            </div>
+        </div>
+    </div>
+</div> -->
+<div class="modal fade" id="deleteProjectModal" tabindex="-1" aria-labelledby="deleteProjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title text-white" id="deleteProjectModalLabel">Xác nhận xóa đồ án</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Bạn có chắc chắn muốn xóa đồ án <strong id="projectTitleToDelete"></strong> (ID: <span id="projectIdToDelete"></span>) không?<br>
+                <small class="text-danger">Hành động này không thể hoàn tác và sẽ xóa luôn các nhóm, báo cáo liên quan.</small>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteProject">Xóa ngay</button>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
     // Hàm hiển thị thông báo dùng chung (giữ nguyên)
     function showAlert(message, type = 'success') {
@@ -236,7 +301,7 @@ $statusMapping = [
          * @param {string|int|null} lecturerToSelect ID của giảng viên cần chọn (dùng cho chế độ edit)
          */
         /**
-         * *** THAY ĐỔI: Thêm isViewMode ***
+         
          * Hàm Fetch giảng viên
          * @param {string|int} facultyId ID của khoa
          * @param {string|int|null} lecturerToSelect ID của giảng viên cần chọn
@@ -266,7 +331,7 @@ $statusMapping = [
                             lecturerSelect.value = lecturerToSelect;
                         }
 
-                        // *** THAY ĐỔI: Chỉ enable khi KHÔNG PHẢI view mode ***
+
                         if (!isViewMode) {
                             lecturerSelect.disabled = false;
                         }
@@ -283,19 +348,13 @@ $statusMapping = [
                 });
         }
 
-        /**
-         * Sự kiện MỚI: Xử lý khi chọn Khoa
-         * (Không đổi so với lần trước)
-         */
+
         facultySelect.addEventListener('change', function() {
             const selectedFacultyId = this.value;
             fetchLecturers(selectedFacultyId, null, false); // Khi tự chọn thì không phải view mode
         });
 
 
-        // ====================================================================
-        // A. Xử lý Modal Thêm/Sửa/Xem (Cập nhật logic)
-        // ====================================================================
 
         addEditModal.addEventListener('show.bs.modal', function(event) {
             const button = event.relatedTarget;
@@ -311,12 +370,12 @@ $statusMapping = [
             projectForm.reset();
             document.getElementById('projectId').value = '';
 
-            // Reset trạng thái (mặc định cho 'Add')
+
             modalTitle.textContent = 'Thêm Đồ án mới';
             saveProjectBtn.style.display = 'block'; // Hiển thị nút lưu
             formElements.forEach(el => el.disabled = false); // Kích hoạt mọi trường
             lecturerSelect.innerHTML = '<option value="">-- Chọn Khoa/Ngành trước --</option>';
-            lecturerSelect.disabled = true; // Vô hiệu hóa GV cho đến khi chọn khoa
+            lecturerSelect.disabled = true;
 
 
             if (mode === 'edit' || mode === 'view') {
@@ -324,13 +383,13 @@ $statusMapping = [
                 modalTitle.textContent = (mode === 'edit') ? 'Chỉnh sửa Đồ án' : 'Xem Chi tiết Đồ án';
 
                 if (mode === 'view') {
-                    // *** LOGIC MỚI: Chế độ XEM ***
+
                     saveProjectBtn.style.display = 'none'; // Ẩn nút lưu
                     formElements.forEach(el => el.disabled = true); // Vô hiệu hóa tất cả
                 } else {
-                    // *** LOGIC CŨ: Chế độ SỬA ***
+
                     saveProjectBtn.style.display = 'block';
-                    // Đã kích hoạt ở trên, nhưng giữ GV disabled
+
                     lecturerSelect.disabled = true;
                 }
 
@@ -346,7 +405,7 @@ $statusMapping = [
                             document.getElementById('status').value = project.status;
                             document.getElementById('max_students').value = project.max_students || 1;
 
-                            // *** ĐÂY LÀ PHẦN SỬA LỖI ***
+
                             // 1. Điền faculty_id (sẽ hoạt động vì model đã trả về)
                             document.getElementById('faculty_id').value = project.faculty_id || '';
 
@@ -404,10 +463,6 @@ $statusMapping = [
                 });
         });
 
-        // ====================================================================
-        // B. Xử lý Modal Xóa (giữ nguyên)
-        // ====================================================================
-
         // 1. Xử lý hiển thị modal xóa
         deleteModal.addEventListener('show.bs.modal', function(event) {
             const button = event.relatedTarget;
@@ -447,9 +502,7 @@ $statusMapping = [
                 });
         };
 
-        // ====================================================================
-        // C. Xử lý Modal Import (giữ nguyên)
-        // ====================================================================
+
         importForm.addEventListener('submit', function(e) {
             e.preventDefault();
 

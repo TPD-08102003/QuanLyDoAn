@@ -694,7 +694,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
             <!-- Quản lý Đồ án -->
             <div class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle <?php echo strpos($_SERVER['REQUEST_URI'], '/Projects/') !== false ? 'active' : ''; ?>" href="/quanlydoan/Project/manage" role="button" data-bs-toggle="dropdown">
+                <a class="nav-link dropdown-toggle <?php echo stripos($_SERVER['REQUEST_URI'], '/project/') !== false ? 'active' : ''; ?>" href="/quanlydoan/Project/manage" role="button" data-bs-toggle="dropdown">
                     <i class="bi bi-folder"></i>
                     <span>Quản lý Đồ án</span>
                 </a>
@@ -884,6 +884,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+
 
     <!-- DataTables -->
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
