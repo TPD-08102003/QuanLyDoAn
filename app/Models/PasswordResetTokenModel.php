@@ -67,4 +67,23 @@ class PasswordResetTokenModel extends BaseModel
         $stmt = $this->pdo->prepare("DELETE FROM {$this->table} WHERE expires_at < NOW()");
         return $stmt->execute();
     }
+
+    /**
+     * Xóa token đặt lại mật khẩu dựa trên giá trị token.
+     * @param string $token
+     * @return bool
+     */
+    public function deleteByToken(string $token): bool
+    {
+        // Giả định bảng lưu token là 'password_resets'
+        $sql = "DELETE FROM password_resets WHERE token = ?";
+
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            return $stmt->execute([$token]);
+        } catch (\PDOException $e) {
+            error_log("PasswordResetTokenModel::deleteByToken error: " . $e->getMessage());
+            return false;
+        }
+    }
 }

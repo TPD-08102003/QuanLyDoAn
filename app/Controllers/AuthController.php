@@ -229,7 +229,7 @@ class AuthController extends BaseController
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Đặt lại mật khẩu - Study Sharing</title>
+            <title>Đặt lại mật khẩu - Quản Lý Đồ Án</title>
             <style>
                 body {
                     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -321,6 +321,92 @@ class AuthController extends BaseController
         </html>
         HTML;
     }
+    public function resetPasswordView(): void
+    {
+        // 1. Lấy token từ URL (đảm bảo router của bạn map /auth/reset-password đến hàm này)
+        $token = $_GET['token'] ?? null;
+
+        if (empty($token)) {
+            // Không có token: chuyển hướng hoặc hiển thị trang lỗi
+            $this->redirect('/');
+            return;
+        }
+
+        // 2. Tìm token trong DB
+        $tokenRecord = $this->passwordResetTokenModel->findByToken($token);
+
+        // 3. Kiểm tra token (Tồn tại và Hết hạn)
+        if (!$tokenRecord || strtotime($tokenRecord['expires_at']) < time()) {
+            // Nếu token không hợp lệ hoặc đã hết hạn
+            // Tùy chọn: Dùng một view lỗi riêng (ví dụ: views/auth/reset_password_error.php)
+            // Hoặc hiển thị view đặt lại mật khẩu với thông báo lỗi
+            $this->render('auth/reset_password_error', [
+                'title' => 'Lỗi Đặt Lại Mật Khẩu',
+                'error_message' => 'Liên kết đặt lại mật khẩu đã hết hạn hoặc không hợp lệ. Vui lòng gửi yêu cầu mới.'
+            ]);
+            return;
+        }
+
+        // 4. Nếu token hợp lệ, hiển thị form đặt lại
+        // View (reset_password.php) sẽ tự động lấy token từ $_GET để đưa vào form ẩn
+        $this->render('auth/reset_password', ['title' => 'Đặt lại mật khẩu']);
+    }
+
+    /**
+     * [POST] Xử lý POST request từ form đặt lại mật khẩu.
+     * URL: /auth/resetPassword (Endpoint AJAX)
+     */
+    public function resetPassword(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            return;
+        }
+
+        // Lấy dữ liệu từ POST
+        $token = $_POST['token'] ?? '';
+        $new_password = $_POST['password'] ?? '';
+
+        if (empty($token) || empty($new_password)) {
+            $this->jsonResponse(['success' => false, 'message' => 'Mật khẩu không được để trống!']);
+            return;
+        }
+
+        // 1. Kiểm tra Token
+        $tokenRecord = $this->passwordResetTokenModel->findByToken($token);
+
+        if (!$tokenRecord) {
+            $this->jsonResponse(['success' => false, 'message' => 'Liên kết đặt lại mật khẩu không hợp lệ hoặc đã được sử dụng.']);
+            return;
+        }
+
+        if (strtotime($tokenRecord['expires_at']) < time()) {
+            // Token hết hạn: Xóa token hết hạn và thông báo lỗi
+            $this->passwordResetTokenModel->deleteByToken($token); // Xóa token hết hạn
+            $this->jsonResponse(['success' => false, 'message' => 'Liên kết đặt lại mật khẩu đã hết hạn. Vui lòng gửi yêu cầu mới.']);
+            return;
+        }
+
+        try {
+            // 2. Cập nhật mật khẩu
+            $hashedPassword = password_hash($new_password, PASSWORD_BCRYPT);
+            $accountId = $tokenRecord['account_id'];
+
+            // Cập nhật mật khẩu trong AccountModel
+            $accountData = ['password' => $hashedPassword];
+            $this->accountModel->update($accountId, $accountData);
+
+            // 3. Xóa Token sau khi sử dụng thành công (BỔ SUNG)
+            // Đảm bảo token không thể được sử dụng lại
+            $this->passwordResetTokenModel->deleteByToken($token);
+            // ----------------------------------------------------
+
+            $this->jsonResponse(['success' => true, 'message' => 'Đặt lại mật khẩu thành công!']);
+        } catch (\PDOException $e) {
+            error_log("Reset password error: " . $e->getMessage());
+            $this->jsonResponse(['success' => false, 'message' => 'Lỗi server khi cập nhật mật khẩu!']);
+        }
+    }
 
     public function reset_password()
     {
@@ -328,40 +414,40 @@ class AuthController extends BaseController
         $this->render('auth/reset_password', ['title' => $title]);
     }
 
-    public function resetPassword()
-    {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $token = $_POST['token'] ?? '';
-            $password = $_POST['password'] ?? '';
+    // public function resetPassword()
+    // {
+    //     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    //         $token = $_POST['token'] ?? '';
+    //         $password = $_POST['password'] ?? '';
 
-            if (empty($token) || empty($password)) {
-                $this->jsonResponse(['success' => false, 'message' => 'Vui lòng nhập đầy đủ thông tin!']);
-            }
+    //         if (empty($token) || empty($password)) {
+    //             $this->jsonResponse(['success' => false, 'message' => 'Vui lòng nhập đầy đủ thông tin!']);
+    //         }
 
-            try {
-                error_log("Reset password attempt with token: $token");
-                $tokenData = $this->passwordResetTokenModel->findByToken($token);
-                if (!$tokenData) {
-                    error_log("Token not found or expired: $token");
-                    $this->jsonResponse(['success' => false, 'message' => 'Token không hợp lệ hoặc đã hết hạn!']);
-                }
+    //         try {
+    //             error_log("Reset password attempt with token: $token");
+    //             $tokenData = $this->passwordResetTokenModel->findByToken($token);
+    //             if (!$tokenData) {
+    //                 error_log("Token not found or expired: $token");
+    //                 $this->jsonResponse(['success' => false, 'message' => 'Token không hợp lệ hoặc đã hết hạn!']);
+    //             }
 
-                $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
-                $account_id = $tokenData['account_id'];
+    //             $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+    //             $account_id = $tokenData['account_id'];
 
-                $accountData = ['password' => $hashedPassword];
-                $accountData = $this->accountModel->prepareData($accountData);
-                $this->accountModel->update($account_id, $accountData);
+    //             $accountData = ['password' => $hashedPassword];
+    //             $accountData = $this->accountModel->prepareData($accountData);
+    //             $this->accountModel->update($account_id, $accountData);
 
-                $this->passwordResetTokenModel->delete((int) $tokenData['token_id']);
+    //             $this->passwordResetTokenModel->delete((int) $tokenData['token_id']);
 
-                $this->jsonResponse(['success' => true, 'message' => 'Mật khẩu đã được đặt lại thành công!']);
-            } catch (PDOException $e) {
-                error_log("Reset password error: " . $e->getMessage());
-                $this->jsonResponse(['success' => false, 'message' => 'Lỗi server, vui lòng thử lại sau!']);
-            }
-        }
-    }
+    //             $this->jsonResponse(['success' => true, 'message' => 'Mật khẩu đã được đặt lại thành công!']);
+    //         } catch (PDOException $e) {
+    //             error_log("Reset password error: " . $e->getMessage());
+    //             $this->jsonResponse(['success' => false, 'message' => 'Lỗi server, vui lòng thử lại sau!']);
+    //         }
+    //     }
+    // }
 
     public function changePassword()
     {
