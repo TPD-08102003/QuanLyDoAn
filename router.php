@@ -31,6 +31,7 @@ use App\Controllers\StudentController;
 use App\Controllers\UserController;
 use App\Controllers\ClassesController;
 use App\Controllers\FacultiesController;
+use App\Controllers\AdminController;
 // Remove 'App\User' if it's not a controller; use models separately if needed
 
 session_start();
@@ -47,6 +48,7 @@ $staticRoutes = [];
 $allowedControllers = [
     'AccountController' => AccountController::class,
     'AuthController' => AuthController::class,
+    'AdminController' => AdminController::class,
     'FeedbackController' => FeedbackController::class,
     'GroupController' => GroupController::class,
     'GroupMemberController' => GroupMemberController::class,
@@ -80,6 +82,7 @@ function handleRoute($uri, $method, $pdo, $staticRoutes, $allowedControllers)
             exit;
         }
     }
+
 
     // Dynamic routing
     $parts = explode('/', $uri);

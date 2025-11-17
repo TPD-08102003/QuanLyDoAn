@@ -237,6 +237,7 @@
         </div>
     </div>
 </div>
+
 <div class="modal fade" id="viewClassModal" tabindex="-1" aria-labelledby="viewClassModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -278,8 +279,14 @@
                     </div>
                 </div>
                 <div class="mt-4">
-                    <h6 class="fw-bold border-bottom pb-2">Danh sách sinh viên</h6>
-                    <div id="studentList" class="mt-2">
+                    <h6 class="fw-bold border-bottom pb-2">Danh sách sinh viên (<span id="student_count">0</span>)</h6>
+                    <div id="studentListContainer" class="mt-2 student-list-scroll">
+                        <div id="studentList">
+                        </div>
+                        <div id="noStudentMessage" class="text-center py-3 text-muted" style="display: none;">
+                            <i class="bi bi-person-x display-6"></i>
+                            <p class="mb-0">Lớp học này chưa có sinh viên.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -289,6 +296,8 @@
         </div>
     </div>
 </div>
+
+
 <div class="modal fade" id="editClassModal" tabindex="-1" aria-labelledby="editClassModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -410,6 +419,15 @@
         /* Màu đen của Bootstrap */
         font-weight: normal !important;
         /* Không in đậm */
+    }
+
+    .student-list-scroll {
+        max-height: 300px;
+        /* Chiều cao tối đa cho danh sách sinh viên */
+        overflow-y: auto;
+        /* Kích hoạt thanh cuộn dọc khi nội dung tràn */
+        padding-right: 15px;
+        /* Để tránh nội dung bị che khuất bởi thanh cuộn */
     }
 </style>
 

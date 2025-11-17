@@ -7,7 +7,7 @@ $date_of_birth_display = $user['date_of_birth'] ? date('d/m/Y', strtotime($user[
 ?>
 
 <link rel="stylesheet" href="/quanlydoan/assets/css/profile.css">
-
+<script src="/quanlydoan/assets/js/profile.js"></script>
 <div class="profile-container">
     <?php if (isset($_SESSION['message'])): ?>
         <div class="alert alert-<?php echo $_SESSION['message_type']; ?> alert-dismissible fade show" role="alert">
@@ -22,7 +22,7 @@ $date_of_birth_display = $user['date_of_birth'] ? date('d/m/Y', strtotime($user[
             <h1 class="mb-0"><i class="bi bi-person-circle me-2"></i> Chỉnh sửa hồ sơ</h1>
         </div>
         <div class="card-body p-0">
-            <form id="profileForm" method="POST" action="/study_sharing/user/updateProfile" enctype="multipart/form-data" class="needs-validation" novalidate>
+            <form id="profileForm" method="POST" action="/quanlydoan/user/updateProfile" enctype="multipart/form-data" class="needs-validation" novalidate>
                 <input type="hidden" name="current_avatar" value="<?php echo htmlspecialchars($user['avatar'] ?? 'profile.png'); ?>">
                 <input type="hidden" name="date_of_birth" id="date_of_birth_hidden" value="<?php echo htmlspecialchars($user['date_of_birth'] ?? ''); ?>">
                 <div class="row g-0 profile-row">
@@ -103,5 +103,3 @@ $date_of_birth_display = $user['date_of_birth'] ? date('d/m/Y', strtotime($user[
 <!-- Include flatpickr CSS và JS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-
-<script src="/quanlydoan/assets/js/profile.css"></script>

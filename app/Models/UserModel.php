@@ -112,7 +112,7 @@ class UserModel extends BaseModel
             'user_id' => $userId,
             'mssv' => $mssv,
             'class_id' => $classId,
-              // Thêm param này
+            // Thêm param này
         ]);
     }
 

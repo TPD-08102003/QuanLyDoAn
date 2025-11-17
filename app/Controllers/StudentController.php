@@ -62,7 +62,7 @@ class StudentController extends BaseController
             // 1. Nhận tham số tìm kiếm và phân trang
             $page = (int)($_GET['page'] ?? 1);
             $keyword = trim($_GET['keyword'] ?? '');
-            $limit = 10;
+            $limit = 5;
             $offset = ($page - 1) * $limit;
 
             // 2. Lấy dữ liệu - Sử dụng phương thức mới

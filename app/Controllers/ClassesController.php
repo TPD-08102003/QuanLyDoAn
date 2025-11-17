@@ -27,7 +27,7 @@ class ClassesController extends BaseController
     public function manage(): void
     {
         $page = (int) ($_GET['page'] ?? 1);
-        $limit = 10;
+        $limit = 5;
         $offset = ($page - 1) * $limit;
         $keyword = $_GET['keyword'] ?? '';
 

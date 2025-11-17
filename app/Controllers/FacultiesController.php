@@ -23,7 +23,7 @@ class FacultiesController extends BaseController
     {
         $page = max(1, (int)($_GET['page'] ?? 1));
         $keyword = trim($_GET['keyword'] ?? '');
-        $limit = 10;
+        $limit = 5;
         $offset = ($page - 1) * $limit;
 
         $result = $this->facultyModel->getFacultiesWithPagination($limit, $offset, $keyword);

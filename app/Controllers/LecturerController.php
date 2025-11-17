@@ -38,7 +38,7 @@ class LecturerController extends BaseController
         try {
             $page = (int)($_GET['page'] ?? 1);
             $keyword = trim($_GET['keyword'] ?? '');
-            $limit = 10;
+            $limit = 5;
             $offset = ($page - 1) * $limit;
 
             if (empty($keyword)) {

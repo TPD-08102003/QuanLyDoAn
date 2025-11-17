@@ -31,7 +31,7 @@ $statusMapping = [
             </div>
             <div class="col-12 col-md-auto">
                 <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addEditProjectModal" data-mode="add" id="addProjectBtn"><i class="bi bi-plus-lg"></i> Thêm Đồ án</button>
-                <!-- <button class="btn btn-info text-dark" data-bs-toggle="modal" data-bs-target="#importProjectModal"><i class="bi bi-cloud-upload"></i> Import</button> -->
+                <button class="btn btn-info text-dark" data-bs-toggle="modal" data-bs-target="#importProjectModal"><i class="bi bi-cloud-upload"></i> Import</button>
                 <a href="/quanlydoan/Project/export" class="btn btn-secondary"><i class="bi bi-cloud-upload"></i> Export</a>
             </div>
         </div>
