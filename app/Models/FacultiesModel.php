@@ -273,4 +273,9 @@ class FacultiesModel extends BaseModel
     //         return false;
     //     }
     // }
+    public function getTotalFaculties(): int
+    {
+        $stmt = $this->pdo->query("SELECT COUNT(*) FROM faculties");
+        return (int) $stmt->fetchColumn();
+    }
 }

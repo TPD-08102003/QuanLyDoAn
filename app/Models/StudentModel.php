@@ -343,4 +343,10 @@ class StudentModel extends BaseModel
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function getTotalStudents(): int
+    {
+        $stmt = $this->pdo->query("SELECT COUNT(*) FROM students");
+        return (int) $stmt->fetchColumn();
+    }
 }

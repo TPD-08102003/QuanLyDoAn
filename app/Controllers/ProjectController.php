@@ -27,6 +27,37 @@ class ProjectController extends BaseController
         $this->facultiesModel = new FacultiesModel($pdo);
     }
 
+    /**
+     * API để lấy chi tiết một đồ án theo ID và trả về JSON
+     * URL: /project/getProjectDetails/{id}
+     */
+    public function getProjectDetailsIndex(int $id): void
+    {
+        // Giả định projectModel có hàm getByIdWithDetails($id)
+        $project = $this->projectModel->getByIdWithDetails($id);
+
+        if (!$project) {
+            $this->jsonResponse(['success' => false, 'message' => 'Không tìm thấy đồ án'], 404);
+            return;
+        }
+
+        // Format ngày tạo
+        $created_at_formatted = date('d/m/Y', strtotime($project['created_at']));
+
+        $this->jsonResponse([
+            'success' => true,
+            'project' => [
+                'project_id'           => $project['project_id'],
+                'title'                => $project['title'],
+                'description'          => $project['description'] ?? 'Không có mô tả.',
+                'status'               => $project['status'],
+                'lecturer_name'        => $project['lecturer_name'] ?? 'Chưa phân công',
+                'faculty_name'         => $project['faculty_name'] ?? 'Mặc định',
+                'created_at_formatted' => $created_at_formatted,
+            ]
+        ], 200);
+    }
+
     public function manage(): void
     {
         try {

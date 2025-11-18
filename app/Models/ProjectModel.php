@@ -406,4 +406,132 @@ class ProjectModel extends BaseModel
             'total'    => $total
         ];
     }
+
+    /**
+     * Lấy tổng số đồ án trong hệ thống.
+     */
+    public function getTotalProjects(): int
+    {
+        // Giả sử $this->pdo là đối tượng PDO đã được khởi tạo
+        $stmt = $this->pdo->query("SELECT COUNT(*) FROM projects WHERE status = 'DaDuyet'");
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Lấy tất cả đồ án và nhóm theo Khoa, sau đó là Lớp.
+     *
+     * @return array
+     */
+    public function getAllProjectsGrouped(): array
+    {
+        // Cần đảm bảo các bảng 'projects', 'faculties', 'classes' đã được tạo
+        $sql = "
+        SELECT 
+            p.project_id, p.title, p.description, p.created_at, p.status, 
+            f.faculty_id, f.faculty_name, 
+            c.class_id, c.class_name
+        FROM 
+            projects p
+        JOIN 
+            faculties f ON p.faculty_id = f.faculty_id
+        JOIN 
+            classes c ON p.class_id = c.class_id
+        ORDER BY 
+            f.faculty_name, c.class_name, p.created_at DESC
+    ";
+
+        // Giả sử $this->pdo là đối tượng PDO đã được khởi tạo
+        $stmt = $this->pdo->query($sql);
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $grouped = [];
+        foreach ($results as $row) {
+            $faculty_id = $row['faculty_id'];
+            $class_id = $row['class_id'];
+
+            // Nhóm theo Khoa
+            if (!isset($grouped[$faculty_id])) {
+                $grouped[$faculty_id] = [
+                    'faculty_id' => $faculty_id,
+                    'faculty_name' => $row['faculty_name'],
+                    'classes' => []
+                ];
+            }
+
+            // Nhóm theo Lớp
+            if (!isset($grouped[$faculty_id]['classes'][$class_id])) {
+                $grouped[$faculty_id]['classes'][$class_id] = [
+                    'class_id' => $class_id,
+                    'class_name' => $row['class_name'],
+                    'projects' => []
+                ];
+            }
+
+            // Thêm Đồ án vào Lớp tương ứng
+            $grouped[$faculty_id]['classes'][$class_id]['projects'][] = [
+                'project_id' => $row['project_id'],
+                'title' => $row['title'],
+                'description' => $row['description'],
+                'status' => $row['status'],
+                'created_at' => $row['created_at'],
+            ];
+        }
+
+        return $grouped;
+    }
+
+    // app/Models/ProjectModel.php (Sửa trong hàm getLatestProjects)
+
+    /**
+     * Lấy số lượng đồ án mới nhất cho Carousel (Chỉ lấy đồ án ĐÃ DUYỆT)
+     */
+    public function getLatestProjects(int $limit = 3): array
+    {
+        $sql = "
+        SELECT 
+            p.project_id, p.title, p.description, p.created_at, 
+            u.full_name as lecturer_name
+        FROM 
+            projects p
+        LEFT JOIN 
+            lecturers l ON p.lecturer_id = l.lecturer_id
+        LEFT JOIN
+            users u ON l.user_id = u.user_id
+        WHERE 
+            p.status = 'DaDuyet' 
+        ORDER BY 
+            p.created_at DESC 
+        LIMIT :limit
+    ";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    // app/Models/ProjectModel.php (Sửa trong hàm getAllProjectsWithDetails)
+
+    /**
+     * Lấy tất cả đồ án ĐÃ DUYỆT, kèm tên giảng viên.
+     */
+    public function getAllProjectsWithDetails(): array
+    {
+        $sql = "
+        SELECT 
+            p.project_id, p.title, p.status, p.created_at,
+            u.full_name as lecturer_name
+        FROM 
+            projects p
+        LEFT JOIN 
+            lecturers l ON p.lecturer_id = l.lecturer_id
+        LEFT JOIN
+            users u ON l.user_id = u.user_id
+        WHERE 
+            p.status = 'DaDuyet' 
+        ORDER BY 
+            p.created_at DESC
+    ";
+        $stmt = $this->pdo->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
