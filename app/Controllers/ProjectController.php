@@ -26,6 +26,84 @@ class ProjectController extends BaseController
         $this->lecturerModel = new LecturerModel($pdo);
         $this->facultiesModel = new FacultiesModel($pdo);
     }
+    /**
+     * Hiển thị danh sách đồ án do giảng viên hiện tại phụ trách
+     * URL: /project/myProjects
+     */
+    public function myProjects(): void
+    {
+        // 1. Kiểm tra vai trò và đăng nhập
+        if (!isset($_SESSION['account_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'teacher') {
+            // Chuyển hướng hoặc hiển thị lỗi nếu không phải là Giảng viên
+            header('Location: /quanlydoan/auth/login');
+            exit;
+        }
+
+        try {
+            // Giả sử có UserModel để lấy user_id từ account_id
+            // và LecturerModel để lấy lecturer_id từ user_id
+            $userModel = new \App\Models\UserModel($this->pdo); // Cần khởi tạo nếu chưa có
+            $userData = $userModel->findByAccountId($_SESSION['account_id']);
+            $userId = $userData['user_id'] ?? 0;
+
+            $lecturer = $this->lecturerModel->findByUserId($userId); // Giả sử có hàm findByUserId
+            $lecturerId = $lecturer['lecturer_id'] ?? 0;
+
+            if ($lecturerId === 0) {
+                // Giảng viên không tồn tại trong bảng lecturers
+                $this->render('error/403', ['message' => 'Thông tin giảng viên không hợp lệ.']);
+                return;
+            }
+
+            $page = (int)($_GET['page'] ?? 1);
+            $keyword = trim($_GET['keyword'] ?? '');
+            $limit = 5;
+            $offset = ($page - 1) * $limit;
+
+            // 2. Gọi Model để lấy danh sách đồ án của giảng viên
+            // *** GIẢ ĐỊNH method getProjectsByLecturerIdWithPagination TỒN TẠI TRONG ProjectModel ***
+            $result = $this->projectModel->getProjectsByLecturerIdWithPagination($lecturerId, $limit, $offset, $keyword);
+            $projects = $result['projects'];
+            $totalProjects = $result['total'];
+            $totalPages = ceil($totalProjects / $limit);
+
+            // 3. Render view
+            $this->render('projects/my_projects', [
+                'projects' => $projects,
+                'totalProjects' => $totalProjects,
+                'totalPages' => $totalPages,
+                'page' => $page,
+                'keyword' => $keyword,
+            ]);
+        } catch (Exception $e) {
+            $this->handleError($e, 'myProjects');
+        }
+    }
+
+    /**
+     * Hiển thị form tạo đồ án mới
+     * URL: /project/create
+     */
+    public function create(): void
+    {
+        // Kiểm tra vai trò Giảng viên (teacher) hoặc Admin
+        if (!isset($_SESSION['role']) || ($_SESSION['role'] !== 'teacher' && $_SESSION['role'] !== 'admin')) {
+            header('Location: /quanlydoan/auth/login');
+            exit;
+        }
+
+        try {
+            // Lấy danh sách khoa/phòng ban nếu cần thiết cho form (Ví dụ: để chọn khoa cho đồ án)
+            $faculties = $this->facultiesModel->getActiveFaculties();
+
+            $this->render('projects/create', [
+                'faculties' => $faculties,
+                'isLecturer' => $_SESSION['role'] === 'teacher', // Truyền trạng thái Giảng viên
+            ]);
+        } catch (Exception $e) {
+            $this->handleError($e, 'create');
+        }
+    }
 
     /**
      * API để lấy chi tiết một đồ án theo ID và trả về JSON

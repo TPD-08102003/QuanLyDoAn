@@ -65,7 +65,22 @@ if (isset($_SESSION['account_id']) && isset($_SESSION['role']) && $_SESSION['rol
                         <a class="nav-link <?php echo $uri === '' ? 'active' : ''; ?>" href="/quanlydoan">Trang chủ</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?php echo strpos($uri, 'project') === 0 ? 'active' : ''; ?>" href="/quanlydoan/project">Dự án</a>
+                        <?php if ($role === 'teacher'): ?>
+                            <a class="nav-link dropdown-toggle <?php echo strpos($uri, 'project') === 0 ? 'active' : ''; ?>"
+                                href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Dự án
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="/quanlydoan/project/myProjects"><i class="bi bi-card-checklist me-2"></i> Đồ án của tôi</a></li>
+                                <li><a class="dropdown-item" href="/quanlydoan/project/create"><i class="bi bi-plus-circle me-2"></i> Thêm đồ án mới</a></li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li><a class="dropdown-item" href="/quanlydoan/project"><i class="bi bi-grid me-2"></i> Tất cả dự án</a></li>
+                            </ul>
+                        <?php else: ?>
+                            <a class="nav-link <?php echo strpos($uri, 'project') === 0 ? 'active' : ''; ?>" href="/quanlydoan/project">Dự án</a>
+                        <?php endif; ?>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link <?php echo strpos($uri, 'group') === 0 ? 'active' : ''; ?>" href="/quanlydoan/group">Nhóm</a>

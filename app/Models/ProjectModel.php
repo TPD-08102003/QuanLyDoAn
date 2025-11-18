@@ -534,4 +534,68 @@ class ProjectModel extends BaseModel
         $stmt = $this->pdo->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    /**
+     * Lấy danh sách đồ án do một giảng viên phụ trách, có phân trang và tìm kiếm.
+     * Giả định bảng 'projects' có cột 'lecturer_id'
+     */
+    public function getProjectsByLecturerIdWithPagination(int $lecturerId, int $limit, int $offset, string $keyword = ''): array
+    {
+        $keyword = '%' . $keyword . '%';
+
+        // 1. Chuẩn bị mệnh đề WHERE
+        $whereClause = "WHERE p.lecturer_id = :lecturer_id";
+        $params = [':lecturer_id' => $lecturerId];
+
+        if (!empty(trim($keyword))) {
+            // Tìm kiếm theo tên đồ án hoặc ID
+            $whereClause .= " AND (p.title LIKE :keyword OR p.project_id LIKE :keyword)";
+            $params[':keyword'] = $keyword;
+        }
+
+        // 2. Lấy tổng số lượng đồ án (cho phân trang)
+        $sqlTotal = "SELECT COUNT(p.project_id) AS total
+                 FROM projects p
+                 {$whereClause}";
+
+        $stmtTotal = $this->pdo->prepare($sqlTotal);
+        $stmtTotal->execute($params);
+        $total = $stmtTotal->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+
+        // 3. Lấy dữ liệu đồ án chi tiết
+        $sqlProjects = "SELECT 
+                        p.project_id, 
+                        p.title, 
+                        p.status,
+                        f.faculty_name, 
+                        l.full_name AS lecturer_name
+                    FROM projects p
+                    LEFT JOIN faculties f ON p.faculty_id = f.faculty_id
+                    LEFT JOIN lecturers l ON p.lecturer_id = l.lecturer_id
+                    {$whereClause}
+                    ORDER BY p.created_at DESC
+                    LIMIT :limit OFFSET :offset";
+
+        $stmtProjects = $this->pdo->prepare($sqlProjects);
+
+        // Thêm các tham số phân trang
+        $params[':limit'] = $limit;
+        $params[':offset'] = $offset;
+
+        // Lưu ý: bindValue phải được sử dụng cho LIMIT/OFFSET
+        $stmtProjects->bindValue(':lecturer_id', $lecturerId, PDO::PARAM_INT);
+        if (!empty(trim($keyword))) {
+            $stmtProjects->bindValue(':keyword', $keyword, PDO::PARAM_STR);
+        }
+        $stmtProjects->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmtProjects->bindValue(':offset', $offset, PDO::PARAM_INT);
+
+        $stmtProjects->execute();
+        $projects = $stmtProjects->fetchAll(PDO::FETCH_ASSOC);
+
+        return [
+            'projects' => $projects,
+            'total' => (int)$total,
+        ];
+    }
 }

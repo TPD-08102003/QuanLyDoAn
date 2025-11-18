@@ -281,6 +281,25 @@ class LecturerModel extends BaseModel
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
+    public function findByUserId(int $userId): ?array
+    {
+        // Giả định bảng lecturers có các cột lecturer_id, full_name, user_id
+        $sql = "SELECT lecturer_id, full_name FROM lecturers WHERE user_id = :user_id LIMIT 1";
+
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([':user_id' => $userId]);
+            $lecturer = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // Trả về mảng dữ liệu hoặc null nếu không tìm thấy
+            return $lecturer ?: null;
+        } catch (\PDOException $e) {
+            // Ghi log lỗi nếu cần thiết
+            error_log("Lỗi truy vấn findByUserId: " . $e->getMessage());
+            return null;
+        }
+    }
+
     // // Các method khác (nếu có), ví dụ findByName() từ code gốc
     // public function findByName(string $name): array|false
     // {
