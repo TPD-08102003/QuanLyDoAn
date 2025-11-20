@@ -105,13 +105,8 @@ class ProjectController extends BaseController
         }
     }
 
-    /**
-     * API để lấy chi tiết một đồ án theo ID và trả về JSON
-     * URL: /project/getProjectDetails/{id}
-     */
     public function getProjectDetailsIndex(int $id): void
     {
-        // Giả định projectModel có hàm getByIdWithDetails($id)
         $project = $this->projectModel->getByIdWithDetails($id);
 
         if (!$project) {
@@ -119,21 +114,28 @@ class ProjectController extends BaseController
             return;
         }
 
-        // Format ngày tạo
-        $created_at_formatted = date('d/m/Y', strtotime($project['created_at']));
+        // Xác định màu badge
+        $statusColors = [
+            'Đã hoàn thành' => 'success',
+            'Đang thực hiện' => 'warning',
+            'ChoDuyet'      => 'secondary',
+            'Đã hủy'        => 'danger'
+
+        ];
+        $badgeColor = $statusColors[$project['status']] ?? 'info';
 
         $this->jsonResponse([
             'success' => true,
             'project' => [
-                'project_id'           => $project['project_id'],
+                'project_id'           => (int)$project['project_id'],
                 'title'                => $project['title'],
-                'description'          => $project['description'] ?? 'Không có mô tả.',
+                'description'          => $project['description'] ?: 'Không có mô tả chi tiết.',
                 'status'               => $project['status'],
+                'badge_color'          => $badgeColor,
                 'lecturer_name'        => $project['lecturer_name'] ?? 'Chưa phân công',
-                'faculty_name'         => $project['faculty_name'] ?? 'Mặc định',
-                'created_at_formatted' => $created_at_formatted,
+                'faculty_name'         => $project['faculty_name'] ?? 'Chưa xác định',
             ]
-        ], 200);
+        ]);
     }
 
     public function manage(): void
@@ -177,72 +179,7 @@ class ProjectController extends BaseController
         }
     }
 
-    // public function store(): void
-    // {
-    //     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    //         $this->jsonResponse(['success' => false, 'message' => 'Phương thức không hợp lệ.'], 405);
-    //         return;
-    //     }
 
-    //     try {
-    //         $data = $_POST;
-    //         $title = trim($data['title'] ?? '');
-    //         $description = trim($data['description'] ?? '');
-    //         $lecturer_id = (int)($data['lecturer_id'] ?? 0);
-    //         $status = trim($data['status'] ?? 'ChoDuyet');
-    //         $faculty_id = (int)($data['faculty_id'] ?? 0);
-    //         if (empty($title) || $lecturer_id <= 0) {
-    //             $this->jsonResponse(['success' => false, 'message' => 'Vui lòng điền đủ các trường bắt buộc.'], 400);
-    //             return;
-    //         }
-
-    //         // Kiểm tra trùng tiêu đề nếu cần
-    //         // if ($this->projectModel->isTitleExists($title)) {
-    //         //     $this->jsonResponse(['success' => false, 'message' => "Tiêu đề '{$title}' đã tồn tại."], 409);
-    //         //     return;
-    //         // }
-
-    //         $this->pdo->beginTransaction();
-
-    //         $projectData = [
-    //             'title' => $title,
-    //             'description' => $description,
-    //             'lecturer_id' => $lecturer_id,
-    //             'status' => $status,
-
-    //         ];
-
-    //         $projectId = $this->projectModel->createProject($projectData);
-
-    //         if (!$projectId) {
-    //             throw new Exception("Không thể tạo đồ án.");
-    //         }
-
-    //         // Tạo report types mặc định
-    //         $this->createDefaultReportTypes($projectId);
-
-    //         $this->pdo->commit();
-
-    //         $this->jsonResponse([
-    //             'success' => true,
-    //             'message' => "Thêm đồ án '{$title}' thành công!",
-    //         ], 201);
-    //     } catch (PDOException $e) {
-    //         $this->pdo->rollBack();
-    //         error_log("ProjectController::store PDO Error: " . $e->getMessage());
-    //         $this->jsonResponse([
-    //             'success' => false,
-    //             'message' => 'Lỗi Database: ' . $e->getMessage()
-    //         ], 500);
-    //     } catch (Exception $e) {
-    //         $this->pdo->rollBack();
-    //         error_log("ProjectController::store Logic Error: " . $e->getMessage());
-    //         $this->jsonResponse([
-    //             'success' => false,
-    //             'message' => 'Lỗi hệ thống: ' . $e->getMessage()
-    //         ], 500);
-    //     }
-    // }
 
     public function store(): void
     {

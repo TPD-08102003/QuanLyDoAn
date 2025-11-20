@@ -83,8 +83,8 @@ class HomeController extends BaseController
                 'projects' => $totalProjects,
             ];
 
-            // 2. Lấy 3 đồ án mới nhất cho Carousel
-            $latestProjects = $this->projectModel->getLatestProjects(3);
+            // 2. Lấy 4 đồ án mới nhất cho Carousel
+            $latestProjects = $this->projectModel->getLatestProjects(4);
 
             // 3. Lấy TẤT CẢ đồ án có chi tiết để hiển thị dạng card trên trang chủ
             $allProjects = $this->projectModel->getAllProjectsWithDetails();
@@ -93,7 +93,7 @@ class HomeController extends BaseController
             $this->render('home/index', [
                 'title' => 'Trang Chủ - Quản lý Đồ án',
                 'statistics' => $statistics,
-                'latestProjects' => $latestProjects, // Dữ liệu cho carousel (3 items)
+                'latestProjects' => $latestProjects, // Dữ liệu cho carousel (4 items)
                 'allProjects' => $allProjects,       // Dữ liệu cho cards (tất cả đồ án)
             ]);
         } catch (Exception $e) {

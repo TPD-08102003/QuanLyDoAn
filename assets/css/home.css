@@ -1,332 +1,345 @@
-/* assets/css/home.css – Phiên bản cải tiến 2025 */
+ /* 3. CSS CẢI TIẾN (INLINE STYLE CHO TRANG CHỦ) */
+ :root {
+     /* Bảng màu hiện đại 2025 */
+     --primary-color: #4361ee;
+     --primary-dark: #3a0ca3;
+     --accent-color: #4cc9f0;
+     --text-main: #2b2d42;
+     --text-muted: #8d99ae;
+     --bg-light: #f8f9fa;
 
-:root {
-    --primary-color: #4361ee;
-    --primary-dark: #3a0ca3;
-    --accent-color: #4895ef;
-    --success-color: #4cc9f0;
-    --warning-color: #f72585;
-    --light-color: #f8f9fa;
-    --dark-color: #212529;
-    --gray-100: #f8f9fa;
-    --gray-200: #e9ecef;
-    --gray-600: #6c757d;
-    --gray-800: #343a40;
+     /* Gradients */
+     --grad-primary: linear-gradient(135deg, #4361ee 0%, #3f37c9 100%);
+     --grad-success: linear-gradient(135deg, #4cc9f0 0%, #4895ef 100%);
+     --grad-hot: linear-gradient(135deg, #f72585 0%, #b5179e 100%);
+     --grad-fresh: linear-gradient(135deg, #4ad66d 0%, #208b55 100%);
+     --grad-dark: linear-gradient(135deg, #212529 0%, #343a40 100%);
 
-    --gradient-primary: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
-    --gradient-success: linear-gradient(135deg, #4cc9f0 0%, #4895ef 100%);
-    --gradient-dark: linear-gradient(135deg, #212529 0%, #495057 100%);
+     /* Effects */
+     --shadow-card: 0 10px 20px rgba(0, 0, 0, 0.05), 0 6px 6px rgba(0, 0, 0, 0.05);
+     --shadow-hover: 0 15px 30px rgba(67, 97, 238, 0.15), 0 10px 10px rgba(0, 0, 0, 0.05);
+     --radius-lg: 1.25rem;
+     --radius-md: 1rem;
+ }
 
-    --border-radius: 1rem;
-    --border-radius-lg: 1.5rem;
-    --transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    --shadow-sm: 0 4px 15px rgba(0, 0, 0, 0.08);
-    --shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-    --shadow-lg: 0 20px 50px rgba(67, 97, 238, 0.25);
-}
+ body {
+     font-family: 'Be Vietnam Pro', sans-serif;
+     background-color: #fdfdfd;
+     color: var(--text-main);
+ }
 
-/* Hero Banner */
-.hero-section {
-    margin-top: -1.5rem;
-    border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
-    overflow: hidden;
-}
+ /* --- HERO SECTION --- */
+ .hero-slide {
+     min-height: 80vh;
+     background-size: cover;
+     background-position: center;
+     position: relative;
+ }
 
-.banner-img {
-    height: 90vh;
-    min-height: 500px;
-    object-fit: cover;
-    filter: brightness(0.65);
-}
+ /* Lớp phủ Gradient đen mờ sang trọng hơn đen tuyền */
+ .hero-overlay {
+     background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.7));
+     position: absolute;
+     top: 0;
+     left: 0;
+     width: 100%;
+     height: 100%;
+ }
 
-.banner-overlay {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    transform: translateY(-50%);
-    width: 100%;
-    padding: 2rem;
-    z-index: 2;
-}
+ .banner-title-custom {
+     font-size: 3.5rem;
+     font-weight: 800;
+     letter-spacing: -1px;
+     margin-bottom: 1.5rem;
+     text-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+ }
 
-.banner-title {
-    font-size: 3.8rem;
-    font-weight: 800;
-    line-height: 1.1;
-    background: linear-gradient(90deg, #ffffff, #f0f4ff);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-}
+ .hero-btn {
+     padding: 12px 35px;
+     border-radius: 50px;
+     font-weight: 600;
+     transition: all 0.3s ease;
+     text-transform: uppercase;
+     letter-spacing: 1px;
+     font-size: 0.9rem;
+ }
 
-.banner-desc {
-    font-size: 1.35rem;
-    font-weight: 500;
-    opacity: 0.95;
-    max-width: 650px;
-    margin: 1.5rem 0 2.5rem;
-}
+ .hero-btn:hover {
+     transform: translateY(-3px);
+     box-shadow: 0 10px 20px rgba(255, 255, 255, 0.3);
+ }
 
-.btn-banner {
-    background: var(--gradient-primary);
-    color: white;
-    padding: 0.9rem 2.2rem;
-    border-radius: 50px;
-    font-weight: 600;
-    font-size: 1.1rem;
-    border: none;
-    box-shadow: 0 8px 25px rgba(67, 97, 238, 0.4);
-    transition: var(--transition);
-}
+ /* --- SECTION TITLES --- */
+ .section-header {
+     margin-bottom: 3rem;
+     position: relative;
+     display: inline-block;
+     left: 50%;
+     transform: translateX(-50%);
+ }
 
-.btn-banner:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 15px 35px rgba(67, 97, 238, 0.5);
-    color: white;
-}
+ .section-title-custom {
+     font-weight: 800;
+     color: var(--primary-dark);
+     font-size: 2.2rem;
+     margin-bottom: 0.5rem;
+ }
 
-/* Thống kê */
-.stat-card {
-    background: var(--gradient-primary);
-    color: white;
-    border-radius: var(--border-radius-lg);
-    transition: var(--transition);
-    position: relative;
-    overflow: hidden;
-    backdrop-filter: blur(10px);
-}
+ .section-divider {
+     height: 4px;
+     width: 60px;
+     background: var(--primary-color);
+     margin: 0 auto;
+     border-radius: 10px;
+ }
 
-.stat-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -150%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
-    transition: left 0.8s;
-}
+ /* --- STATS CARDS (Cải tiến với Watermark Icon) --- */
+ .stat-card-modern {
+     border-radius: var(--radius-lg);
+     padding: 2rem;
+     color: white;
+     position: relative;
+     overflow: hidden;
+     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+     box-shadow: var(--shadow-card);
+     height: 100%;
+     border: none;
+ }
 
-.stat-card:hover::before {
-    left: 150%;
-}
+ .stat-card-modern:hover {
+     transform: translateY(-10px);
+     box-shadow: var(--shadow-hover);
+ }
 
-.stat-card:hover {
-    transform: translateY(-12px) scale(1.03);
-    box-shadow: var(--shadow-lg);
-}
+ /* Icon chìm làm nền */
+ .stat-card-modern .bg-icon {
+     position: absolute;
+     right: -20px;
+     bottom: -20px;
+     font-size: 8rem;
+     opacity: 0.15;
+     transform: rotate(-15deg);
+     transition: all 0.4s ease;
+ }
 
-.stat-card h3 {
-    font-size: 3rem;
-    font-weight: 800;
-    margin: 0.5rem 0;
-}
+ .stat-card-modern:hover .bg-icon {
+     font-size: 9rem;
+     opacity: 0.25;
+     bottom: -30px;
+ }
 
-/* Đồ án nổi bật */
-.project-feature-card {
-    border-radius: var(--border-radius-lg);
-    overflow: hidden;
-    transition: var(--transition);
-    border: none;
-    background: white;
-    box-shadow: var(--shadow);
-}
+ .stat-card-modern .content {
+     position: relative;
+     z-index: 2;
+ }
 
-.project-feature-card .bg-gradient-primary {
-    background: var(--gradient-primary);
-    color: white;
-}
+ .stat-1 {
+     background: var(--grad-primary);
+ }
 
-.project-feature-card:hover {
-    transform: translateY(-10px);
-    box-shadow: var(--shadow-lg);
-}
+ .stat-2 {
+     background: var(--grad-success);
+ }
 
-/* Card đồ án danh sách */
-.project-card {
-    border-radius: var(--border-radius);
-    transition: var(--transition);
-    border: none;
-    background: white;
-    box-shadow: var(--shadow-sm);
-    overflow: hidden;
-}
+ .stat-3 {
+     background: var(--grad-hot);
+ }
 
-.project-card:hover {
-    transform: translateY(-10px);
-    box-shadow: var(--shadow);
-}
+ .stat-4 {
+     background: var(--grad-fresh);
+ }
 
-.project-card .card-body {
-    padding: 1.5rem;
-}
+ /* --- FEATURE PROJECT --- */
+ .featured-wrapper {
+     background: white;
+     border-radius: var(--radius-lg);
+     box-shadow: var(--shadow-card);
+     overflow: hidden;
+     border: 1px solid rgba(0, 0, 0, 0.05);
+ }
 
-.project-card .card-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--dark-color);
-    margin-bottom: 0.75rem;
-}
+ .badge-custom {
+     padding: 0.5em 1em;
+     font-weight: 600;
+     border-radius: 6px;
+ }
 
-.project-card .badge {
-    font-size: 0.8rem;
-    padding: 0.45em 0.9em;
-    border-radius: 50px;
-}
+ /* --- PROJECT CARD (Thẻ đồ án) --- */
+ .project-card-modern {
+     /* Xóa background: white; ở đây để nhận màu từ class con */
+     border-radius: var(--radius-md);
+     border: none;
+     box-shadow: var(--shadow-card);
+     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+     height: 100%;
+     display: flex;
+     flex-direction: column;
+     overflow: hidden;
+     position: relative;
+ }
 
-/* Section Title */
-.section-title {
-    font-weight: 700;
-    font-size: 2.1rem;
-    color: var(--primary-color);
-    position: relative;
-    display: inline-block;
-    padding-bottom: 0.75rem;
-}
+ /* Định nghĩa 4 Theme màu Pastel sang trọng */
+ .card-theme-blue {
+     background: linear-gradient(145deg, #e3f2fd 0%, #ffffff 100%);
+     border-bottom: 3px solid #2196f3;
+ }
 
-.section-title::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 70px;
-    height: 5px;
-    background: var(--gradient-primary);
-    border-radius: 3px;
-}
+ .card-theme-green {
+     background: linear-gradient(145deg, #e8f5e9 0%, #ffffff 100%);
+     border-bottom: 3px solid #4caf50;
+ }
 
-/* Modal cải tiến */
-.modal-content {
-    border-radius: var(--border-radius-lg);
-    border: none;
-    overflow: hidden;
-}
+ .card-theme-purple {
+     background: linear-gradient(145deg, #f3e5f5 0%, #ffffff 100%);
+     border-bottom: 3px solid #9c27b0;
+ }
 
-.modal-header.bg-gradient-primary {
-    background: var(--gradient-primary) !important;
-}
+ .card-theme-orange {
+     background: linear-gradient(145deg, #fff3e0 0%, #ffffff 100%);
+     border-bottom: 3px solid #ff9800;
+ }
 
-.project-detail-item {
-    background: var(--gray-100);
-    border-left: 5px solid var(--primary-color);
-    border-radius: 0.5rem;
-    padding: 1rem 1.25rem;
-    margin-bottom: 1rem;
-    transition: var(--transition);
-}
+ /* Hiệu ứng Hover: Nổi lên và bóng đổ theo màu */
+ .project-card-modern:hover {
+     transform: translateY(-8px);
+ }
 
-.project-detail-item:hover {
-    background: #e0e7ff;
-    transform: translateX(5px);
-}
+ .card-theme-blue:hover {
+     box-shadow: 0 15px 30px rgba(33, 150, 243, 0.2);
+ }
 
-.project-detail-item h6 {
-    color: var(--primary-color);
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-}
+ .card-theme-green:hover {
+     box-shadow: 0 15px 30px rgba(76, 175, 80, 0.2);
+ }
 
-/* Carousel Controls */
-.carousel-control-prev,
-.carousel-control-next {
-    width: 55px;
-    height: 55px;
-    background: rgba(255, 255, 255, 0.25);
-    border-radius: 50%;
-    top: 50%;
-    transform: translateY(-50%);
-    opacity: 0.8;
-    transition: var(--transition);
-    backdrop-filter: blur(5px);
-}
+ .card-theme-purple:hover {
+     box-shadow: 0 15px 30px rgba(156, 39, 176, 0.2);
+ }
 
-.carousel-control-prev:hover,
-.carousel-control-next:hover {
-    background: rgba(255, 255, 255, 0.4);
-    opacity: 1;
-    transform: translateY(-50%) scale(1.1);
-}
+ .card-theme-orange:hover {
+     box-shadow: 0 15px 30px rgba(255, 152, 0, 0.2);
+ }
 
-/* Responsive tinh chỉnh */
-@media (max-width: 768px) {
-    .banner-title {
-        font-size: 2.8rem;
-    }
+ /* Các phần giữ nguyên */
+ .project-thumb-wrapper {
+     height: 180px;
+     overflow: hidden;
+     position: relative;
+ }
 
-    .banner-desc {
-        font-size: 1.1rem;
-    }
+ .project-thumb-wrapper img {
+     width: 100%;
+     height: 100%;
+     object-fit: cover;
+     transition: transform 0.5s ease;
+ }
 
-    .stat-card h3 {
-        font-size: 2.3rem;
-    }
+ .project-card-modern:hover .project-thumb-wrapper img {
+     transform: scale(1.1);
+ }
 
-    .section-title {
-        font-size: 1.8rem;
-    }
-}
+ /* Chỉnh lại nội dung bên trong để nền trong suốt */
+ .card-body-custom {
+     padding: 1.5rem;
+     flex: 1;
+     display: flex;
+     flex-direction: column;
+     background: transparent;
+     /* Quan trọng: Để lộ màu nền gradient */
+ }
 
-@media (max-width: 576px) {
-    .banner-img {
-        height: 70vh;
-    }
+ .project-title {
+     font-weight: 800;
+     color: #2c3e50;
+     /* Màu chữ đậm hơn để dễ đọc trên nền màu */
+     font-size: 1.1rem;
+     margin-bottom: 0.75rem;
+     display: -webkit-box;
+     -webkit-line-clamp: 2;
+     -webkit-box-orient: vertical;
+     overflow: hidden;
+     height: 2.8em;
+ }
 
-    .btn-banner {
-        padding: 0.8rem 1.8rem;
-        font-size: 1rem;
-    }
-}
+ /* Nút xem chi tiết: Tự động đổi màu theo theme */
+ .btn-theme-action {
+     background: white;
+     border: none;
+     font-weight: 600;
+     padding: 8px 16px;
+     border-radius: 8px;
+     transition: all 0.3s;
+     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+ }
 
-/* Hiệu ứng loading skeleton (dùng trong modal) */
-.skeleton {
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-    background-size: 200% 100%;
-    animation: loading 1.5s infinite;
-}
+ /* Màu nút tương ứng với từng theme */
+ .card-theme-blue .btn-theme-action {
+     color: #1976d2;
+ }
 
-.feat-img-placeholder {
-    height: 160px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
+ .card-theme-blue .btn-theme-action:hover {
+     background: #1976d2;
+     color: white;
+ }
 
-.feat-img-placeholder i {
-    font-size: 3rem;
-    opacity: 0.9;
-}
+ .card-theme-green .btn-theme-action {
+     color: #388e3c;
+ }
 
-/* Cải thiện stat-card khi có nhiều màu */
-.stat-card:nth-child(1) {
-    background: linear-gradient(135deg, #4361ee, #3a0ca3);
-}
+ .card-theme-green .btn-theme-action:hover {
+     background: #388e3c;
+     color: white;
+ }
 
-.stat-card:nth-child(2) {
-    background: linear-gradient(135deg, #4895ef, #4361ee);
-}
+ .card-theme-purple .btn-theme-action {
+     color: #7b1fa2;
+ }
 
-.stat-card:nth-child(3) {
-    background: linear-gradient(135deg, #4cc9f0, #4895ef);
-}
+ .card-theme-purple .btn-theme-action:hover {
+     background: #7b1fa2;
+     color: white;
+ }
 
-.stat-card:nth-child(4) {
-    background: linear-gradient(135deg, #7209b7, #b5179e);
-}
+ .card-theme-orange .btn-theme-action {
+     color: #f57c00;
+ }
 
-/* Đảm bảo badge trong project-card đẹp */
-.project-card .badge {
-    font-size: 0.75rem;
-    padding: 0.4em 0.8em;
-}
+ .card-theme-orange .btn-theme-action:hover {
+     background: #f57c00;
+     color: white;
+ }
 
-@keyframes loading {
-    0% {
-        background-position: 200% 0;
-    }
+ /* Nút xem chi tiết */
+ .btn-outline-custom {
+     color: var(--primary-color);
+     border: 2px solid var(--primary-color);
+     border-radius: 8px;
+     font-weight: 600;
+     padding: 0.4rem 1rem;
+     transition: all 0.3s;
+ }
 
-    100% {
-        background-position: -200% 0;
-    }
-}
+ .btn-outline-custom:hover {
+     background: var(--primary-color);
+     color: white;
+ }
+
+ /* Loading Skeleton */
+ .skeleton-loader {
+     width: 100%;
+     height: 200px;
+     background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+     background-size: 200% 100%;
+     animation: loading 1.5s infinite;
+     border-radius: 8px;
+ }
+
+ @keyframes loading {
+     0% {
+         background-position: 200% 0;
+     }
+
+     100% {
+         background-position: -200% 0;
+     }
+ }
