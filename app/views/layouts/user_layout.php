@@ -10,6 +10,11 @@ if (isset($_SESSION['account_id']) && isset($_SESSION['role']) && $_SESSION['rol
         exit;
     }
 }
+
+// Lấy URI hiện tại để active menu
+$uri = $_SERVER['REQUEST_URI'];
+// Loại bỏ query string nếu có để so sánh chính xác hơn
+$uri = strtok($uri, '?');
 ?>
 
 <!DOCTYPE html>
@@ -18,83 +23,108 @@ if (isset($_SESSION['account_id']) && isset($_SESSION['role']) && $_SESSION['rol
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo isset($title) ? htmlspecialchars($title) : 'Trang chủ'; ?></title>
-    <!-- Bootstrap CSS -->
+    <title>Trang Chủ</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="/quanlydoan/assets/css/user_layout.css">
+    <style>
+        /* CSS bổ sung cho Search Bar đẹp hơn trên navbar */
+        .search-form {
+            max-width: 400px;
+            width: 100%;
+        }
+
+        @media (min-width: 992px) {
+            .search-form {
+                width: 300px;
+            }
+        }
+    </style>
 </head>
 
 <body>
-    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-custom sticky-top">
         <div class="container">
             <a class="navbar-brand" href="/quanlydoan">
                 <img src="/quanlydoan/assets/images/sv_logo_dashboard.png" alt="Logo">
-                <!-- <span>Quản lý Đồ Án</span> -->
             </a>
 
-            <ul class="navbar-nav ms-auto">
-                <?php
-                // Giả sử $pdo được truyền từ controller hoặc global; ở đây dùng global nếu có
-                global $pdo;
-                $user = null;
-                $role = null;
-                $avatar = '/quanlydoan/assets/images/profile.png';
-                if (isset($_SESSION['account_id']) && isset($pdo)) {
-                    $userModel = new \App\Models\UserModel($pdo);
-                    $userData = $userModel->findByAccountId($_SESSION['account_id']);
-                    if ($userData) {
-                        $user = $userModel->getFullUser($userData['user_id']);
-                        $role = $user['role'] ?? null;
-                        $avatar = $user['avatar'] ? '/quanlydoan/assets/images/' . htmlspecialchars($user['avatar']) : $avatar;
-                    }
+            <?php
+            // Xử lý logic lấy thông tin user
+            global $pdo;
+            $user = null;
+            $role = null;
+            $avatar = '/quanlydoan/assets/images/profile.png';
+            if (isset($_SESSION['account_id']) && isset($pdo)) {
+                $userModel = new \App\Models\UserModel($pdo);
+                $userData = $userModel->findByAccountId($_SESSION['account_id']);
+                if ($userData) {
+                    $user = $userModel->getFullUser($userData['user_id']);
+                    $role = $user['role'] ?? null;
+                    $avatar = $user['avatar'] ? '/quanlydoan/assets/images/' . htmlspecialchars($user['avatar']) : $avatar;
                 }
-                ?>
+            }
+            ?>
 
-                <!-- Mobile Toggle -->
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
-                <div class="collapse navbar-collapse" id="navbarContent">
+            <div class="collapse navbar-collapse" id="navbarContent">
+
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link <?php echo $uri === '' ? 'active' : ''; ?>" href="/quanlydoan">Trang chủ</a>
+                        <a class="nav-link <?php echo ($uri === '/quanlydoan' || $uri === '/quanlydoan/') ? 'active' : ''; ?>" href="/quanlydoan">Trang chủ</a>
                     </li>
-                    <li class="nav-item">
-                        <?php if ($role === 'teacher'): ?>
-                            <a class="nav-link dropdown-toggle <?php echo strpos($uri, 'project') === 0 ? 'active' : ''; ?>"
+
+                    <?php if ($user): // Chỉ hiện khi đã đăng nhập 
+                    ?>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle <?php echo strpos($uri, '/quanlydoan/project') === 0 ? 'active' : ''; ?>"
                                 href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Dự án
+                                Đồ án
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="/quanlydoan/project/myProjects"><i class="bi bi-card-checklist me-2"></i> Đồ án của tôi</a></li>
-                                <li><a class="dropdown-item" href="/quanlydoan/project/create"><i class="bi bi-plus-circle me-2"></i> Thêm đồ án mới</a></li>
-                                <li>
-                                    <hr class="dropdown-divider">
-                                </li>
-                                <li><a class="dropdown-item" href="/quanlydoan/project"><i class="bi bi-grid me-2"></i> Tất cả dự án</a></li>
+                                <?php if ($role === 'student'): ?>
+                                    <li><a class="dropdown-item" href="/quanlydoan/project"><i class="bi bi-list-ul me-2"></i> Danh sách đồ án mới</a></li>
+                                    <li><a class="dropdown-item" href="/quanlydoan/project/myProjects"><i class="bi bi-card-checklist me-2"></i> Đồ án của tôi</a></li>
+                                <?php elseif ($role === 'teacher'): ?>
+                                    <li><a class="dropdown-item" href="/quanlydoan/project/myProjects"><i class="bi bi-card-checklist me-2"></i> Đồ án của tôi</a></li>
+                                    <li><a class="dropdown-item" href="/quanlydoan/project/create"><i class="bi bi-plus-circle me-2"></i> Tạo mới đồ án</a></li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li><a class="dropdown-item" href="/quanlydoan/project"><i class="bi bi-grid me-2"></i> Tất cả dự án</a></li>
+                                <?php endif; ?>
                             </ul>
-                        <?php else: ?>
-                            <a class="nav-link <?php echo strpos($uri, 'project') === 0 ? 'active' : ''; ?>" href="/quanlydoan/project">Dự án</a>
-                        <?php endif; ?>
-                    </li>
+                        </li>
+
+                    <?php endif; // Kết thúc if($user) 
+                    ?>
+
                     <li class="nav-item">
-                        <a class="nav-link <?php echo strpos($uri, 'group') === 0 ? 'active' : ''; ?>" href="/quanlydoan/group">Nhóm</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link <?php echo strpos($uri, 'about') === 0 ? 'active' : ''; ?>" href="/quanlydoan/about">Giới thiệu</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link <?php echo strpos($uri, 'contact') === 0 ? 'active' : ''; ?>" href="/quanlydoan/contact">Liên hệ</a>
+                        <a class="nav-link <?php echo strpos($uri, '/quanlydoan/about') === 0 ? 'active' : ''; ?>" href="/quanlydoan/about">Giới thiệu</a>
                     </li>
 
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo strpos($uri, '/quanlydoan/contact') === 0 ? 'active' : ''; ?>" href="/quanlydoan/contact">Liên hệ</a>
+                    </li>
+                </ul>
+
+                <?php if ($user): ?>
+                    <form class="d-flex search-form mx-lg-3 mb-3 mb-lg-0" role="search" action="/quanlydoan/project" method="GET">
+                        <div class="input-group">
+                            <input class="form-control" type="search" name="keyword" placeholder="Tìm kiếm đồ án..." aria-label="Search" required>
+                            <button class="btn btn-light text-primary" type="submit"><i class="bi bi-search"></i></button>
+                        </div>
+                    </form>
+                <?php endif; ?>
+
+                <ul class="navbar-nav ms-auto">
                     <?php if ($user): ?>
-                        <!-- User Dropdown -->
-                        <li class="nav-item dropdown ms-lg-2">
+                        <li class="nav-item dropdown">
                             <div class="d-flex align-items-center">
                                 <a class="nav-link dropdown-toggle d-flex align-items-center pe-2" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <div class="avatar-container position-relative me-2">
@@ -114,8 +144,7 @@ if (isset($_SESSION['account_id']) && isset($_SESSION['role']) && $_SESSION['rol
                             </div>
                         </li>
                     <?php else: ?>
-                        <!-- Guest Actions Dropdown -->
-                        <li class="nav-item dropdown ms-lg-2">
+                        <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <div class="avatar-container position-relative me-2">
                                     <img src="/quanlydoan/assets/images/profile.png" alt="Avatar" class="avatar-img rounded-circle">
@@ -129,22 +158,23 @@ if (isset($_SESSION['account_id']) && isset($_SESSION['role']) && $_SESSION['rol
                             </ul>
                         </li>
                     <?php endif; ?>
-                </div>
-            </ul>
+                </ul>
+            </div>
         </div>
     </nav>
 
-    <!-- Main Content -->
     <main class="content flex-grow-1 py-4">
         <div class="container-fluid">
             <?php if (isset($content)): ?>
                 <?php echo $content; ?>
             <?php else: ?>
-                <!-- Fallback content nếu không có $content -->
                 <div class="row">
-                    <div class="col-12">
-                        <h1>Chào mừng đến với Hệ thống Quản lý Đồ Án</h1>
-                        <p>Đây là trang chủ. Hãy đăng nhập để bắt đầu quản lý đồ án của bạn.</p>
+                    <div class="col-12 text-center mt-5">
+                        <h2>Chào mừng đến với Hệ thống Quản lý Đồ Án</h2>
+                        <?php if (!$user): ?>
+                            <p>Vui lòng đăng nhập để sử dụng các tính năng.</p>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#loginModal">Đăng nhập ngay</button>
+                        <?php endif; ?>
                     </div>
                 </div>
             <?php endif; ?>
@@ -171,8 +201,9 @@ if (isset($_SESSION['account_id']) && isset($_SESSION['role']) && $_SESSION['rol
                     <h4 class="footer-title">Liên kết</h4>
                     <ul class="footer-links">
                         <li><a href="/quanlydoan">Trang chủ</a></li>
-                        <li><a href="/quanlydoan/project">Dự án</a></li>
-                        <li><a href="/quanlydoan/group">Nhóm</a></li>
+                        <?php if ($user): ?>
+                            <li><a href="/quanlydoan/project">Dự án</a></li>
+                        <?php endif; ?>
                         <li><a href="/quanlydoan/about">Giới thiệu</a></li>
                         <li><a href="/quanlydoan/contact">Liên hệ</a></li>
                     </ul>
@@ -194,7 +225,6 @@ if (isset($_SESSION['account_id']) && isset($_SESSION['role']) && $_SESSION['rol
         </div>
     </footer>
 
-    <!-- Modal Đăng nhập -->
     <div id="loginModal" class="modal fade" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -229,7 +259,6 @@ if (isset($_SESSION['account_id']) && isset($_SESSION['role']) && $_SESSION['rol
         </div>
     </div>
 
-    <!-- Modal Đăng ký -->
     <div id="registerModal" class="modal fade" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -294,7 +323,6 @@ if (isset($_SESSION['account_id']) && isset($_SESSION['role']) && $_SESSION['rol
         </div>
     </div>
 
-    <!-- Modal Quên mật khẩu -->
     <div id="forgotPasswordModal" class="modal fade" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -323,7 +351,6 @@ if (isset($_SESSION['account_id']) && isset($_SESSION['role']) && $_SESSION['rol
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/quanlydoan/assets/js/index.js"></script>
 </body>

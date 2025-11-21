@@ -264,7 +264,7 @@ $featuredProject = !empty($allProjects) ? $allProjects[0] : [
                                             <div class="bg-white rounded-circle p-1 border d-flex me-2">
                                                 <i class="bi bi-person-video3 text-primary"></i>
                                             </div>
-                                            <span class="text-truncate fw-medium" style="max-width: 130px;">
+                                            <span class="text-truncate fw-medium" style="max-width: 200px;">
                                                 <?= htmlspecialchars($project['lecturer_name'] ?? 'Chưa phân công') ?>
                                             </span>
                                         </div>

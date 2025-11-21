@@ -90,6 +90,12 @@ function handleRoute($uri, $method, $pdo, $staticRoutes, $allowedControllers)
     $action = !empty($parts[1]) ? $parts[1] : 'index';
     $params = array_slice($parts, 2);
 
+    if (in_array($parts[0], ['about', 'contact'])) {
+        $controllerName = 'HomeController';
+        $action = $parts[0]; // Tên action trùng với tên URL (about, contact)
+        $params = array_slice($parts, 1);
+    }
+
     // Kiểm tra nếu là request AJAX hoặc trả JSON
     $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
     $isJsonRequest = (strpos($action, 'get') === 0 && $action !== 'get') || // getClassInfo, getStudents...

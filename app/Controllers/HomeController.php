@@ -108,4 +108,26 @@ class HomeController extends BaseController
             ]);
         }
     }
+
+    /**
+     * Hiển thị trang Giới thiệu
+     * URL: /quanlydoan/home/about (hoặc /quanlydoan/about tùy router)
+     */
+    public function about(): void
+    {
+        $this->render('home/about', [
+            'title' => 'Giới thiệu - Quản lý Đồ án'
+        ]);
+    }
+
+    /**
+     * Hiển thị trang Liên hệ
+     * URL: /quanlydoan/home/contact (hoặc /quanlydoan/contact tùy router)
+     */
+    public function contact(): void
+    {
+        $this->render('home/contact', [
+            'title' => 'Liên hệ - Quản lý Đồ án'
+        ]);
+    }
 }
