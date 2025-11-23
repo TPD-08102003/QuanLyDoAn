@@ -51,18 +51,28 @@ $uri = strtok($uri, '?');
             </a>
 
             <?php
-            // Xử lý logic lấy thông tin user
+            // Xử lý logic lấy thông tin user & role
             global $pdo;
             $user = null;
-            $role = null;
+            $role = $_SESSION['role'] ?? null; // Ưu tiên session
             $avatar = '/quanlydoan/assets/images/profile.png';
+
             if (isset($_SESSION['account_id']) && isset($pdo)) {
                 $userModel = new \App\Models\UserModel($pdo);
                 $userData = $userModel->findByAccountId($_SESSION['account_id']);
+
                 if ($userData) {
                     $user = $userModel->getFullUser($userData['user_id']);
-                    $role = $user['role'] ?? null;
-                    $avatar = $user['avatar'] ? '/quanlydoan/assets/images/' . htmlspecialchars($user['avatar']) : $avatar;
+
+                    // Nếu session chưa có role hoặc user chưa có role, query lấy role chuẩn từ accounts
+                    if (!$role) {
+                        $stmtRole = $pdo->prepare("SELECT role FROM accounts WHERE account_id = ?");
+                        $stmtRole->execute([$_SESSION['account_id']]);
+                        $role = $stmtRole->fetchColumn();
+                        $_SESSION['role'] = $role; // Cập nhật lại session luôn
+                    }
+
+                    $avatar = !empty($user['avatar']) ? '/quanlydoan/assets/images/' . htmlspecialchars($user['avatar']) : '/quanlydoan/assets/images/profile.png';
                 }
             }
             ?>
@@ -83,7 +93,7 @@ $uri = strtok($uri, '?');
 
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle <?php echo strpos($uri, '/quanlydoan/project') === 0 ? 'active' : ''; ?>"
-                                href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                href="#" role="button" data-bs-toggle="dropdown">
                                 Đồ án
                             </a>
                             <ul class="dropdown-menu">

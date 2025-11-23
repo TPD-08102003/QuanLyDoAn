@@ -3,6 +3,7 @@
 
 namespace App\Models;
 
+use Exception;
 use PDO;
 
 class ProjectModel extends BaseModel
@@ -596,6 +597,114 @@ class ProjectModel extends BaseModel
         return [
             'projects' => $projects,
             'total' => (int)$total,
+        ];
+    }
+
+    public function registerStudentToProject($studentId, $projectId)
+    {
+        try {
+            $this->pdo->beginTransaction();
+
+            // Kiểm tra đồ án có tồn tại và còn trống không (tính từ COUNT students)
+            $stmt = $this->pdo->prepare("
+            SELECT COUNT(*) as current_count 
+            FROM students 
+            WHERE project_id = ? 
+            FOR UPDATE
+        ");
+            $stmt->execute([$projectId]);
+            $currentCount = $stmt->fetch(PDO::FETCH_ASSOC)['current_count'] ?? 0;
+
+            // Giả sử max_students = 1 (như yêu cầu, không cần sửa)
+            if ($currentCount >= 1) {
+                $this->pdo->rollBack();
+                return false; // Đã đủ người
+            }
+
+            // Cập nhật sinh viên
+            $stmt = $this->pdo->prepare("UPDATE students SET project_id = ? WHERE student_id = ?");
+            $stmt->execute([$projectId, $studentId]);
+
+            $this->pdo->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            error_log("Lỗi đăng ký đồ án: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // Sửa getAvailableProjectsForRegistration (thêm lọc current < 1, giả sử max=1)
+    public function getAvailableProjectsForRegistration(int $limit = 10, int $offset = 0, string $keyword = ''): array
+    {
+        $likeKeyword = '%' . $keyword . '%';
+
+        // 1. Truy vấn danh sách đồ án + thông tin giảng viên + số SV hiện tại
+        $sql = "
+        SELECT 
+            p.project_id,
+            p.title,
+            p.description,
+            p.status,
+            p.max_students,  // Giữ nếu có, nhưng hardcode check <1
+            p.created_at,
+            l.full_name AS lecturer_name,
+            f.faculty_name,
+            COALESCE(reg.student_count, 0) AS current_students
+        FROM projects p
+        LEFT JOIN lecturers l ON p.lecturer_id = l.lecturer_id
+        LEFT JOIN faculties f ON l.faculty_id = f.faculty_id
+        LEFT JOIN (
+            SELECT project_id, COUNT(*) AS student_count 
+            FROM students 
+            WHERE project_id IS NOT NULL 
+            GROUP BY project_id
+        ) reg ON p.project_id = reg.project_id
+        WHERE p.status IN ('DaDuyet', 'DangThucHien')
+          AND COALESCE(reg.student_count, 0) < 1  // Sửa: Chỉ hiển thị đồ án còn chỗ (max=1)
+          AND (p.title LIKE :keyword 
+               OR p.description LIKE :keyword 
+               OR l.full_name LIKE :keyword 
+               OR f.faculty_name LIKE :keyword)
+        ORDER BY p.created_at DESC
+        LIMIT :limit OFFSET :offset
+    ";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':keyword', $likeKeyword, PDO::PARAM_STR);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // 2. Đếm tổng số đồ án (cho phân trang) - Thêm lọc tương tự
+        $countSql = "
+        SELECT COUNT(*) 
+        FROM projects p
+        LEFT JOIN lecturers l ON p.lecturer_id = l.lecturer_id
+        LEFT JOIN faculties f ON l.faculty_id = f.faculty_id
+        LEFT JOIN (
+            SELECT project_id, COUNT(*) AS student_count 
+            FROM students 
+            WHERE project_id IS NOT NULL 
+            GROUP BY project_id
+        ) reg ON p.project_id = reg.project_id
+        WHERE p.status IN ('DaDuyet', 'DangThucHien')
+          AND COALESCE(reg.student_count, 0) < 1  // Sửa: Chỉ đếm đồ án còn chỗ
+          AND (p.title LIKE :keyword 
+               OR p.description LIKE :keyword 
+               OR l.full_name LIKE :keyword 
+               OR f.faculty_name LIKE :keyword)
+    ";
+
+        $countStmt = $this->pdo->prepare($countSql);
+        $countStmt->bindValue(':keyword', $likeKeyword, PDO::PARAM_STR);
+        $countStmt->execute();
+        $total = (int) $countStmt->fetchColumn();
+
+        return [
+            'projects' => $projects,
+            'total'    => $total
         ];
     }
 }

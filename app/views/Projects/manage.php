@@ -210,7 +210,11 @@ $statusMapping = [
 
                         <div class="col-md-6">
                             <label for="max_students" class="form-label">Số SV Tối đa</label>
-                            <input type="number" class="form-control" id="max_students" name="max_students" value="1" min="1" max="5">
+                            <select class="form-select" id="max_students" name="max_students">
+                                <option value="1">1 Sinh viên</option>
+                                <option value="2">2 Sinh viên</option>
+                                <option value="3" selected>3 Sinh viên</option>
+                            </select>
                         </div>
 
                         <div class="col-md-12">
@@ -403,8 +407,7 @@ $statusMapping = [
                             document.getElementById('title').value = project.title;
                             document.getElementById('description').value = project.description || '';
                             document.getElementById('status').value = project.status;
-                            document.getElementById('max_students').value = project.max_students || 1;
-
+                            document.getElementById('max_students').value = project.max_students || 3;
 
                             // 1. Điền faculty_id (sẽ hoạt động vì model đã trả về)
                             document.getElementById('faculty_id').value = project.faculty_id || '';

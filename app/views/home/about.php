@@ -216,16 +216,21 @@
                 <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Bảo mật: HTTPS, 2FA, mã hóa dữ liệu</li>
             </ul>
         </div>
-        <div class="col-lg-6 text-center">
-            <img src="https://via.placeholder.com/600x400/0055ff/ffffff?text=QLDA+Architecture" alt="Architecture" class="img-fluid rounded-4 shadow">
+        <div class="col-lg-6">
+            <h3 class="fw-bold text-primary">Hỗ trợ & Bảo trì</h3>
+            <ul class="list-unstyled fs-5">
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Hỗ trợ kỹ thuật 24/7 qua email và chat trực tiếp</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Cập nhật phần mềm định kỳ với tính năng mới và vá lỗi bảo mật</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Đào tạo sử dụng hệ thống cho giảng viên và quản trị viên</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Tùy chỉnh theo yêu cầu đặc thù của từng trường đại học</li>
+            </ul>
         </div>
     </div>
-</div>
 
-<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-<script>
-    AOS.init({
-        duration: 800,
-        once: true
-    });
-</script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init({
+            duration: 800,
+            once: true
+        });
+    </script>
