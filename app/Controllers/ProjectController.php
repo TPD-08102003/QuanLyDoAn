@@ -61,7 +61,7 @@ class ProjectController extends BaseController
         if ($role === 'teacher') {
             try {
                 $userData = $this->userModel->findByAccountId($_SESSION['account_id']);
-                $lecturer = $this->lecturerModel->findByUserId($userData['user_id']);
+                $lecturer = $this->lecturerModel->findByUserIdLecturer($userData['user_id']);
                 if (!$lecturer) {
                     echo "Lỗi: Tài khoản chưa có thông tin giảng viên.";
                     return;
@@ -119,7 +119,7 @@ class ProjectController extends BaseController
                 }
 
                 // Lấy thành viên nhóm
-                $sqlMembers = "SELECT s.mssv, u.full_name, u.email, u.avatar, s.student_id
+                $sqlMembers = "SELECT s.mssv, u.full_name, u.avatar, s.student_id
                                FROM group_members gm
                                JOIN students s ON gm.student_id = s.student_id
                                JOIN users u ON s.user_id = u.user_id
@@ -241,7 +241,7 @@ class ProjectController extends BaseController
             // Xử lý File Upload
             if (isset($_FILES['report_file']) && $_FILES['report_file']['error'] === UPLOAD_ERR_OK) {
                 $file = $_FILES['report_file'];
-                $uploadDir = __DIR__ . '/../../assets/uploads/reports/';
+                $uploadDir = __DIR__ . '/../../uploads/reports/';
                 if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
 
                 $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
@@ -302,6 +302,7 @@ class ProjectController extends BaseController
             $this->jsonResponse(['success' => false, 'message' => 'Không tìm thấy đồ án'], 404);
             return;
         }
+        $members = $this->projectModel->getProjectMembers($id);
 
         // Xác định màu badge
         $statusColors = [
@@ -323,7 +324,8 @@ class ProjectController extends BaseController
                 'badge_color'          => $badgeColor,
                 'lecturer_name'        => $project['lecturer_name'] ?? 'Chưa phân công',
                 'faculty_name'         => $project['faculty_name'] ?? 'Chưa xác định',
-            ]
+            ],
+            'members' => $members
         ]);
     }
 
@@ -874,33 +876,84 @@ class ProjectController extends BaseController
             return;
         }
 
-        // Format ngày tạo (giữ nguyên như cũ)
+        // Lấy danh sách thành viên
+        $members = $this->projectModel->getProjectMembers($id);
+
+        // Định nghĩa màu sắc cho badge (giống list_for_student)
+        $statusColors = [
+            'ChoDuyet'      => 'warning',
+            'DaDuyet'       => 'info',
+            'DangThucHien'  => 'primary',
+            'DaNopBaoCao'   => 'secondary',
+            'DaBaoVe'       => 'success',
+            'HoanThanh'     => 'success',
+            'Huy'           => 'danger'
+        ];
+        $badgeColor = $statusColors[$project['status']] ?? 'secondary';
+
+        // Format ngày
         $created_at_formatted = date('d/m/Y', strtotime($project['created_at']));
 
         $this->jsonResponse([
             'success' => true,
             'project' => [
-                'project_id'           => $project['project_id'],               // THÊM: để biết ID khi edit
+                'project_id'           => $project['project_id'],
                 'title'                => $project['title'],
                 'description'          => $project['description'] ?? '',
                 'status'               => $project['status'],
+                'badge_color'          => $badgeColor, // Màu sắc cho view
                 'lecturer_name'        => $project['lecturer_name'] ?? 'Chưa phân công',
                 'faculty_name'         => $project['faculty_name'] ?? '',
-                'lecturer_id'          => $project['lecturer_id'] ?? null,      // THÊM: cần để chọn đúng GV
-                'faculty_id'           => $project['faculty_id'] ?? null,      // THÊM: cần để chọn đúng Khoa
+                'lecturer_id'          => $project['lecturer_id'] ?? null,
+                'faculty_id'           => $project['faculty_id'] ?? null,
                 'created_at_formatted' => $created_at_formatted,
-                'max_students'  => $project['max_students'] ?? 3,
-            ]
+                'max_students'         => $project['max_students'] ?? 3,
+                'current_students'     => count($members) // Đếm số lượng thực tế
+            ],
+            'members' => $members // Trả về danh sách sinh viên
         ]);
+    }
+
+    public function edit(int $id): void
+    {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+
+        // Kiểm tra quyền (Giảng viên hoặc Admin)
+        if (!isset($_SESSION['role']) || ($_SESSION['role'] !== 'teacher' && $_SESSION['role'] !== 'admin')) {
+            header('Location: /quanlydoan/auth/login');
+            exit;
+        }
+
+        try {
+            $project = $this->projectModel->getByIdWithDetails($id);
+            if (!$project) {
+                echo "Đồ án không tồn tại.";
+                return;
+            }
+
+            // Nếu là giảng viên, kiểm tra xem đồ án có thuộc về mình không
+            if ($_SESSION['role'] === 'teacher') {
+                $user = $this->userModel->findByAccountId($_SESSION['account_id']);
+                $lecturer = $this->lecturerModel->findByUserIdLecturer($user['user_id']);
+
+                if ($project['lecturer_id'] != $lecturer['lecturer_id']) {
+                    echo "Bạn không có quyền chỉnh sửa đồ án này.";
+                    return;
+                }
+            }
+
+            $this->render('projects/edit', [
+                'project' => $project
+            ]);
+        } catch (Exception $e) {
+            $this->handleError($e, 'edit');
+        }
     }
 
     public function index(): void
     {
         if (isset($_SESSION['role'])) {
-            if ($_SESSION['role'] === 'teacher') {
-                header('Location: /quanlydoan/project/myProjects');
-                exit;
-            }
+
             if ($_SESSION['role'] === 'admin') {
                 header('Location: /quanlydoan/HomeAdmin/index');
                 exit;
@@ -914,81 +967,7 @@ class ProjectController extends BaseController
             $offset = ($page - 1) * $limit;
             $params = [];
 
-            //         // 1. Query lấy danh sách Project + Đếm số thành viên từ bảng group_members
-            //         $sql = "SELECT p.*, 
-            //                        u.full_name as lecturer_name, 
-            //                        f.faculty_name,
-            //                        COALESCE(p.max_students, 3) as max_students,
-            //                        (SELECT COUNT(*) 
-            //                         FROM group_members gm 
-            //                         JOIN groups g ON gm.group_id = g.group_id 
-            //                         WHERE g.project_id = p.project_id) as current_students
-            //                 FROM projects p
-            //                 LEFT JOIN lecturers l ON p.lecturer_id = l.lecturer_id
-            //                 LEFT JOIN users u ON l.user_id = u.user_id
-            //                 LEFT JOIN faculties f ON l.faculty_id = f.faculty_id
-            //                 WHERE p.status IN ('DaDuyet', 'DangThucHien')";
 
-            //         if (!empty($keyword)) {
-            //             $sql .= " AND (p.title LIKE :keyword OR u.full_name LIKE :keyword)";
-            //             $params[':keyword'] = "%$keyword%";
-            //         }
-
-            //         $sql .= " ORDER BY p.created_at DESC LIMIT $limit OFFSET $offset";
-
-            //         // Thực thi query lấy danh sách
-            //         $stmt = $this->pdo->prepare($sql);
-            //         $stmt->execute($params);
-            //         $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            //         // 2. Đếm tổng số để phân trang
-            //         $countSql = "SELECT COUNT(*) FROM projects p 
-            //                      LEFT JOIN users u ON p.lecturer_id = u.user_id -- Join tạm để search
-            //                      WHERE p.status IN ('DaDuyet', 'DangThucHien')";
-            //         if (!empty($keyword)) {
-            //             $countSql .= " AND (p.title LIKE :keyword OR u.full_name LIKE :keyword)";
-            //         }
-            //         $stmtCount = $this->pdo->prepare($countSql);
-            //         $stmtCount->execute($params);
-            //         $totalProjects = $stmtCount->fetchColumn();
-            //         $totalPages = ceil($totalProjects / $limit);
-
-            //         // 3. Kiểm tra xem Sinh viên hiện tại đã có nhóm chưa (để disable nút đăng ký)
-            //         $registeredProjectIds = [];
-            //         if (isset($_SESSION['role']) && $_SESSION['role'] === 'student') {
-            //             $user = $this->userModel->findByAccountId($_SESSION['account_id']);
-            //             if ($user) {
-            //                 $student = $this->studentModel->findByUserId($user['user_id']);
-            //                 if ($student) {
-            //                     // Kiểm tra trong bảng group_members
-            //                     $stmtCheck = $this->pdo->prepare("
-            //                         SELECT g.project_id 
-            //                         FROM group_members gm
-            //                         JOIN groups g ON gm.group_id = g.group_id
-            //                         WHERE gm.student_id = ?
-            //                     ");
-            //                     $stmtCheck->execute([$student['student_id']]);
-            //                     $myProject = $stmtCheck->fetchColumn();
-            //                     if ($myProject) {
-            //                         $registeredProjectIds[] = $myProject;
-            //                     }
-            //                 }
-            //             }
-            //         }
-
-            //         $this->render('Projects/list_for_student', [
-            //             'title'                => 'Danh sách Đồ án',
-            //             'projects'             => $projects,
-            //             'totalProjects'        => $totalProjects,
-            //             'totalPages'           => $totalPages,
-            //             'page'                 => $page,
-            //             'keyword'              => $keyword,
-            //             'registeredProjectIds' => $registeredProjectIds,
-            //         ]);
-            //     } catch (Exception $e) {
-            //         $this->handleError($e, 'project.index');
-            //     }
-            // }
 
             $sql = "SELECT p.*, 
                            u.full_name as lecturer_name, 
@@ -1171,6 +1150,136 @@ class ProjectController extends BaseController
                 error_log("Register Error: " . $e->getMessage());
                 echo json_encode(['success' => false, 'message' => 'Lỗi hệ thống: ' . $e->getMessage()]);
             }
+        }
+    }
+
+    /**
+     * Hiển thị form tạo đồ án mới
+     * Tự động lấy thông tin nếu là Giảng viên
+     */
+    public function createByLecturer(): void
+    {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+
+        // Kiểm tra quyền
+        if (!isset($_SESSION['role']) || ($_SESSION['role'] !== 'teacher' && $_SESSION['role'] !== 'admin')) {
+            header('Location: /quanlydoan/auth/login');
+            exit;
+        }
+
+        try {
+            $currentLecturer = null;
+            $faculties = []; // Chỉ cần thiết nếu là Admin
+
+            // Nếu là Giảng viên: Lấy thông tin cố định
+            if ($_SESSION['role'] === 'teacher') {
+                $user = $this->userModel->findByAccountId($_SESSION['account_id']);
+                if ($user) {
+                    $currentLecturer = $this->lecturerModel->getLecturerInfoByUserId($user['user_id']);
+                }
+
+                if (!$currentLecturer) {
+                    echo "Lỗi: Tài khoản giảng viên chưa được cấu hình đầy đủ.";
+                    return;
+                }
+            }
+            // Nếu là Admin: Lấy danh sách để chọn
+            else {
+                $faculties = $this->facultiesModel->getActiveFaculties();
+            }
+
+            $this->render('projects/create', [
+                'faculties' => $faculties,
+                'isLecturer' => $_SESSION['role'] === 'teacher',
+                'currentLecturer' => $currentLecturer // Truyền thông tin giảng viên vào view
+            ]);
+        } catch (Exception $e) {
+            $this->handleError($e, 'create');
+        }
+    }
+
+    /**
+     * Xử lý lưu đồ án
+     */
+    public function storeByLecturer(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->jsonResponse(['success' => false, 'message' => 'Phương thức không hợp lệ.'], 405);
+            return;
+        }
+
+        if (session_status() === PHP_SESSION_NONE) session_start();
+
+        try {
+            $data = $_POST;
+            $title = trim($data['title'] ?? '');
+            $description = trim($data['description'] ?? '');
+            $max_students = (int)($data['max_students'] ?? 3);
+
+            // Validate số lượng sinh viên (1-3)
+            if ($max_students < 1 || $max_students > 3) $max_students = 3;
+
+            // --- XỬ LÝ QUYỀN VÀ THÔNG TIN GIẢNG VIÊN ---
+            $lecturer_id = 0;
+            $status = 'ChoDuyet'; // Mặc định là chờ duyệt
+
+            if (isset($_SESSION['role']) && $_SESSION['role'] === 'teacher') {
+                // Nếu là Giảng viên: Bắt buộc lấy ID từ session (Tránh hack form)
+                $user = $this->userModel->findByAccountId($_SESSION['account_id']);
+                $lecturerInfo = $this->lecturerModel->getLecturerInfoByUserId($user['user_id']);
+
+                if (!$lecturerInfo) {
+                    $this->jsonResponse(['success' => false, 'message' => 'Không tìm thấy thông tin giảng viên.'], 403);
+                    return;
+                }
+                $lecturer_id = $lecturerInfo['lecturer_id'];
+                $lecturer_name = $lecturerInfo['full_name'];
+
+                // Giảng viên tạo thì mặc định là 'ChoDuyet', trừ khi có logic khác
+                $status = 'ChoDuyet';
+            } else {
+                // Nếu là Admin: Lấy từ form
+                $lecturer_id = (int)($data['lecturer_id'] ?? 0);
+                $status = trim($data['status'] ?? 'ChoDuyet');
+                $lecturer = $this->lecturerModel->getById($lecturer_id);
+                $lecturer_name = $lecturer ? $lecturer['full_name'] : '';
+            }
+
+            // Validate chung
+            if (empty($title) || $lecturer_id <= 0) {
+                $this->jsonResponse(['success' => false, 'message' => 'Vui lòng nhập tiêu đề và thông tin giảng viên.'], 400);
+                return;
+            }
+
+            $this->pdo->beginTransaction();
+
+            $projectData = [
+                'title' => $title,
+                'description' => $description,
+                'lecturer_id' => $lecturer_id,
+                'status' => $status,
+                'max_students' => $max_students
+            ];
+
+            $projectId = $this->projectModel->createProject($projectData);
+
+            if (!$projectId) {
+                throw new Exception("Không thể tạo đồ án.");
+            }
+
+            // Tạo các loại báo cáo mặc định (Đề cương, Tiến độ...)
+            $this->createDefaultReportTypes($projectId);
+
+            $this->pdo->commit();
+
+            $this->jsonResponse([
+                'success' => true,
+                'message' => "Đã tạo đồ án thành công! (Trạng thái: " . ($status == 'ChoDuyet' ? 'Chờ duyệt' : 'Đã duyệt') . ")",
+            ], 201);
+        } catch (Exception $e) {
+            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+            error_log("ProjectController::store error: " . $e->getMessage());
+            $this->jsonResponse(['success' => false, 'message' => 'Lỗi hệ thống: ' . $e->getMessage()], 500);
         }
     }
 }

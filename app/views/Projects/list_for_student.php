@@ -137,51 +137,120 @@ $isStudent = $_SESSION['role'] ?? null === 'student';
 </div>
 
 <script>
-    // Copy từ index.php: showProjectDetail
     function showProjectDetail(projectId) {
         const modal = new bootstrap.Modal(document.getElementById('projectDetailModal'));
         const titleEl = document.getElementById('modalProjectTitle');
         const idEl = document.getElementById('modalProjectId');
         const bodyEl = document.getElementById('projectDetailModalBody');
 
+        // 1. Reset trạng thái loading
         titleEl.textContent = 'Đang tải...';
         idEl.textContent = '...';
-        bodyEl.innerHTML = `<div class="p-5 text-center"><div class="spinner-border text-primary"></div><p class="mt-3 text-muted">Đang tải dữ liệu...</p></div>`;
+        bodyEl.innerHTML = `
+        <div class="p-5 text-center">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-3 text-muted">Đang tải dữ liệu...</p>
+        </div>`;
         modal.show();
 
+        // 2. Gọi API
         fetch(`/quanlydoan/Project/getProjectDetailsIndex/${projectId}`)
             .then(r => r.json())
             .then(data => {
                 if (data.success && data.project) {
                     const p = data.project;
+                    const members = data.members || [];
+
                     titleEl.textContent = p.title;
                     idEl.textContent = '#' + p.project_id;
 
+                    // Xử lý HTML danh sách thành viên
+                    let membersHtml = '';
+                    if (members.length > 0) {
+                        // Chuyển sang grid 2 cột nhỏ bên trong để tận dụng không gian rộng (60%)
+                        membersHtml = `<div class="row g-2 mt-2">`;
+                        members.forEach(mem => {
+                            membersHtml += `
+                            <div class="col-md-6">
+                                <div class="p-2 border rounded d-flex align-items-center bg-white">
+                                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width:35px; height:35px;">
+                                        <i class="bi bi-person-fill"></i>
+                                    </div>
+                                    <div class="overflow-hidden">
+                                        <div class="fw-bold text-truncate" style="font-size: 0.9rem;">${mem.full_name}</div>
+                                        <div class="text-muted small" style="font-size: 0.8rem;">${mem.mssv}</div>
+                                    </div>
+                                </div>
+                            </div>`;
+                        });
+                        membersHtml += `</div>`;
+                    } else {
+                        membersHtml = `
+                        <div class="text-center py-4 bg-white rounded-3 border border-dashed mt-2">
+                            <i class="bi bi-people text-muted fs-3"></i>
+                            <p class="text-muted small mb-0 mt-1">Chưa có thành viên nào đăng ký.</p>
+                        </div>`;
+                    }
+
+                    // 3. Render Layout: CÒN LẠI (60%) - MÔ TẢ (40%)
+                    // col-lg-7 = 60% (Cho thông tin & Thành viên)
+                    // col-lg-5 = 40% (Cho Mô tả)
                     bodyEl.innerHTML = `
-                    <div class="row g-4">
-                        <div class="col-lg-8">
-                            <div class="bg-light rounded-4 p-4 border-start border-5 border-primary">
-                                <h5 class="fw-bold text-primary mb-3">Mô tả đồ án</h5>
-                                <div class="text-dark lh-lg" style="text-align: justify;">
-                                    ${p.description ? p.description.replace(/\n/g, '<br>') : 'Chưa có mô tả chi tiết.'}
+                <div class="row g-4">
+                    <div class="col-lg-7">
+                        <div class="d-flex flex-column h-100 gap-3">
+                            <div class="bg-light rounded-4 p-3 border-start border-4 border-info">
+                                <h6 class="fw-bold text-dark mb-3 text-uppercase small ls-1">
+                                    <i class="bi bi-info-circle-fill me-2 text-info"></i>Thông tin đồ án
+                                </h6>
+                                <div class="row">
+                                    <div class="col-6 mb-2">
+                                        <small class="text-muted d-block">Giảng viên hướng dẫn</small>
+                                        <span class="fw-bold text-dark">${p.lecturer_name}</span>
+                                    </div>
+                                    <div class="col-6 mb-2">
+                                        <small class="text-muted d-block">Khoa chuyên môn</small>
+                                        <span class="fw-bold text-dark">${p.faculty_name || 'N/A'}</span>
+                                    </div>
+                                    <div class="col-12">
+                                        <small class="text-muted d-block mb-1">Trạng thái hiện tại</small>
+                                        <span class="badge bg-${p.badge_color} px-3 py-2 rounded-pill">${p.status}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-lg-4">
-                            <div class="bg-light rounded-4 p-4">
-                                <h6 class="fw-bold text-primary mb-3">Thông tin</h6>
-                                <div class="mb-3"><small class="text-muted">GV Hướng dẫn</small><p class="fw-bold mb-0">${p.lecturer_name}</p></div>
-                                <div class="mb-3"><small class="text-muted">Khoa</small><p class="fw-bold mb-0">${p.faculty_name || 'Chưa xác định'}</p></div>
-                                <div class="mb-3"><small class="text-muted">Trạng thái</small><span class="badge bg-${p.badge_color} px-3 py-2">${p.status}</span></div>
+
+                            <div class="bg-light rounded-4 p-3 flex-grow-1 border-start border-4 border-primary">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="fw-bold text-dark mb-0 text-uppercase small ls-1">
+                                        <i class="bi bi-people-fill me-2 text-primary"></i>Nhóm thực hiện
+                                    </h6>
+                                    <span class="badge bg-primary rounded-pill">${members.length} Sinh viên</span>
+                                </div>
+                                <hr class="my-2 opacity-25">
+                                ${membersHtml}
                             </div>
                         </div>
-                    </div>`;
+                    </div>
+
+                    <div class="col-lg-5">
+                        <div class="bg-white border rounded-4 p-4 h-100 shadow-sm position-relative overflow-hidden">
+                           
+                            <h5 class="fw-bold text-primary mb-3 position-relative z-1">
+                                Mô tả yêu cầu
+                            </h5>
+                            <div class="text-dark lh-base position-relative z-1" style="text-align: justify; white-space: pre-line; font-size: 0.95rem;">
+                                ${p.description ? p.description : '<em class="text-muted">Chưa có mô tả chi tiết.</em>'}
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
                 } else {
-                    bodyEl.innerHTML = `<div class="alert alert-warning">Không tìm thấy thông tin đồ án.</div>`;
+                    bodyEl.innerHTML = `<div class="alert alert-warning text-center">Không tìm thấy thông tin.</div>`;
                 }
             })
-            .catch(() => {
-                bodyEl.innerHTML = `<div class="alert alert-danger">Lỗi kết nối. Vui lòng thử lại.</div>`;
+            .catch(err => {
+                console.error(err);
+                bodyEl.innerHTML = `<div class="alert alert-danger text-center">Lỗi kết nối server.</div>`;
             });
     }
 

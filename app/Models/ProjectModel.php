@@ -485,13 +485,23 @@ class ProjectModel extends BaseModel
 
     /**
      * Lấy số lượng đồ án mới nhất cho Carousel (Chỉ lấy đồ án ĐÃ DUYỆT)
+     * Cập nhật: Lấy thêm max_students và đếm số lượng sinh viên hiện tại
      */
     public function getLatestProjects(int $limit = 3): array
     {
         $sql = "
         SELECT 
-            p.project_id, p.title, p.description, p.created_at, 
-            u.full_name as lecturer_name
+            p.project_id, 
+            p.title, 
+            p.description, 
+            p.created_at, 
+            p.status,
+            u.full_name as lecturer_name,
+            COALESCE(p.max_students, 3) as max_students,
+            (SELECT COUNT(*) 
+             FROM group_members gm 
+             JOIN groups g ON gm.group_id = g.group_id 
+             WHERE g.project_id = p.project_id) as current_students
         FROM 
             projects p
         LEFT JOIN 
@@ -507,6 +517,27 @@ class ProjectModel extends BaseModel
         $stmt = $this->pdo->prepare($sql);
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+
+
+    /**
+     * Lấy danh sách thành viên của một đồ án
+     * @param int $projectId
+     * @return array
+     */
+    public function getProjectMembers(int $projectId): array
+    {
+        $sql = "SELECT s.mssv, u.full_name
+                FROM groups g
+                JOIN group_members gm ON g.group_id = gm.group_id
+                JOIN students s ON gm.student_id = s.student_id
+                JOIN users u ON s.user_id = u.user_id
+                WHERE g.project_id = :project_id";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':project_id' => $projectId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -536,66 +567,78 @@ class ProjectModel extends BaseModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+
     /**
-     * Lấy danh sách đồ án do một giảng viên phụ trách, có phân trang và tìm kiếm.
-     * Giả định bảng 'projects' có cột 'lecturer_id'
+     * Lấy danh sách đồ án của giảng viên có phân trang
+     * Đã sửa lỗi:
+     * 1. Join bảng users để lấy tên giảng viên (u.full_name)
+     * 2. Join bảng faculties thông qua bảng lecturers (l.faculty_id) thay vì projects
+     */
+    /**
+     * Lấy danh sách đồ án của giảng viên có phân trang
+     * ĐÃ CẬP NHẬT: Thêm đếm số lượng sinh viên (current_students)
      */
     public function getProjectsByLecturerIdWithPagination(int $lecturerId, int $limit, int $offset, string $keyword = ''): array
     {
-        $keyword = '%' . $keyword . '%';
-
         // 1. Chuẩn bị mệnh đề WHERE
         $whereClause = "WHERE p.lecturer_id = :lecturer_id";
         $params = [':lecturer_id' => $lecturerId];
 
-        if (!empty(trim($keyword))) {
-            // Tìm kiếm theo tên đồ án hoặc ID
+        // Kiểm tra keyword
+        $isSearch = !empty(trim($keyword));
+
+        if ($isSearch) {
             $whereClause .= " AND (p.title LIKE :keyword OR p.project_id LIKE :keyword)";
-            $params[':keyword'] = $keyword;
+            $params[':keyword'] = '%' . $keyword . '%';
         }
 
-        // 2. Lấy tổng số lượng đồ án (cho phân trang)
-        $sqlTotal = "SELECT COUNT(p.project_id) AS total
-                 FROM projects p
-                 {$whereClause}";
-
+        // 2. Đếm tổng số (Count Query)
+        $sqlTotal = "SELECT COUNT(p.project_id) AS total FROM projects p {$whereClause}";
         $stmtTotal = $this->pdo->prepare($sqlTotal);
         $stmtTotal->execute($params);
-        $total = $stmtTotal->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+        $total = $stmtTotal->fetch(\PDO::FETCH_ASSOC)['total'] ?? 0;
 
-        // 3. Lấy dữ liệu đồ án chi tiết
+        // 3. Truy vấn lấy dữ liệu (Main Query)
+        // CẬP NHẬT: Thêm dòng đếm số lượng sinh viên trong nhóm
         $sqlProjects = "SELECT 
-                        p.project_id, 
-                        p.title, 
-                        p.status,
-                        f.faculty_name, 
-                        l.full_name AS lecturer_name
-                    FROM projects p
-                    LEFT JOIN faculties f ON p.faculty_id = f.faculty_id
-                    LEFT JOIN lecturers l ON p.lecturer_id = l.lecturer_id
-                    {$whereClause}
-                    ORDER BY p.created_at DESC
-                    LIMIT :limit OFFSET :offset";
+                            p.project_id, 
+                            p.title, 
+                            p.description, -- Lấy thêm mô tả để hiển thị preview
+                            p.status,
+                            p.created_at,
+                            COALESCE(p.max_students, 3) as max_students, -- Lấy max_students
+                            f.faculty_name, 
+                            u.full_name AS lecturer_name, 
+                            
+                            -- ĐẾM SỐ SINH VIÊN ĐANG THAM GIA --
+                            (SELECT COUNT(*) 
+                             FROM group_members gm 
+                             JOIN groups g ON gm.group_id = g.group_id 
+                             WHERE g.project_id = p.project_id) as current_students
+                             
+                        FROM projects p
+                        LEFT JOIN lecturers l ON p.lecturer_id = l.lecturer_id
+                        LEFT JOIN faculties f ON l.faculty_id = f.faculty_id
+                        LEFT JOIN users u ON l.user_id = u.user_id
+                        {$whereClause}
+                        ORDER BY p.created_at DESC
+                        LIMIT :limit OFFSET :offset";
 
-        $stmtProjects = $this->pdo->prepare($sqlProjects);
+        $stmt = $this->pdo->prepare($sqlProjects);
 
-        // Thêm các tham số phân trang
-        $params[':limit'] = $limit;
-        $params[':offset'] = $offset;
+        // 4. Bind tham số
+        $stmt->bindValue(':lecturer_id', $lecturerId, \PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
 
-        // Lưu ý: bindValue phải được sử dụng cho LIMIT/OFFSET
-        $stmtProjects->bindValue(':lecturer_id', $lecturerId, PDO::PARAM_INT);
-        if (!empty(trim($keyword))) {
-            $stmtProjects->bindValue(':keyword', $keyword, PDO::PARAM_STR);
+        if ($isSearch) {
+            $stmt->bindValue(':keyword', '%' . $keyword . '%', \PDO::PARAM_STR);
         }
-        $stmtProjects->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $stmtProjects->bindValue(':offset', $offset, PDO::PARAM_INT);
 
-        $stmtProjects->execute();
-        $projects = $stmtProjects->fetchAll(PDO::FETCH_ASSOC);
+        $stmt->execute();
 
         return [
-            'projects' => $projects,
+            'projects' => $stmt->fetchAll(\PDO::FETCH_ASSOC),
             'total' => (int)$total,
         ];
     }

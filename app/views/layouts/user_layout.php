@@ -102,7 +102,7 @@ $uri = strtok($uri, '?');
                                     <li><a class="dropdown-item" href="/quanlydoan/project/myProjects"><i class="bi bi-card-checklist me-2"></i> Đồ án của tôi</a></li>
                                 <?php elseif ($role === 'teacher'): ?>
                                     <li><a class="dropdown-item" href="/quanlydoan/project/myProjects"><i class="bi bi-card-checklist me-2"></i> Đồ án của tôi</a></li>
-                                    <li><a class="dropdown-item" href="/quanlydoan/project/create"><i class="bi bi-plus-circle me-2"></i> Tạo mới đồ án</a></li>
+                                    <li><a class="dropdown-item" href="/quanlydoan/project/createByLecturer"><i class="bi bi-plus-circle me-2"></i> Tạo mới đồ án</a></li>
                                     <li>
                                         <hr class="dropdown-divider">
                                     </li>

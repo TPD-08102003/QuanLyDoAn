@@ -300,6 +300,55 @@ class LecturerModel extends BaseModel
         }
     }
 
+    public function findByUserIdLecturer(int $userId): ?array
+    {
+        // SỬA: Chỉ lấy * từ bảng lecturers, hoặc join nếu cần tên. 
+        // Ở đây ProjectController chỉ cần lecturer_id nên lấy * là đủ và an toàn.
+        $sql = "SELECT * FROM lecturers WHERE user_id = :user_id LIMIT 1";
+
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([':user_id' => $userId]);
+            $lecturer = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // Trả về mảng dữ liệu hoặc null nếu không tìm thấy
+            return $lecturer ?: null;
+        } catch (\PDOException $e) {
+            // Ghi log lỗi nếu cần thiết
+            error_log("Lỗi truy vấn findByUserId: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Lấy thông tin chi tiết giảng viên (bao gồm Tên và Khoa) dựa trên User ID
+     * Dùng cho chức năng tự động điền thông tin khi tạo đồ án
+     */
+    public function getLecturerInfoByUserId(int $userId): array|false
+    {
+        $sql = "SELECT 
+                    l.lecturer_id, 
+                    l.lecturer_code, 
+                    l.faculty_id,
+                    u.full_name,
+                    f.faculty_name
+                FROM lecturers l
+                JOIN users u ON l.user_id = u.user_id
+                LEFT JOIN faculties f ON l.faculty_id = f.faculty_id
+                WHERE l.user_id = :user_id AND l.deleted_at IS NULL
+                LIMIT 1";
+
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([':user_id' => $userId]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("LecturerModel::getLecturerInfoByUserId error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+
     // // Các method khác (nếu có), ví dụ findByName() từ code gốc
     // public function findByName(string $name): array|false
     // {
