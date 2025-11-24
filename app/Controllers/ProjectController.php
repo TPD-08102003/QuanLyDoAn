@@ -952,23 +952,22 @@ class ProjectController extends BaseController
 
     public function index(): void
     {
-        if (isset($_SESSION['role'])) {
+        if (session_status() === PHP_SESSION_NONE) session_start();
 
-            if ($_SESSION['role'] === 'admin') {
-                header('Location: /quanlydoan/HomeAdmin/index');
-                exit;
-            }
+        // Chuyển hướng nếu là Admin
+        if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
+            header('Location: /quanlydoan/HomeAdmin/index');
+            exit;
         }
 
         try {
-            $page = (int)($_GET['page'] ?? 1);
+            $page = max(1, (int)($_GET['page'] ?? 1)); // Đảm bảo page >= 1
             $keyword = trim($_GET['keyword'] ?? '');
             $limit = 9;
             $offset = ($page - 1) * $limit;
             $params = [];
 
-
-
+            // 1. QUERY CHÍNH: Lấy danh sách đồ án
             $sql = "SELECT p.*, 
                            u.full_name as lecturer_name, 
                            f.faculty_name,
@@ -983,8 +982,11 @@ class ProjectController extends BaseController
                     LEFT JOIN faculties f ON l.faculty_id = f.faculty_id
                     WHERE p.status IN ('DaDuyet', 'DangThucHien')";
 
+            // Logic tìm kiếm: Tiêu đề OR Tên giảng viên OR Tên Khoa
             if (!empty($keyword)) {
-                $sql .= " AND (p.title LIKE :keyword OR u.full_name LIKE :keyword)";
+                $sql .= " AND (p.title LIKE :keyword 
+                               OR u.full_name LIKE :keyword 
+                               OR f.faculty_name LIKE :keyword)";
                 $params[':keyword'] = "%$keyword%";
             }
 
@@ -994,19 +996,26 @@ class ProjectController extends BaseController
             $stmt->execute($params);
             $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Query đếm tổng trang (Giữ nguyên)
-            $countSql = "SELECT COUNT(*) FROM projects p 
-                         LEFT JOIN users u ON p.lecturer_id = u.user_id 
+            // 2. QUERY ĐẾM: Tính tổng trang (Phải join giống hệt query chính để đếm đúng)
+            $countSql = "SELECT COUNT(*) 
+                         FROM projects p 
+                         LEFT JOIN lecturers l ON p.lecturer_id = l.lecturer_id
+                         LEFT JOIN users u ON l.user_id = u.user_id
+                         LEFT JOIN faculties f ON l.faculty_id = f.faculty_id
                          WHERE p.status IN ('DaDuyet', 'DangThucHien')";
+
             if (!empty($keyword)) {
-                $countSql .= " AND (p.title LIKE :keyword OR u.full_name LIKE :keyword)";
+                $countSql .= " AND (p.title LIKE :keyword 
+                                    OR u.full_name LIKE :keyword 
+                                    OR f.faculty_name LIKE :keyword)";
             }
+
             $stmtCount = $this->pdo->prepare($countSql);
             $stmtCount->execute($params);
             $totalProjects = $stmtCount->fetchColumn();
             $totalPages = ceil($totalProjects / $limit);
 
-            // Check sinh viên đã đăng ký
+            // 3. CHECK ĐĂNG KÝ: Kiểm tra sinh viên đã đăng ký đồ án nào chưa
             $registeredProjectIds = [];
             if (isset($_SESSION['role']) && $_SESSION['role'] === 'student') {
                 $user = $this->userModel->findByAccountId($_SESSION['account_id']);
@@ -1026,6 +1035,7 @@ class ProjectController extends BaseController
                 }
             }
 
+            // Render View
             $this->render('Projects/list_for_student', [
                 'projects' => $projects,
                 'totalProjects' => $totalProjects,
