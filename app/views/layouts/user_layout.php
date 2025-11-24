@@ -50,19 +50,6 @@ $uri = strtok($uri, '?');
                 <img src="/quanlydoan/assets/images/sv_logo_dashboard.png" alt="Logo">
             </a>
 
-
-            <form class="d-none d-lg-flex search-form me-auto" role="search" action="/quanlydoan/project" method="GET">
-                <div class="input-group">
-                    <input class="form-control search-input bg-light" type="search" name="keyword"
-                        placeholder="Tìm kiếm đồ án, giảng viên..."
-                        value="<?php echo isset($_GET['keyword']) ? htmlspecialchars($_GET['keyword']) : ''; ?>" required>
-                    <button class="btn btn-light search-btn" type="submit">
-                        <i class="bi bi-search text-primary"></i>
-                    </button>
-                </div>
-            </form>
-
-
             <?php
             // Xử lý logic lấy thông tin user & role
             global $pdo;
@@ -90,41 +77,22 @@ $uri = strtok($uri, '?');
             }
             ?>
 
-
-
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
             <div class="collapse navbar-collapse" id="navbarContent">
-
-                <?php if ($user): ?>
-                    <form class="d-flex d-lg-none mb-3 mt-3" role="search" action="/quanlydoan/project" method="GET">
-                        <div class="input-group">
-                            <input class="form-control" type="search" name="keyword" placeholder="Tìm kiếm..." value="<?php echo isset($_GET['keyword']) ? htmlspecialchars($_GET['keyword']) : ''; ?>">
-                            <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i></button>
-                        </div>
-                    </form>
-                <?php endif; ?>
-
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
                 <div class="collapse navbar-collapse" id="navbarContent">
-
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                         <li class="nav-item">
                             <a class="nav-link <?php echo ($uri === '/quanlydoan' || $uri === '/quanlydoan/') ? 'active' : ''; ?>" href="/quanlydoan">Trang chủ</a>
                         </li>
-
                         <?php if ($user): // Chỉ hiện khi đã đăng nhập 
                         ?>
-
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle <?php echo strpos($uri, '/quanlydoan/project') === 0 ? 'active' : ''; ?>"
                                     href="#" role="button" data-bs-toggle="dropdown">
-                                    Đồ án
+                                    Dự án
                                 </a>
                                 <ul class="dropdown-menu">
                                     <?php if ($role === 'student'): ?>
@@ -140,22 +108,17 @@ $uri = strtok($uri, '?');
                                     <?php endif; ?>
                                 </ul>
                             </li>
-
                         <?php endif; // Kết thúc if($user) 
                         ?>
-
+                        <li>
+                            <a class="nav-link <?php echo strpos($uri, '/quanlydoan/group') === 0 ? 'active' : ''; ?>" href="/quanlydoan/group">Nhóm Dự án</a>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link <?php echo strpos($uri, '/quanlydoan/about') === 0 ? 'active' : ''; ?>" href="/quanlydoan/about">Giới thiệu</a>
                         </li>
-
                         <li class="nav-item">
                             <a class="nav-link <?php echo strpos($uri, '/quanlydoan/contact') === 0 ? 'active' : ''; ?>" href="/quanlydoan/contact">Liên hệ</a>
                         </li>
-                    </ul>
-
-
-
-                    <ul class="navbar-nav ms-auto">
                         <?php if ($user): ?>
                             <li class="nav-item dropdown">
                                 <div class="d-flex align-items-center">
@@ -194,6 +157,7 @@ $uri = strtok($uri, '?');
                     </ul>
                 </div>
             </div>
+        </div>
     </nav>
 
     <main class="content flex-grow-1 py-4">

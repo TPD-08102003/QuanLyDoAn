@@ -36,18 +36,20 @@ class GroupMemberModel extends BaseModel
         return $stmt->execute(['group_id' => $groupId, 'student_id' => $studentId]);
     }
 
-    /**
-     * Get members of a group.
-     * @param int $groupId
-     * @return array
-     */
     public function getMembers(int $groupId): array
     {
-        $sql = "SELECT gm.*, s.mssv, u.full_name 
-                FROM {$this->table} gm 
+        $sql = "SELECT gm.*, 
+                       s.mssv, 
+                       u.full_name, 
+                       u.avatar, 
+                       u.phone_number, 
+                       a.email
+                FROM group_members gm 
                 JOIN students s ON gm.student_id = s.student_id 
                 JOIN users u ON s.user_id = u.user_id 
+                JOIN accounts a ON u.account_id = a.account_id
                 WHERE gm.group_id = :group_id";
+
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(['group_id' => $groupId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

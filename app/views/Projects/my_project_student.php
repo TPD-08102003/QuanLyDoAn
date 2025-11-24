@@ -20,6 +20,9 @@ $statusMap = [
 $statusInfo = $statusMap[$project['status']] ?? [$project['status'], 'secondary'];
 
 $isLeader = ($project['leader_id'] == $studentId); // $studentId từ controller
+
+// Kiểm tra xem có được phép hủy đăng ký không (Không được hủy khi đã nộp báo cáo hoặc hoàn thành)
+$canLeave = !in_array($project['status'], ['DaNopBaoCao', 'DaBaoVe', 'HoanThanh', 'Huy']);
 ?>
 
 <div class="container py-4">
@@ -38,13 +41,29 @@ $isLeader = ($project['leader_id'] == $studentId); // $studentId từ controller
                         <i class="bi bi-building"></i> Khoa: <?= htmlspecialchars($project['faculty_name']) ?>
                     </div>
                 </div>
+
                 <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
-                    <?php if ($isLeader && $project['status'] == 'DangThucHien'): ?>
-                        <button class="btn btn-success shadow-sm" onclick="confirmFinishProject(<?= $project['project_id'] ?>)">
-                            <i class="bi bi-check-circle-fill me-2"></i> Báo cáo hoàn thành
-                        </button>
-                        <div class="form-text text-end mt-1 small">Chỉ trưởng nhóm mới thấy nút này</div>
-                    <?php endif; ?>
+                    <div class="d-flex flex-column align-items-end gap-2">
+
+                        <?php if ($isLeader && $project['status'] == 'DangThucHien'): ?>
+                            <button class="btn btn-success shadow-sm w-100" onclick="confirmFinishProject(<?= $project['project_id'] ?>)">
+                                <i class="bi bi-check-circle-fill me-2"></i> Báo cáo hoàn thành
+                            </button>
+                        <?php endif; ?>
+
+                        <?php if ($canLeave): ?>
+                            <?php if (!$isLeader): ?>
+                                <button class="btn btn-outline-danger shadow-sm w-100" onclick="cancelRegistration(<?= $project['group_id'] ?>)">
+                                    <i class="bi bi-x-circle me-2"></i> Hủy đăng ký / Rời nhóm
+                                </button>
+                            <?php else: ?>
+                                <button class="btn btn-outline-secondary shadow-sm w-100" disabled title="Trưởng nhóm phải chuyển quyền trước khi rời nhóm">
+                                    <i class="bi bi-lock-fill me-2"></i> Hủy đăng ký (Leader)
+                                </button>
+                            <?php endif; ?>
+                        <?php endif; ?>
+
+                    </div>
                 </div>
             </div>
         </div>
@@ -61,11 +80,12 @@ $isLeader = ($project['leader_id'] == $studentId); // $studentId từ controller
                         $isMemLeader = ($mem['student_id'] == $project['leader_id']);
                     ?>
                         <div class="list-group-item py-3 d-flex align-items-center">
-                            <img src="/quanlydoan/assets/images/<?= $mem['avatar'] ?: 'profile.png' ?>" class="rounded-circle me-3 border" width="45" height="45" style="object-fit: cover;">
+                            <img src="/quanlydoan/assets/images/<?= !empty($mem['avatar']) ? $mem['avatar'] : 'profile.png' ?>" class="rounded-circle me-3 border" width="45" height="45" style="object-fit: cover;">
                             <div>
                                 <h6 class="mb-0 fw-bold text-dark">
                                     <?= htmlspecialchars($mem['full_name']) ?>
-                                    <?php if ($isMemLeader): ?> <i class="bi bi-star-fill text-warning small" title="Trưởng nhóm"></i><?php endif; ?>
+                                    <?php if ($mem['student_id'] == $studentId): ?> <span class="badge bg-light text-dark border ms-1">Tôi</span> <?php endif; ?>
+                                    <?php if ($isMemLeader): ?> <i class="bi bi-star-fill text-warning small ms-1" title="Trưởng nhóm"></i><?php endif; ?>
                                 </h6>
                                 <small class="text-muted"><?= $mem['mssv'] ?></small>
                             </div>
@@ -145,7 +165,6 @@ $isLeader = ($project['leader_id'] == $studentId); // $studentId từ controller
     </div>
 </div>
 
-<!-- Modal Nộp Báo Cáo/Code -->
 <div class="modal fade" id="uploadReportModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -179,6 +198,7 @@ $isLeader = ($project['leader_id'] == $studentId); // $studentId từ controller
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     function openUploadModal(typeId, name) {
         document.getElementById('modalTypeId').value = typeId;
@@ -193,7 +213,7 @@ $isLeader = ($project['leader_id'] == $studentId); // $studentId từ controller
         const spinner = btn.querySelector('.spinner-border');
 
         if (!this.report_file.value && !this.link_url.value) {
-            alert('Vui lòng chọn file hoặc nhập link!');
+            Swal.fire('Thông báo', 'Vui lòng chọn file hoặc nhập link!', 'warning');
             return;
         }
 
@@ -206,10 +226,13 @@ $isLeader = ($project['leader_id'] == $studentId); // $studentId từ controller
             })
             .then(r => r.json())
             .then(data => {
-                alert(data.message);
-                if (data.success) window.location.reload();
+                if (data.success) {
+                    Swal.fire('Thành công', data.message, 'success').then(() => window.location.reload());
+                } else {
+                    Swal.fire('Lỗi', data.message, 'error');
+                }
             })
-            .catch(() => alert('Lỗi kết nối.'))
+            .catch(() => Swal.fire('Lỗi', 'Lỗi kết nối server', 'error'))
             .finally(() => {
                 btn.disabled = false;
                 spinner.classList.add('d-none');
@@ -218,20 +241,73 @@ $isLeader = ($project['leader_id'] == $studentId); // $studentId từ controller
 
     // Leader báo cáo hoàn thành
     function confirmFinishProject(projectId) {
-        if (!confirm('Xác nhận đồ án đã hoàn thành? Sau khi xác nhận, chờ GV duyệt.')) return;
+        Swal.fire({
+            title: 'Xác nhận hoàn thành?',
+            text: "Sau khi xác nhận, đồ án sẽ chuyển sang trạng thái chờ giảng viên duyệt bảo vệ.",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Xác nhận',
+            cancelButtonText: 'Hủy'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch('/quanlydoan/project/finishProject', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: 'project_id=' + projectId
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire('Thành công', data.message, 'success').then(() => window.location.reload());
+                        } else {
+                            Swal.fire('Lỗi', data.message, 'error');
+                        }
+                    })
+                    .catch(() => Swal.fire('Lỗi', 'Lỗi hệ thống', 'error'));
+            }
+        });
+    }
 
-        fetch('/quanlydoan/project/finishProject', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: 'project_id=' + projectId
-            })
-            .then(r => r.json())
-            .then(data => {
-                alert(data.message);
-                if (data.success) window.location.reload();
-            })
-            .catch(() => alert('Lỗi hệ thống.'));
+    // Hủy đăng ký / Rời nhóm
+    function cancelRegistration(groupId) {
+        Swal.fire({
+            title: 'Hủy đăng ký?',
+            text: "Bạn có chắc chắn muốn hủy đăng ký đồ án này? Bạn sẽ bị xóa khỏi nhóm ngay lập tức.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Đồng ý hủy',
+            cancelButtonText: 'Giữ lại'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const formData = new FormData();
+                formData.append('group_id', groupId);
+
+                // Gọi đến GroupController để xử lý rời nhóm
+                fetch('/quanlydoan/group/leave', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire('Đã hủy!', 'Bạn đã rời khỏi nhóm thành công.', 'success')
+                                .then(() => {
+                                    // Chuyển hướng về trang danh sách đồ án đăng ký
+                                    window.location.href = '/quanlydoan/project';
+                                });
+                        } else {
+                            Swal.fire('Không thể hủy', data.message, 'error');
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        Swal.fire('Lỗi', 'Có lỗi xảy ra khi kết nối server', 'error');
+                    });
+            }
+        });
     }
 </script>

@@ -65,4 +65,27 @@ class GroupModel extends BaseModel
         $stmt->execute(['group_id' => $groupId]);
         return (int) $stmt->fetch(PDO::FETCH_ASSOC)['count'];
     }
+
+    // Trong models/GroupModel.php
+
+    /**
+     * Lấy danh sách tất cả các nhóm kèm thông tin chi tiết
+     * (Tên đồ án, Tên trưởng nhóm, MSSV trưởng nhóm)
+     */
+    public function getAllGroupsWithDetails(): array
+    {
+        $sql = "SELECT g.*, 
+                       p.title as project_title, 
+                       s.mssv as leader_mssv, 
+                       u.full_name as leader_name
+                FROM {$this->table} g
+                LEFT JOIN projects p ON g.project_id = p.project_id
+                LEFT JOIN students s ON g.leader_id = s.student_id
+                LEFT JOIN users u ON s.user_id = u.user_id
+                ORDER BY g.created_at DESC";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

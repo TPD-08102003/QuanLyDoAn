@@ -13,13 +13,14 @@ $isStudent = $_SESSION['role'] ?? null === 'student';
         </div>
     </div>
 
-    <!-- Search + Filter -->
     <div class="row mb-4">
         <div class="col-lg-6 mx-auto">
-            <form action="/quanlydoan/project" method="GET" class="d-flex">
-                <input type="text" name="keyword" class="form-control me-2" placeholder="Tìm kiếm đồ án, giảng viên..." value="<?= htmlspecialchars($keyword) ?>">
-                <button type="submit" class="btn btn-primary px-4">
-                    <i class="bi bi-search"></i>
+            <form action="/quanlydoan/project/index" method="GET" class="d-flex shadow-sm rounded-pill overflow-hidden bg-white">
+                <input type="text" name="keyword" class="form-control border-0 ps-4 py-2"
+                    placeholder="Nhập tên đồ án, tên giảng viên hoặc khoa..."
+                    value="<?= htmlspecialchars($keyword) ?>">
+                <button type="submit" class="btn btn-primary px-4 rounded-0">
+                    <i class="bi bi-search"></i> Tìm kiếm
                 </button>
             </form>
         </div>
@@ -288,5 +289,34 @@ $isStudent = $_SESSION['role'] ?? null === 'student';
 
     .transition {
         transition: all 0.3s ease;
+    }
+
+    /* CSS bổ sung trong user_layout.php */
+    .search-form {
+        width: 100%;
+    }
+
+    @media (min-width: 992px) {
+        .search-form {
+            width: 350px !important;
+            /* Tăng độ rộng trên máy tính */
+        }
+    }
+
+    .search-form .input-group {
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        border-radius: 5px;
+        overflow: hidden;
+    }
+
+    .search-form input {
+        border: 1px solid #dee2e6;
+        border-right: none;
+        font-size: 0.9rem;
+    }
+
+    .search-form button {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
     }
 </style>

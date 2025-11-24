@@ -43,11 +43,15 @@
                     </div>
                 </div>
 
-                <!-- Google Map Embed -->
                 <div class="mt-4 rounded overflow-hidden shadow-sm">
                     <iframe
-                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3924.587477750546!2d105.63131831479697!3d10.464718292533226!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x310a650a35f05937%3A0xe17c711112345678!2zVHLGsOG7nW5nIMSQ4bqhaSBo4buNYyDEkOG7k25nIFRow6Fw!5e0!3m2!1svi!2s!4v1625000000000!5m2!1svi!2s"
-                        width="100%" height="250" style="border:0;" allowfullscreen="" loading="lazy">
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3923.834694936306!2d105.6366553147116!3d10.45780879253818!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x310a6566e01d1563%3A0x6a164e2d4d8c850!2sTr%C6%B0%E1%BB%9Dng%20%C4%90%E1%BA%A1i%20h%E1%BB%8Dc%20%C4%90%E1%BB%93ng%20Th%C3%A1p!5e0!3m2!1svi!2s!4v1684829302211!5m2!1svi!2s"
+                        width="100%"
+                        height="250"
+                        style="border:0;"
+                        allowfullscreen=""
+                        loading="lazy"
+                        referrerpolicy="no-referrer-when-downgrade">
                     </iframe>
                 </div>
             </div>
