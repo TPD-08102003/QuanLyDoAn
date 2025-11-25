@@ -477,9 +477,35 @@ class ProjectController extends BaseController
             if (isset($_POST['lecturer_id']) && !empty($_POST['lecturer_id'])) $data['lecturer_id'] = (int)$_POST['lecturer_id'];
             if (isset($_POST['status']) && !empty($_POST['status'])) $data['status'] = $_POST['status'];
 
+
+
+            // --- SỬA LOGIC KIỂM TRA SỐ LƯỢNG SINH VIÊN ---
             if (isset($_POST['max_students'])) {
-                $ms = (int)$_POST['max_students'];
-                $data['max_students'] = ($ms >= 1 && $ms <= 3) ? $ms : 3;
+                $newMax = (int)$_POST['max_students'];
+
+                // Validate cơ bản (1-3)
+                if ($newMax < 1 || $newMax > 3) $newMax = 3;
+
+                // Đếm số lượng sinh viên thực tế đang có trong nhóm
+                $stmtCount = $this->pdo->prepare("
+                SELECT COUNT(*) 
+                FROM group_members gm 
+                JOIN groups g ON gm.group_id = g.group_id 
+                WHERE g.project_id = ?
+            ");
+                $stmtCount->execute([$id]);
+                $currentCount = (int)$stmtCount->fetchColumn();
+
+                // KIỂM TRA: Nếu số lượng mới nhỏ hơn số sinh viên hiện có -> BÁO LỖI
+                if ($newMax < $currentCount) {
+                    $this->jsonResponse([
+                        'success' => false,
+                        'message' => "Không thể giảm xuống $newMax sinh viên vì hiện tại đang có $currentCount sinh viên đã đăng ký."
+                    ], 400);
+                    return; // Dừng thực hiện ngay lập tức
+                }
+
+                $data['max_students'] = $newMax;
             }
 
             // Sửa: Nếu có lecturer_id mới, từ ID lấy tên và kiểm tra tồn tại; nếu không, dùng tên cũ từ project
@@ -941,14 +967,26 @@ class ProjectController extends BaseController
                     return;
                 }
             }
+            // --- BỔ SUNG: Đếm số lượng sinh viên hiện tại của đồ án ---
+            $stmtCount = $this->pdo->prepare("
+            SELECT COUNT(*) 
+            FROM group_members gm 
+            JOIN groups g ON gm.group_id = g.group_id 
+            WHERE g.project_id = ?
+        ");
+            $stmtCount->execute([$id]);
+            $currentCount = $stmtCount->fetchColumn();
 
             $this->render('projects/edit', [
-                'project' => $project
+                'project' => $project,
+                'currentCount' => $currentCount // Truyền biến này sang view
             ]);
         } catch (Exception $e) {
             $this->handleError($e, 'edit');
         }
     }
+
+
 
     public function index(): void
     {

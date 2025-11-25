@@ -117,6 +117,13 @@ class GroupController extends BaseController
             return;
         }
 
+        // --- [MỚI] KIỂM TRA KHÓA NHÓM ---
+        if (isset($group['is_locked']) && $group['is_locked'] == 1) {
+            // Nếu bị khóa, render trang thông báo khóa và DỪNG LẠI
+            $this->render('groups/locked');
+            return;
+        }
+
         // Lấy thành viên
         $members = $this->groupMemberModel->getMembers($group['group_id']);
 
@@ -144,6 +151,11 @@ class GroupController extends BaseController
         $message = trim($_POST['message'] ?? '');
 
         if ($groupId && $message) {
+            $group = $this->groupModel->getFullGroup($groupId);
+            if ($group && isset($group['is_locked']) && $group['is_locked'] == 1) {
+                $this->jsonResponse(['success' => false, 'message' => 'Nhóm đã bị khóa, không thể gửi tin nhắn.']);
+                return;
+            }
             $this->groupMessageModel->saveMessage($groupId, $user['user_id'], $message);
             $this->jsonResponse(['success' => true]);
         }
@@ -466,6 +478,50 @@ class GroupController extends BaseController
             ]);
         } catch (\Exception $e) {
             $this->handleError($e, 'chat');
+        }
+    }
+
+    /**
+     * Dành cho Admin: Quản lý danh sách tất cả các nhóm
+     * URL: /quanlydoan/Group/manage
+     */
+    public function manage(): void
+    {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+
+        // Kiểm tra quyền Admin
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+            header('Location: /quanlydoan/auth/login');
+            exit;
+        }
+
+        // Lấy tất cả nhóm kèm thông tin chi tiết (Model đã có hàm này)
+        $groups = $this->groupModel->getAllGroupsWithDetails();
+
+        // Render view cho admin
+        $this->render('groups/manage', ['groups' => $groups]);
+    }
+
+    public function toggle_lock(int $id): void
+    {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+
+        // Chỉ Admin được phép
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+            $this->jsonResponse(['success' => false, 'message' => 'Không có quyền.'], 403);
+            return;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Lấy trạng thái mới từ client gửi lên (0 hoặc 1)
+            $isLocked = isset($_POST['is_locked']) ? (int)$_POST['is_locked'] : 0;
+
+            if ($this->groupModel->toggleLock($id, $isLocked)) {
+                $msg = $isLocked ? 'Đã khóa nhóm thành công.' : 'Đã mở khóa nhóm.';
+                $this->jsonResponse(['success' => true, 'message' => $msg]);
+            } else {
+                $this->jsonResponse(['success' => false, 'message' => 'Lỗi cập nhật Database.'], 500);
+            }
         }
     }
 }

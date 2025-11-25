@@ -704,17 +704,11 @@ if (session_status() === PHP_SESSION_NONE) {
                 </ul>
             </div>
 
-            <!-- Quản lý Nhóm & Phân công -->
-            <div class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle <?php echo strpos($_SERVER['REQUEST_URI'], '/Group/') !== false ? 'active' : ''; ?>" href="#" role="button" data-bs-toggle="dropdown">
-                    <i class="bi bi-diagram-3"></i>
-                    <span>Nhóm & Phân công</span>
+            <div class="nav-item">
+                <a class="nav-link <?php echo strpos($_SERVER['REQUEST_URI'], '/Group/') !== false ? 'active' : ''; ?>" href="/quanlydoan/Group/manage">
+                    <i class="bi bi-people me-2"></i>
+                    <span>Quản lý Nhóm</span>
                 </a>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item <?php echo strpos($_SERVER['REQUEST_URI'], '/Group/manage') !== false ? 'active' : ''; ?>" href="/quanlydoan/Group/manage"><i class="bi bi-people me-2"></i>Quản lý Nhóm</a></li>
-                    <li><a class="dropdown-item <?php echo strpos($_SERVER['REQUEST_URI'], '/Group/assign') !== false ? 'active' : ''; ?>" href="/quanlydoan/Group/assign"><i class="bi bi-arrow-left-right me-2"></i>Phân công GVHD</a></li>
-                    <li><a class="dropdown-item <?php echo strpos($_SERVER['REQUEST_URI'], '/Group/schedule') !== false ? 'active' : ''; ?>" href="/quanlydoan/Group/schedule"><i class="bi bi-calendar-event me-2"></i>Lịch Phân công</a></li>
-                </ul>
             </div>
 
             <!-- Theo dõi Tiến độ -->

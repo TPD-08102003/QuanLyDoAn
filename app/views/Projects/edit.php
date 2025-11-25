@@ -34,13 +34,43 @@
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="max_students" class="form-label fw-bold">Số lượng sinh viên tối đa</label>
-                                <select class="form-select" id="max_students" name="max_students">
-                                    <option value="1" <?php echo ($project['max_students'] == 1) ? 'selected' : ''; ?>>1 Sinh viên</option>
-                                    <option value="2" <?php echo ($project['max_students'] == 2) ? 'selected' : ''; ?>>2 Sinh viên</option>
-                                    <option value="3" <?php echo ($project['max_students'] == 3) ? 'selected' : ''; ?>>3 Sinh viên</option>
-                                </select>
-                            </div>
 
+                                <?php if (isset($currentCount) && $currentCount > 0): ?>
+                                    <div class="text-info mb-1" style="font-size: 0.9em;">
+                                        <i class="bi bi-info-circle"></i>
+                                        Hiện tại đã có <strong><?php echo $currentCount; ?></strong> sinh viên đăng ký.
+                                    </div>
+                                <?php endif; ?>
+
+                                <select class="form-select" id="max_students" name="max_students">
+                                    <?php
+                                    // Mặc định là 0 nếu không có biến (để tránh lỗi undefined variable)
+                                    $registered = isset($currentCount) ? $currentCount : 0;
+                                    ?>
+
+                                    <option value="1"
+                                        <?php echo ($project['max_students'] == 1) ? 'selected' : ''; ?>
+                                        <?php echo ($registered > 1) ? 'disabled class="bg-light text-muted"' : ''; ?>>
+                                        1 Sinh viên <?php echo ($registered > 1) ? '(Không khả dụng)' : ''; ?>
+                                    </option>
+
+                                    <option value="2"
+                                        <?php echo ($project['max_students'] == 2) ? 'selected' : ''; ?>
+                                        <?php echo ($registered > 2) ? 'disabled class="bg-light text-muted"' : ''; ?>>
+                                        2 Sinh viên <?php echo ($registered > 2) ? '(Không khả dụng)' : ''; ?>
+                                    </option>
+
+                                    <option value="3" <?php echo ($project['max_students'] == 3) ? 'selected' : ''; ?>>
+                                        3 Sinh viên
+                                    </option>
+                                </select>
+
+                                <?php if (isset($currentCount) && $currentCount > 0): ?>
+                                    <div class="form-text text-muted">
+                                        Bạn không thể giảm số lượng tối đa thấp hơn số sinh viên hiện có.
+                                    </div>
+                                <?php endif; ?>
+                            </div>
                         </div>
 
                         <div class="mb-4">

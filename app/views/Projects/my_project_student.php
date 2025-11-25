@@ -117,9 +117,32 @@ $canLeave = !in_array($project['status'], ['DaNopBaoCao', 'DaBaoVe', 'HoanThanh'
                                     <td colspan="5" class="text-center py-4 text-muted">Giảng viên chưa tạo mốc báo cáo nào.</td>
                                 </tr>
                                 <?php else: foreach ($reports as $rep):
-                                    $isLate = (strtotime($rep['deadline']) < time()) && !$rep['submitted_at'];
-                                    $repStatus = $rep['report_status'] == 'DaNop' ? 'success' : ($isLate ? 'danger' : 'secondary');
-                                    $repLabel = $rep['report_status'] == 'DaNop' ? 'Đã nộp' : ($isLate ? 'Trễ hạn' : 'Chưa nộp');
+                                    // 1. Xác định đã nộp hay chưa dựa vào 'submitted_at' hoặc các trạng thái đã nộp
+                                    $hasSubmitted = !empty($rep['submitted_at']) || in_array($rep['report_status'], ['DaNop', 'DaCham', 'Tre']);
+
+                                    // 2. Kiểm tra trễ hạn
+                                    $isLate = (strtotime($rep['deadline']) < time()) && !$hasSubmitted;
+
+                                    // 3. Xác định màu sắc và nhãn hiển thị
+                                    $repStatus = 'secondary';
+                                    $repLabel = 'Chưa nộp';
+
+                                    if ($rep['report_status'] == 'DaCham') {
+                                        $repStatus = 'primary'; // Màu xanh dương cho đã chấm
+                                        $repLabel = 'Đã chấm';
+                                    } elseif ($rep['report_status'] == 'DaNop' || $hasSubmitted) {
+                                        $repStatus = 'success'; // Màu xanh lá cho đã nộp
+                                        $repLabel = 'Đã nộp';
+
+                                        // Nếu trạng thái là 'Tre' hoặc tính toán thấy trễ
+                                        if ($rep['report_status'] == 'Tre') {
+                                            $repStatus = 'warning text-dark';
+                                            $repLabel = 'Nộp trễ';
+                                        }
+                                    } elseif ($isLate) {
+                                        $repStatus = 'danger';
+                                        $repLabel = 'Quá hạn';
+                                    }
                                 ?>
                                     <tr>
                                         <td class="ps-4">

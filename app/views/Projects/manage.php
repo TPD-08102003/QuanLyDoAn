@@ -43,9 +43,9 @@ $statusMapping = [
             <table class="table table-hover align-middle">
                 <thead>
                     <tr>
-                        <th scope="col">Mã ĐA</th>
-                        <th scope="col">Tên Đồ Án</th>
-                        <th scope="col">GV Hướng Dẫn</th>
+                        <th scope="col">ID</th>
+                        <th scope="col" style="width: 35%; min-width: 250px;">Tên Đồ Án</th>
+                        <th scope="col">GVHD</th>
                         <th scope="col">Khoa</th>
                         <th scope="col">Trạng Thái</th>
                         <th scope="col">Ngày Tạo</th>

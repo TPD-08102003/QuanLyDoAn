@@ -88,4 +88,11 @@ class GroupModel extends BaseModel
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function toggleLock(int $groupId, int $isLocked): bool
+    {
+        $sql = "UPDATE {$this->table} SET is_locked = :is_locked WHERE group_id = :group_id";
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute(['is_locked' => $isLocked, 'group_id' => $groupId]);
+    }
 }

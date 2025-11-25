@@ -107,53 +107,58 @@ $uri = strtok($uri, '?');
                                         <li><a class="dropdown-item" href="/quanlydoan/project"><i class="bi bi-grid me-2"></i> Tất cả dự án</a></li>
                                     <?php endif; ?>
                                 </ul>
-                            </li>
-                        <?php endif; // Kết thúc if($user) 
-                        ?>
+                                <?php if ($role === 'teacher'): ?>
+                            <li><a class="nav-link" <?php echo strpos($uri, '/quanlydoan/report/manage_progress') === 0 ? 'active' : ''; ?> href="/quanlydoan/report/manage_progress"><i></i> Quản lý tiến độ</a></li>
+                        <?php endif; ?>
+                        </li>
+                    <?php endif;
+                    ?>
+                    <?php if ($role === 'student' || $role === 'teacher'): ?>
                         <li>
                             <a class="nav-link <?php echo strpos($uri, '/quanlydoan/group') === 0 ? 'active' : ''; ?>" href="/quanlydoan/group">Nhóm Dự án</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link <?php echo strpos($uri, '/quanlydoan/about') === 0 ? 'active' : ''; ?>" href="/quanlydoan/about">Giới thiệu</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link <?php echo strpos($uri, '/quanlydoan/contact') === 0 ? 'active' : ''; ?>" href="/quanlydoan/contact">Liên hệ</a>
-                        </li>
-                        <?php if ($user): ?>
-                            <li class="nav-item dropdown">
-                                <div class="d-flex align-items-center">
-                                    <a class="nav-link dropdown-toggle d-flex align-items-center pe-2" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <div class="avatar-container position-relative me-2">
-                                            <img src="<?php echo $avatar; ?>" alt="Avatar" class="avatar-img rounded-circle">
-                                            <span class="avatar-status"></span>
-                                        </div>
-                                        <span class="user-name"><?php echo htmlspecialchars($user['full_name'] ?? ''); ?></span>
-                                    </a>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        <li><a class="dropdown-item" href="/quanlydoan/user/profile"><i class="bi bi-person me-2"></i> Hồ sơ</a></li>
-                                        <li><a class="dropdown-item" href="/quanlydoan/notification/list"><i class="bi bi-bell me-2"></i> Thông báo</a></li>
-                                        <li>
-                                            <hr class="dropdown-divider">
-                                        </li>
-                                        <li><a class="dropdown-item text-danger" href="/quanlydoan/auth/logout"><i class="bi bi-box-arrow-right me-2"></i> Đăng xuất</a></li>
-                                    </ul>
-                                </div>
-                            </li>
-                        <?php else: ?>
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <?php endif; ?>
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo strpos($uri, '/quanlydoan/about') === 0 ? 'active' : ''; ?>" href="/quanlydoan/about">Giới thiệu</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo strpos($uri, '/quanlydoan/contact') === 0 ? 'active' : ''; ?>" href="/quanlydoan/contact">Liên hệ</a>
+                    </li>
+                    <?php if ($user): ?>
+                        <li class="nav-item dropdown">
+                            <div class="d-flex align-items-center">
+                                <a class="nav-link dropdown-toggle d-flex align-items-center pe-2" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <div class="avatar-container position-relative me-2">
-                                        <img src="/quanlydoan/assets/images/profile.png" alt="Avatar" class="avatar-img rounded-circle">
+                                        <img src="<?php echo $avatar; ?>" alt="Avatar" class="avatar-img rounded-circle">
+                                        <span class="avatar-status"></span>
                                     </div>
-                                    <span class="user-name">Tài khoản</span>
+                                    <span class="user-name"><?php echo htmlspecialchars($user['full_name'] ?? ''); ?></span>
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end">
-                                    <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#loginModal"><i class="bi bi-box-arrow-in-right me-2"></i> Đăng nhập</a></li>
-                                    <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#registerModal"><i class="bi bi-person-plus me-2"></i> Đăng ký</a></li>
-                                    <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal"><i class="bi bi-question-circle me-2"></i> Quên mật khẩu</a></li>
+                                    <li><a class="dropdown-item" href="/quanlydoan/user/profile"><i class="bi bi-person me-2"></i> Hồ sơ</a></li>
+                                    <li><a class="dropdown-item" href="/quanlydoan/notification/list"><i class="bi bi-bell me-2"></i> Thông báo</a></li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li><a class="dropdown-item text-danger" href="/quanlydoan/auth/logout"><i class="bi bi-box-arrow-right me-2"></i> Đăng xuất</a></li>
                                 </ul>
-                            </li>
-                        <?php endif; ?>
+                            </div>
+                        </li>
+                    <?php else: ?>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <div class="avatar-container position-relative me-2">
+                                    <img src="/quanlydoan/assets/images/profile.png" alt="Avatar" class="avatar-img rounded-circle">
+                                </div>
+                                <span class="user-name">Tài khoản</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#loginModal"><i class="bi bi-box-arrow-in-right me-2"></i> Đăng nhập</a></li>
+                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#registerModal"><i class="bi bi-person-plus me-2"></i> Đăng ký</a></li>
+                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal"><i class="bi bi-question-circle me-2"></i> Quên mật khẩu</a></li>
+                            </ul>
+                        </li>
+                    <?php endif; ?>
                     </ul>
                 </div>
             </div>
