@@ -1318,11 +1318,35 @@ class ProjectController extends BaseController
             // Tạo các loại báo cáo mặc định (Đề cương, Tiến độ...)
             $this->createDefaultReportTypes($projectId);
 
+
+
+            // --- ĐOẠN CODE THÊM MỚI: GỬI THÔNG BÁO CHO ADMIN ---
+            // 1. Tìm danh sách Admin
+            $stmtAdmin = $this->pdo->prepare("
+                SELECT u.user_id 
+                FROM users u 
+                JOIN accounts a ON u.account_id = a.account_id 
+                WHERE a.role = 'admin' AND a.status = 'active'
+            ");
+            $stmtAdmin->execute();
+            $admins = $stmtAdmin->fetchAll(\PDO::FETCH_ASSOC);
+
+            // 2. Nội dung thông báo
+            $notifTitle = "Yêu cầu duyệt đồ án mới";
+            $notifMessage = "Giảng viên " . htmlspecialchars($lecturer_name) . " vừa tạo đồ án: " . htmlspecialchars($title) . ". Vui lòng kiểm tra và phê duyệt.";
+
+            // 3. Khởi tạo model thông báo và gửi
+            $notificationModel = new \App\Models\NotificationModel($this->pdo);
+            foreach ($admins as $admin) {
+                $notificationModel->createNotification($admin['user_id'], $notifTitle, $notifMessage);
+            }
+
             $this->pdo->commit();
 
             $this->jsonResponse([
                 'success' => true,
-                'message' => "Đã tạo đồ án thành công! (Trạng thái: " . ($status == 'ChoDuyet' ? 'Chờ duyệt' : 'Đã duyệt') . ")",
+                'message' => "Đã tạo đồ án thành công! Đã tạo đồ án thành công và gửi yêu cầu duyệt tới Admin!
+                (Trạng thái: " . ($status == 'ChoDuyet' ? 'Chờ duyệt' : 'Đã duyệt') . ")",
             ], 201);
         } catch (Exception $e) {
             if ($this->pdo->inTransaction()) $this->pdo->rollBack();

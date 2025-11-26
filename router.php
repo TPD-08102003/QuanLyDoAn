@@ -32,6 +32,7 @@ use App\Controllers\UserController;
 use App\Controllers\ClassesController;
 use App\Controllers\FacultiesController;
 use App\Controllers\AdminController;
+use App\Controllers\NotificationController;
 // Remove 'App\User' if it's not a controller; use models separately if needed
 
 session_start();
@@ -61,6 +62,7 @@ $allowedControllers = [
     'UserController' => UserController::class,
     'ClassesController' => ClassesController::class,
     'FacultiesController' => FacultiesController::class,
+    'NotificationController' => NotificationController::class,
 ];
 
 // Handle route function

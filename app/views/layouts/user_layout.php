@@ -136,7 +136,7 @@ $uri = strtok($uri, '?');
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li><a class="dropdown-item" href="/quanlydoan/user/profile"><i class="bi bi-person me-2"></i> Hồ sơ</a></li>
-                                    <li><a class="dropdown-item" href="/quanlydoan/notification/list"><i class="bi bi-bell me-2"></i> Thông báo</a></li>
+                                    <li><a class="dropdown-item" href="/quanlydoan/Notification/list"><i class="bi bi-bell me-2"></i> Thông báo</a></li>
                                     <li>
                                         <hr class="dropdown-divider">
                                     </li>

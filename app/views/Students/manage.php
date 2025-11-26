@@ -39,9 +39,9 @@
                     <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addStudentModal">
                         <i class="bi bi-person-add me-1"></i> Thêm SV
                     </button>
-                    <a href="/quanlydoan/Student/export" class="btn btn-info text-white">
+                    <button type="button" class="btn btn-info text-white" data-bs-toggle="modal" data-bs-target="#exportStudentModal">
                         <i class="bi bi-cloud-download"></i> Xuất Excel
-                    </a>
+                    </button>
                     <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#importStudentModal">
                         <i class="bi bi-cloud-upload"></i> Nhập Excel
                     </button>
