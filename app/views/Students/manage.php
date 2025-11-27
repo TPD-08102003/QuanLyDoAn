@@ -65,7 +65,7 @@
                         <th scope="col">Giới tính</th>
                         <th scope="col">Lớp</th>
                         <th scope="col">Khoa</th>
-                        <th scope="col">Tình trạng</th>
+                        <th scope="col">Trạng Thái</th>
                         <th scope="col" class="text-center" width="180">Hành động</th>
                     </tr>
                 </thead>

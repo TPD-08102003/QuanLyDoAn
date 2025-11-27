@@ -21,10 +21,37 @@ abstract class BaseController
         $this->pdo = $pdo;
     }
 
+    // protected function render(string $view, array $data = [], ?string $layout = null): void
+    // {
+    //     if (session_status() === PHP_SESSION_NONE) {
+    //         session_start();
+    //     }
+
+    //     // Chọn layout: Ưu tiên layout được truyền vào, nếu không thì dựa vào vai trò
+    //     if ($layout === null) {
+    //         $role = $_SESSION['role'] ?? 'default';
+    //         $layout = $this->layoutMap[$role] ?? $this->layoutMap['default'];
+    //     }
+
+    //     extract($data, EXTR_SKIP);
+    //     ob_start();
+    //     require __DIR__ . '/../views/' . str_replace('/', DIRECTORY_SEPARATOR, $view) . '.php';
+    //     $content = ob_get_clean();
+    //     require __DIR__ . '/../views/layouts/' . $layout . '.php';
+    // }
+
     protected function render(string $view, array $data = [], ?string $layout = null): void
     {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
+        }
+
+        // Nếu $layout là chuỗi rỗng, thì không dùng layout
+        if ($layout === '') {
+            // Chỉ render view
+            extract($data, EXTR_SKIP);
+            require __DIR__ . '/../views/' . str_replace('/', DIRECTORY_SEPARATOR, $view) . '.php';
+            return;
         }
 
         // Chọn layout: Ưu tiên layout được truyền vào, nếu không thì dựa vào vai trò
@@ -39,7 +66,7 @@ abstract class BaseController
         $content = ob_get_clean();
         require __DIR__ . '/../views/layouts/' . $layout . '.php';
     }
-
+    
     protected function redirect(string $url): void
     {
         header("Location: /quanlydoan" . $url);

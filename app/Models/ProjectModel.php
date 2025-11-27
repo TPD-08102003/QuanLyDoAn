@@ -750,4 +750,76 @@ class ProjectModel extends BaseModel
             'total'    => $total
         ];
     }
+
+    /**
+     * Hàm tìm kiếm nâng cao kết hợp phân trang
+     */
+    public function searchProjects(int $limit, int $offset, string $keyword = '', string $facultyId = '', string $status = ''): array
+    {
+        // 1. Base Query (Dùng chung cho cả lấy dữ liệu và đếm tổng)
+        // Lưu ý: LEFT JOIN đầy đủ để lấy tên GV và tên Khoa
+        $baseSql = "
+            FROM {$this->table} p
+            LEFT JOIN lecturers l ON p.lecturer_id = l.lecturer_id
+            LEFT JOIN users u ON l.user_id = u.user_id
+            LEFT JOIN faculties f ON l.faculty_id = f.faculty_id
+        ";
+
+        // 2. Xây dựng điều kiện WHERE động
+        $conditions = ["1=1"]; // Luôn đúng để dễ nối chuỗi AND
+        $params = [];
+
+        // Lọc theo từ khóa (Tên đồ án hoặc Tên GV)
+        if (!empty($keyword)) {
+            $conditions[] = "(p.title LIKE :keyword OR u.full_name LIKE :keyword)";
+            $params[':keyword'] = "%$keyword%";
+        }
+
+        // Lọc theo Khoa (nếu có chọn)
+        if (!empty($facultyId) && is_numeric($facultyId)) {
+            $conditions[] = "f.faculty_id = :faculty_id";
+            $params[':faculty_id'] = $facultyId;
+        }
+
+        // Lọc theo Trạng thái (nếu có chọn)
+        if (!empty($status)) {
+            $conditions[] = "p.status = :status";
+            $params[':status'] = $status;
+        }
+
+        // Ghép các điều kiện lại
+        $whereSql = " WHERE " . implode(" AND ", $conditions);
+
+        // --- QUERY 1: LẤY DỮ LIỆU ---
+        $sqlData = "SELECT 
+                        p.project_id, p.title, p.description, p.status, p.created_at,
+                        l.lecturer_id, u.full_name AS lecturer_name,
+                        f.faculty_name "
+            . $baseSql . $whereSql
+            . " ORDER BY p.created_at DESC LIMIT :limit OFFSET :offset";
+
+        $stmt = $this->pdo->prepare($sqlData);
+
+        // Bind params
+        foreach ($params as $key => $val) {
+            $stmt->bindValue($key, $val);
+        }
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // --- QUERY 2: ĐẾM TỔNG SỐ (Để phân trang) ---
+        // Quan trọng: Dùng lại đúng $baseSql và $whereSql để đếm chính xác
+        $sqlCount = "SELECT COUNT(*) " . $baseSql . $whereSql;
+
+        $stmtCount = $this->pdo->prepare($sqlCount);
+        foreach ($params as $key => $val) {
+            $stmtCount->bindValue($key, $val);
+        }
+        $stmtCount->execute();
+        $total = (int)$stmtCount->fetchColumn();
+
+        return ['projects' => $projects, 'total' => $total];
+    }
 }

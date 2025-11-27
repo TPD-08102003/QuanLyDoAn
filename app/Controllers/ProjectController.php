@@ -329,48 +329,81 @@ class ProjectController extends BaseController
         ]);
     }
 
+    // public function manage(): void
+    // {
+    //     try {
+    //         $page = (int)($_GET['page'] ?? 1);
+    //         $keyword = trim($_GET['keyword'] ?? '');
+    //         $limit = 5;
+    //         $offset = ($page - 1) * $limit;
+
+
+    //         if (empty($keyword)) {
+    //             $allProjects = $this->projectModel->getAllWithDetails();
+    //             $totalProjects = count($allProjects);
+    //             $projects = array_slice($allProjects, $offset, $limit);
+    //             $totalPages = ceil($totalProjects / $limit);
+    //         } else {
+    //             // Giả sử ProjectModel có getProjectsWithPagination
+    //             $result = $this->projectModel->getProjectsWithPagination($limit, $offset, $keyword);
+    //             $projects = $result['projects'];
+    //             $totalProjects = $result['total'];
+    //             $totalPages = ceil($totalProjects / $limit);
+    //         }
+
+    //         // $lecturers = $this->projectModel->getAvailableLecturers(); // Lấy tất cả
+    //         $faculties = $this->facultiesModel->getActiveFaculties();
+    //         // $lecturers = $this->projectModel->getAvailableLecturers();
+    //         // $faculties = $this->facultiesModel->getActiveFaculties();
+
+    //         $this->render('projects/manage', [
+    //             'projects' => $projects,
+    //             'totalProjects' => $totalProjects,
+    //             'totalPages' => $totalPages,
+    //             'page' => $page,
+    //             'keyword' => $keyword,
+    //             // 'lecturers' => $lecturers,
+    //             'faculties' => $faculties,
+    //         ]);
+    //     } catch (Exception $e) {
+    //         $this->handleError($e, 'manage');
+    //     }
+    // }
+
     public function manage(): void
     {
         try {
-            $page = (int)($_GET['page'] ?? 1);
-            $keyword = trim($_GET['keyword'] ?? '');
+            // 1. Lấy tham số phân trang
+            $page = max(1, (int)($_GET['page'] ?? 1));
             $limit = 5;
             $offset = ($page - 1) * $limit;
 
+            // 2. Lấy tham số tìm kiếm (Xử lý trim để xóa khoảng trắng thừa)
+            $keyword = trim($_GET['keyword'] ?? '');
+            $facultyId = trim($_GET['faculty_id'] ?? '');
+            $status = trim($_GET['status'] ?? '');
 
-            if (empty($keyword)) {
-                $allProjects = $this->projectModel->getAllWithDetails();
-                $totalProjects = count($allProjects);
-                $projects = array_slice($allProjects, $offset, $limit);
-                $totalPages = ceil($totalProjects / $limit);
-            } else {
-                // Giả sử ProjectModel có getProjectsWithPagination
-                $result = $this->projectModel->getProjectsWithPagination($limit, $offset, $keyword);
-                $projects = $result['projects'];
-                $totalProjects = $result['total'];
-                $totalPages = ceil($totalProjects / $limit);
-            }
+            // 3. Gọi Model tìm kiếm
+            $result = $this->projectModel->searchProjects($limit, $offset, $keyword, $facultyId, $status);
 
-            // $lecturers = $this->projectModel->getAvailableLecturers(); // Lấy tất cả
+            // 4. Lấy danh sách Khoa để đổ vào Dropdown lọc
             $faculties = $this->facultiesModel->getActiveFaculties();
-            // $lecturers = $this->projectModel->getAvailableLecturers();
-            // $faculties = $this->facultiesModel->getActiveFaculties();
 
+            // 5. Render View và truyền lại các biến để giữ trạng thái Selected
             $this->render('projects/manage', [
-                'projects' => $projects,
-                'totalProjects' => $totalProjects,
-                'totalPages' => $totalPages,
+                'projects' => $result['projects'],
+                'totalProjects' => $result['total'],
+                'totalPages' => ceil($result['total'] / $limit),
                 'page' => $page,
                 'keyword' => $keyword,
-                // 'lecturers' => $lecturers,
+                'selectedFaculty' => $facultyId, // Biến này để giữ lựa chọn Khoa
+                'selectedStatus' => $status,     // Biến này để giữ lựa chọn Status
                 'faculties' => $faculties,
             ]);
         } catch (Exception $e) {
             $this->handleError($e, 'manage');
         }
     }
-
-
 
     public function store(): void
     {

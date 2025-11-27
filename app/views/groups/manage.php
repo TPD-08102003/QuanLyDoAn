@@ -45,8 +45,8 @@
                         <tr>
                             <th class="ps-4 py-3" width="5%">ID</th>
                             <th width="35%">Thông tin Đồ án</th>
-                            <th width="25%">Trưởng nhóm</th>
-                            <th class="text-center" width="10%">Thành viên</th>
+                            <th width="20%">Trưởng nhóm</th>
+                            <th class="text-center" width="15%">Thành viên</th>
                             <th class="text-center" width="10%">Trạng thái</th>
                             <th class="text-end pe-4" width="15%">Hành động</th>
                         </tr>

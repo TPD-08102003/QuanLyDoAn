@@ -161,63 +161,140 @@ class AuthController extends BaseController
         }
     }
 
+    // public function forgotPassword()
+    // {
+    //     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    //         $this->jsonResponse(['success' => false, 'message' => 'Phương thức không hợp lệ!']);
+    //     }
+
+    //     $email = $_POST['email'] ?? '';
+
+    //     if (empty($email)) {
+    //         $this->jsonResponse(['success' => false, 'message' => 'Vui lòng nhập email!']);
+    //     }
+
+    //     try {
+    //         $account = $this->accountModel->findByEmail($email);
+    //         if (!$account) {
+    //             $this->jsonResponse(['success' => false, 'message' => 'Email không tồn tại!']);
+    //         }
+
+    //         $token = bin2hex(random_bytes(32));
+    //         $this->passwordResetTokenModel->createToken($account['account_id'], $token, 60); // 60 minutes
+
+    //         $mail = new PHPMailer(true);
+    //         try {
+    //             $mail->isSMTP();
+    //             $mail->Host = 'smtp.gmail.com';
+    //             $mail->SMTPAuth = true;
+    //             $mail->Username = '0022410911@student.dthu.edu.vn';
+    //             $mail->Password = 'illt rfgp odrx jtfo';
+    //             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+    //             $mail->Port = 587;
+
+    //             $mail->CharSet = 'UTF-8';
+    //             $mail->Encoding = 'base64';
+
+    //             $mail->setFrom('0022410911@student.dthu.edu.vn', 'Quan Ly Do An', true);
+    //             $mail->addAddress($email);
+    //             $mail->isHTML(true);
+    //             $mail->Subject = 'Đặt lại mật khẩu - Quan Ly Do An';
+
+    //             $resetLink = "http://localhost/quanlydoan/auth/reset_password?token=$token";
+
+    //             $mail->Body = $this->getPasswordResetEmailTemplate($resetLink);
+
+    //             $mail->AltBody = mb_convert_encoding(
+    //                 "Nhấn vào liên kết sau để đặt lại mật khẩu của bạn: $resetLink\nLiên kết này có hiệu lực trong 1 giờ.",
+    //                 'UTF-8'
+    //             );
+
+    //             $mail->send();
+    //             $this->jsonResponse(['success' => true, 'message' => 'Liên kết đặt lại mật khẩu đã được gửi đến email của bạn!']);
+    //         } catch (Exception $e) {
+    //             error_log("Email error: " . $mail->ErrorInfo);
+    //             $this->jsonResponse(['success' => false, 'message' => 'Lỗi gửi email: ' . $mail->ErrorInfo]);
+    //         }
+    //     } catch (PDOException $e) {
+    //         error_log("Forgot password error: " . $e->getMessage());
+    //         $this->jsonResponse(['success' => false, 'message' => 'Lỗi server, vui lòng thử lại sau!']);
+    //     }
+    // }
+
     public function forgotPassword()
     {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $this->jsonResponse(['success' => false, 'message' => 'Phương thức không hợp lệ!']);
+        // 1. Nếu là GET Request -> Hiển thị View
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            // Gọi đến file views/auth/forgot_password.php
+            // Hàm render này được thừa kế từ BaseController
+            $this->render('auth/forgot_password', ['title' => 'Quên mật khẩu']);
+            return;
         }
 
-        $email = $_POST['email'] ?? '';
+        // 2. Nếu là POST Request -> Xử lý logic gửi mail
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $email = $_POST['email'] ?? '';
 
-        if (empty($email)) {
-            $this->jsonResponse(['success' => false, 'message' => 'Vui lòng nhập email!']);
-        }
-
-        try {
-            $account = $this->accountModel->findByEmail($email);
-            if (!$account) {
-                $this->jsonResponse(['success' => false, 'message' => 'Email không tồn tại!']);
+            if (empty($email)) {
+                $this->jsonResponse(['success' => false, 'message' => 'Vui lòng nhập email!']);
+                return;
             }
 
-            $token = bin2hex(random_bytes(32));
-            $this->passwordResetTokenModel->createToken($account['account_id'], $token, 60); // 60 minutes
-
-            $mail = new PHPMailer(true);
             try {
-                $mail->isSMTP();
-                $mail->Host = 'smtp.gmail.com';
-                $mail->SMTPAuth = true;
-                $mail->Username = '0022410169@student.dthu.edu.vn';
-                $mail->Password = 'mebx bfpj kdzz xhqy';
-                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-                $mail->Port = 587;
+                $account = $this->accountModel->findByEmail($email);
+                if (!$account) {
+                    // Để bảo mật, đôi khi người ta báo thành công giả, 
+                    // nhưng ở đây bạn đang báo lỗi trực tiếp (ok cho đồ án)
+                    $this->jsonResponse(['success' => false, 'message' => 'Email không tồn tại trong hệ thống!']);
+                    return;
+                }
 
-                $mail->CharSet = 'UTF-8';
-                $mail->Encoding = 'base64';
+                // Tạo token
+                $token = bin2hex(random_bytes(32));
+                // Token hết hạn sau 60 phút
+                $this->passwordResetTokenModel->createToken($account['account_id'], $token, 60);
 
-                $mail->setFrom('0022410911@student.dthu.edu.vn', 'Quan Ly Do An', true);
-                $mail->addAddress($email);
-                $mail->isHTML(true);
-                $mail->Subject = 'Đặt lại mật khẩu - Quan Ly Do An';
+                // Cấu hình gửi mail
+                $mail = new PHPMailer(true);
+                try {
+                    // Server settings
+                    $mail->isSMTP();
+                    $mail->Host = 'smtp.gmail.com';
+                    $mail->SMTPAuth = true;
+                    $mail->Username = '0022410911@student.dthu.edu.vn';
+                    $mail->Password = 'illt rfgp odrx jtfo'; // App Password
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                    $mail->Port = 587;
 
-                $resetLink = "http://localhost/quanlydoan/auth/reset_password?token=$token";
+                    $mail->CharSet = 'UTF-8';
+                    $mail->Encoding = 'base64';
 
-                $mail->Body = $this->getPasswordResetEmailTemplate($resetLink);
+                    // Recipients
+                    $mail->setFrom('0022410911@student.dthu.edu.vn', 'Hệ Thống Quản Lý Đồ Án', true);
+                    $mail->addAddress($email);
 
-                $mail->AltBody = mb_convert_encoding(
-                    "Nhấn vào liên kết sau để đặt lại mật khẩu của bạn: $resetLink\nLiên kết này có hiệu lực trong 1 giờ.",
-                    'UTF-8'
-                );
+                    // Content
+                    $mail->isHTML(true);
+                    $mail->Subject = 'Yêu cầu đặt lại mật khẩu';
 
-                $mail->send();
-                $this->jsonResponse(['success' => true, 'message' => 'Liên kết đặt lại mật khẩu đã được gửi đến email của bạn!']);
-            } catch (Exception $e) {
-                error_log("Email error: " . $mail->ErrorInfo);
-                $this->jsonResponse(['success' => false, 'message' => 'Lỗi gửi email: ' . $mail->ErrorInfo]);
+                    // Link reset
+                    $resetLink = "http://localhost/quanlydoan/auth/reset_password?token=$token";
+
+                    // Template email
+                    $mail->Body = $this->getPasswordResetEmailTemplate($resetLink);
+
+                    $mail->AltBody = "Vui lòng truy cập đường dẫn sau để đặt lại mật khẩu: $resetLink";
+
+                    $mail->send();
+                    $this->jsonResponse(['success' => true, 'message' => 'Đã gửi liên kết khôi phục mật khẩu vào email của bạn. Vui lòng kiểm tra hộp thư (cả mục Spam).']);
+                } catch (Exception $e) {
+                    error_log("Email error: " . $mail->ErrorInfo);
+                    $this->jsonResponse(['success' => false, 'message' => 'Không thể gửi email. Lỗi: ' . $mail->ErrorInfo]);
+                }
+            } catch (PDOException $e) {
+                error_log("Forgot password error: " . $e->getMessage());
+                $this->jsonResponse(['success' => false, 'message' => 'Lỗi hệ thống, vui lòng thử lại sau!']);
             }
-        } catch (PDOException $e) {
-            error_log("Forgot password error: " . $e->getMessage());
-            $this->jsonResponse(['success' => false, 'message' => 'Lỗi server, vui lòng thử lại sau!']);
         }
     }
 
@@ -321,41 +398,44 @@ class AuthController extends BaseController
         </html>
         HTML;
     }
-    public function resetPasswordView(): void
-    {
-        // 1. Lấy token từ URL (đảm bảo router của bạn map /auth/reset-password đến hàm này)
-        $token = $_GET['token'] ?? null;
+    // public function resetPasswordView(): void
+    // {
+    //     // 1. Lấy token từ URL (đảm bảo router của bạn map /auth/reset-password đến hàm này)
+    //     $token = $_GET['token'] ?? null;
 
-        if (empty($token)) {
-            // Không có token: chuyển hướng hoặc hiển thị trang lỗi
-            $this->redirect('/');
-            return;
-        }
+    //     if (empty($token)) {
+    //         // Không có token: chuyển hướng hoặc hiển thị trang lỗi
+    //         $this->redirect('/');
+    //         return;
+    //     }
 
-        // 2. Tìm token trong DB
-        $tokenRecord = $this->passwordResetTokenModel->findByToken($token);
+    //     // 2. Tìm token trong DB
+    //     $tokenRecord = $this->passwordResetTokenModel->findByToken($token);
 
-        // 3. Kiểm tra token (Tồn tại và Hết hạn)
-        if (!$tokenRecord || strtotime($tokenRecord['expires_at']) < time()) {
-            // Nếu token không hợp lệ hoặc đã hết hạn
-            // Tùy chọn: Dùng một view lỗi riêng (ví dụ: views/auth/reset_password_error.php)
-            // Hoặc hiển thị view đặt lại mật khẩu với thông báo lỗi
-            $this->render('auth/reset_password_error', [
-                'title' => 'Lỗi Đặt Lại Mật Khẩu',
-                'error_message' => 'Liên kết đặt lại mật khẩu đã hết hạn hoặc không hợp lệ. Vui lòng gửi yêu cầu mới.'
-            ]);
-            return;
-        }
+    //     // 3. Kiểm tra token (Tồn tại và Hết hạn)
+    //     if (!$tokenRecord || strtotime($tokenRecord['expires_at']) < time()) {
+    //         // Nếu token không hợp lệ hoặc đã hết hạn
+    //         // Tùy chọn: Dùng một view lỗi riêng (ví dụ: views/auth/reset_password_error.php)
+    //         // Hoặc hiển thị view đặt lại mật khẩu với thông báo lỗi
+    //         $this->render('auth/reset_password_error', [
+    //             'title' => 'Lỗi Đặt Lại Mật Khẩu',
+    //             'error_message' => 'Liên kết đặt lại mật khẩu đã hết hạn hoặc không hợp lệ. Vui lòng gửi yêu cầu mới.'
+    //         ]);
+    //         return;
+    //     }
 
-        // 4. Nếu token hợp lệ, hiển thị form đặt lại
-        // View (reset_password.php) sẽ tự động lấy token từ $_GET để đưa vào form ẩn
-        $this->render('auth/reset_password', ['title' => 'Đặt lại mật khẩu']);
-    }
+    //     // 4. Nếu token hợp lệ, hiển thị form đặt lại
+    //     // View (reset_password.php) sẽ tự động lấy token từ $_GET để đưa vào form ẩn
+    //     $this->render('auth/reset_password', ['title' => 'Đặt lại mật khẩu']);
+    // }
+
 
     /**
      * [POST] Xử lý POST request từ form đặt lại mật khẩu.
      * URL: /auth/resetPassword (Endpoint AJAX)
      */
+    // AuthController.php - Sửa phương thức resetPassword
+
     public function resetPassword(): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -381,8 +461,7 @@ class AuthController extends BaseController
         }
 
         if (strtotime($tokenRecord['expires_at']) < time()) {
-            // Token hết hạn: Xóa token hết hạn và thông báo lỗi
-            $this->passwordResetTokenModel->deleteByToken($token); // Xóa token hết hạn
+            $this->passwordResetTokenModel->deleteByToken($token);
             $this->jsonResponse(['success' => false, 'message' => 'Liên kết đặt lại mật khẩu đã hết hạn. Vui lòng gửi yêu cầu mới.']);
             return;
         }
@@ -392,19 +471,51 @@ class AuthController extends BaseController
             $hashedPassword = password_hash($new_password, PASSWORD_BCRYPT);
             $accountId = $tokenRecord['account_id'];
 
-            // Cập nhật mật khẩu trong AccountModel
             $accountData = ['password' => $hashedPassword];
             $this->accountModel->update($accountId, $accountData);
 
-            // 3. Xóa Token sau khi sử dụng thành công (BỔ SUNG)
-            // Đảm bảo token không thể được sử dụng lại
+            // 3. Xóa Token sau khi sử dụng thành công
             $this->passwordResetTokenModel->deleteByToken($token);
-            // ----------------------------------------------------
 
+            // 4. Chỉ trả về JSON, không render view
             $this->jsonResponse(['success' => true, 'message' => 'Đặt lại mật khẩu thành công!']);
         } catch (\PDOException $e) {
             error_log("Reset password error: " . $e->getMessage());
             $this->jsonResponse(['success' => false, 'message' => 'Lỗi server khi cập nhật mật khẩu!']);
+        }
+    }
+
+    // Phương thức hiển thị form reset password - sửa lại
+    public function resetPasswordView(): void
+    {
+        $token = $_GET['token'] ?? null;
+
+        if (empty($token)) {
+            // Không có token: chuyển hướng về trang chủ
+            $this->redirect('/');
+            return;
+        }
+
+        // Kiểm tra token hợp lệ
+        $tokenRecord = $this->passwordResetTokenModel->findByToken($token);
+
+        if (!$tokenRecord || strtotime($tokenRecord['expires_at']) < time()) {
+            // Hiển thị trang lỗi
+            $errorViewPath = __DIR__ . '/../../views/auth/reset_password_error.php';
+            if (file_exists($errorViewPath)) {
+                require_once $errorViewPath;
+            } else {
+                echo "Liên kết đặt lại mật khẩu đã hết hạn hoặc không hợp lệ.";
+            }
+            return;
+        }
+
+        // Hiển thị form reset password (không dùng layout)
+        $viewPath = __DIR__ . '/../../views/auth/reset_password.php';
+        if (file_exists($viewPath)) {
+            require_once $viewPath;
+        } else {
+            echo "Lỗi: Không tìm thấy file view.";
         }
     }
 
@@ -413,7 +524,6 @@ class AuthController extends BaseController
         $title = "Đặt lại mật khẩu";
         $this->render('auth/reset_password', ['title' => $title]);
     }
-
     // public function resetPassword()
     // {
     //     if ($_SERVER['REQUEST_METHOD'] === 'POST') {

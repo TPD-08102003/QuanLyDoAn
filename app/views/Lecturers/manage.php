@@ -67,7 +67,7 @@
                         <th scope="col">Chức vụ</th>
                         <th scope="col">Chuyên ngành</th>
                         <th scope="col">Kinh nghiệm</th>
-                        <th scope="col">Tình trạng</th>
+                        <th scope="col">Trạng Thái</th>
                         <th scope="col" class="text-center" width="160">Hành động</th>
                     </tr>
                 </thead>

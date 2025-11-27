@@ -11,32 +11,62 @@ $statusMapping = [
     'Huy' => ['class' => 'bg-danger', 'text' => 'Hủy']
 ];
 ?>
-
 <h1 class="page-title h2">Quản lý Đồ Án</h1>
 
 <div class="card shadow-sm mb-4">
     <div class="card-body">
-        <div class="row g-3 align-items-center">
-            <div class="col-12 col-md-auto me-auto">
-                <form method="GET" action="/quanlydoan/Project/manage" class="row g-3 align-items-center">
-                    <div class="col-md-auto" style="width: 300px;">
-                        <input type="text" class="form-control" name="keyword"
-                            placeholder="Tìm kiếm theo Tên đồ án, Mã ĐA, Tên GV"
-                            value="<?php echo htmlspecialchars($keyword ?? ''); ?>">
-                    </div>
-                    <div class="col-md-auto">
-                        <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Tìm kiếm</button>
-                    </div>
-                </form>
+        <form method="GET" action="">
+            <div class="row g-2 align-items-end">
+
+                <div class="col-md-3">
+                    <label class="form-label fw-bold small">Khoa/Ngành</label>
+                    <select class="form-select" name="faculty_id">
+                        <option value="">-- Tất cả Khoa --</option>
+                        <?php if (!empty($faculties)): ?>
+                            <?php foreach ($faculties as $f): ?>
+                                <option value="<?php echo $f['faculty_id']; ?>"
+                                    <?php echo (isset($selectedFaculty) && $selectedFaculty == $f['faculty_id']) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($f['faculty_name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </select>
+                </div>
+
+                <div class="col-md-3"> <label class="form-label fw-bold small">Trạng thái</label>
+                    <select class="form-select" name="status">
+                        <option value="">-- Tất cả --</option>
+                        <?php foreach ($statusMapping as $key => $val): ?>
+                            <option value="<?php echo $key; ?>"
+                                <?php echo (isset($selectedStatus) && $selectedStatus == $key) ? 'selected' : ''; ?>>
+                                <?php echo $val['text']; ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-primary w-100" title="Tìm kiếm">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+
+                <div class="col-md-2 ms-auto">
+                    <button type="button" class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#addEditProjectModal" data-mode="add" id="addProjectBtn" title="Thêm mới">
+                        <i class="bi bi-plus-lg"></i> Thêm
+                    </button>
+                </div>
+
+                <div class="col-md-2">
+                    <a href="/quanlydoan/Project/export" class="btn btn-secondary w-100">
+                        <i class="bi bi-cloud-download"></i> Xuất
+                    </a>
+                </div>
             </div>
-            <div class="col-12 col-md-auto">
-                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addEditProjectModal" data-mode="add" id="addProjectBtn"><i class="bi bi-plus-lg"></i> Thêm Đồ án</button>
-                <button class="btn btn-info text-dark" data-bs-toggle="modal" data-bs-target="#importProjectModal"><i class="bi bi-cloud-upload"></i> Import</button>
-                <a href="/quanlydoan/Project/export" class="btn btn-secondary"><i class="bi bi-cloud-download"></i> Export</a>
-            </div>
-        </div>
+        </form>
     </div>
 </div>
+
 <div class="card shadow-sm">
     <div class="card-body">
         <div class="table-responsive">
@@ -44,12 +74,12 @@ $statusMapping = [
                 <thead>
                     <tr>
                         <th scope="col">ID</th>
-                        <th scope="col" style="width: 35%; min-width: 250px;">Tên Đồ Án</th>
+                        <th scope="col" style="width: 30%; min-width: 250px;">Tên Đồ Án</th>
                         <th scope="col">GVHD</th>
                         <th scope="col">Khoa</th>
                         <th scope="col">Trạng Thái</th>
                         <th scope="col">Ngày Tạo</th>
-                        <th scope="col">Thao tác</th>
+                        <th scope="col" style="width: 15%; min-width: 150px;">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -95,10 +125,10 @@ $statusMapping = [
                     <?php else: ?>
                         <tr>
                             <td colspan="7" class="text-center">
-                                <?php if (!empty($keyword)): ?>
-                                    Không tìm thấy đồ án nào khớp với từ khóa "<?php echo htmlspecialchars($keyword); ?>".
+                                <?php if (!empty($keyword) || !empty($selectedFaculty) || !empty($selectedStatus)): ?>
+                                    Không tìm thấy đồ án nào khớp với điều kiện lọc.
                                 <?php else: ?>
-                                    Không tìm thấy đồ án nào.
+                                    Chưa có đồ án nào trong hệ thống.
                                 <?php endif; ?>
                             </td>
                         </tr>
@@ -107,22 +137,30 @@ $statusMapping = [
             </table>
         </div>
 
-        <?php
-        // Logic Pagination (giữ nguyên)
-        if (isset($totalPages) && $totalPages > 1):
-        ?>
-            <nav>
+        <?php if (isset($totalPages) && $totalPages > 1): ?>
+            <nav class="mt-3">
                 <ul class="pagination justify-content-center">
+                    <?php
+                    // Tạo query string
+                    $queryParams = http_build_query([
+                        'keyword' => $keyword ?? '',
+                        'faculty_id' => $selectedFaculty ?? '',
+                        'status' => $selectedStatus ?? ''
+                    ]);
+                    ?>
+
                     <li class="page-item <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
-                        <a class="page-link" href="?page=<?php echo $page - 1; ?>&keyword=<?php echo htmlspecialchars($keyword ?? ''); ?>">Trước</a>
+                        <a class="page-link" href="?page=<?php echo $page - 1; ?>&<?php echo $queryParams; ?>">Trước</a>
                     </li>
+
                     <?php for ($i = 1; $i <= $totalPages; $i++): ?>
                         <li class="page-item <?php echo ($i == $page) ? 'active' : ''; ?>">
-                            <a class="page-link" href="?page=<?php echo $i; ?>&keyword=<?php echo htmlspecialchars($keyword ?? ''); ?>"><?php echo $i; ?></a>
+                            <a class="page-link" href="?page=<?php echo $i; ?>&<?php echo $queryParams; ?>"><?php echo $i; ?></a>
                         </li>
                     <?php endfor; ?>
+
                     <li class="page-item <?php echo ($page >= $totalPages) ? 'disabled' : ''; ?>">
-                        <a class="page-link" href="?page=<?php echo $page + 1; ?>&keyword=<?php echo htmlspecialchars($keyword ?? ''); ?>">Sau</a>
+                        <a class="page-link" href="?page=<?php echo $page + 1; ?>&<?php echo $queryParams; ?>">Sau</a>
                     </li>
                 </ul>
             </nav>
@@ -130,6 +168,7 @@ $statusMapping = [
 
     </div>
 </div>
+
 <div class="modal fade" id="importProjectModal" tabindex="-1" aria-labelledby="importProjectModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -161,6 +200,7 @@ $statusMapping = [
         </div>
     </div>
 </div>
+
 <div class="modal fade" id="addEditProjectModal" tabindex="-1" aria-labelledby="addEditProjectModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -231,24 +271,7 @@ $statusMapping = [
         </div>
     </div>
 </div>
-<!-- <div class="modal fade" id="deleteProjectModal" tabindex="-1" aria-labelledby="deleteProjectModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="deleteProjectModalLabel">Xác nhận xóa đồ án</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                Bạn có chắc chắn muốn xóa đồ án <strong id="projectTitleToDelete"></strong> (ID: <span id="projectIdToDelete"></span>) không?<br>
-                <small class="text-danger">Hành động này không thể hoàn tác.</small>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-danger" id="confirmDeleteProject">Xóa ngay</button>
-            </div>
-        </div>
-    </div>
-</div> -->
+
 <div class="modal fade" id="deleteProjectModal" tabindex="-1" aria-labelledby="deleteProjectModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -267,8 +290,8 @@ $statusMapping = [
         </div>
     </div>
 </div>
+
 <script>
-    // Hàm hiển thị thông báo dùng chung (giữ nguyên)
     function showAlert(message, type = 'success') {
         const alertHtml = `
             <div class="alert alert-${type} alert-dismissible fade show fixed-top-alert" role="alert" style="z-index: 2000; top: 10px; right: 10px; width: 350px;">
@@ -299,18 +322,6 @@ $statusMapping = [
         const facultySelect = document.getElementById('faculty_id');
         const lecturerSelect = document.getElementById('lecturer_id');
 
-        /**
-         * **HÀM MỚI:** Fetch danh sách giảng viên theo khoa và cập nhật dropdown
-         * @param {string|int} facultyId ID của khoa
-         * @param {string|int|null} lecturerToSelect ID của giảng viên cần chọn (dùng cho chế độ edit)
-         */
-        /**
-         
-         * Hàm Fetch giảng viên
-         * @param {string|int} facultyId ID của khoa
-         * @param {string|int|null} lecturerToSelect ID của giảng viên cần chọn
-         * @param {boolean} isViewMode Chế độ chỉ xem (sẽ vô hiệu hóa dropdown sau khi tải)
-         */
         function fetchLecturers(facultyId, lecturerToSelect = null, isViewMode = false) {
             if (!facultyId || facultyId === '') {
                 lecturerSelect.innerHTML = '<option value="">-- Chọn Khoa/Ngành trước --</option>';
@@ -335,14 +346,11 @@ $statusMapping = [
                             lecturerSelect.value = lecturerToSelect;
                         }
 
-
                         if (!isViewMode) {
                             lecturerSelect.disabled = false;
                         }
-                        // Nếu là view mode, nó sẽ giữ nguyên trạng thái disabled
                     } else {
                         lecturerSelect.innerHTML = '<option value="">-- Lỗi tải GV --</option>';
-                        // Vẫn vô hiệu hóa nếu là view mode
                         lecturerSelect.disabled = isViewMode;
                     }
                 })
@@ -355,49 +363,38 @@ $statusMapping = [
 
         facultySelect.addEventListener('change', function() {
             const selectedFacultyId = this.value;
-            fetchLecturers(selectedFacultyId, null, false); // Khi tự chọn thì không phải view mode
+            fetchLecturers(selectedFacultyId, null, false);
         });
-
-
 
         addEditModal.addEventListener('show.bs.modal', function(event) {
             const button = event.relatedTarget;
             const projectId = button.getAttribute('data-id');
-            // *** THAY ĐỔI: Lấy mode từ nút ***
-            const mode = button.getAttribute('data-mode'); // 'view', 'edit', hoặc null (cho nút Add)
+            const mode = button.getAttribute('data-mode');
 
             const modalTitle = addEditModal.querySelector('#addEditProjectModalLabel');
             const saveProjectBtn = addEditModal.querySelector('#saveProjectBtn');
             const formElements = projectForm.querySelectorAll('input, select, textarea');
 
-            // Reset form
             projectForm.reset();
             document.getElementById('projectId').value = '';
 
-
             modalTitle.textContent = 'Thêm Đồ án mới';
-            saveProjectBtn.style.display = 'block'; // Hiển thị nút lưu
-            formElements.forEach(el => el.disabled = false); // Kích hoạt mọi trường
+            saveProjectBtn.style.display = 'block';
+            formElements.forEach(el => el.disabled = false);
             lecturerSelect.innerHTML = '<option value="">-- Chọn Khoa/Ngành trước --</option>';
             lecturerSelect.disabled = true;
 
-
             if (mode === 'edit' || mode === 'view') {
-                // Chế độ Sửa hoặc Xem
                 modalTitle.textContent = (mode === 'edit') ? 'Chỉnh sửa Đồ án' : 'Xem Chi tiết Đồ án';
 
                 if (mode === 'view') {
-
-                    saveProjectBtn.style.display = 'none'; // Ẩn nút lưu
-                    formElements.forEach(el => el.disabled = true); // Vô hiệu hóa tất cả
+                    saveProjectBtn.style.display = 'none';
+                    formElements.forEach(el => el.disabled = true);
                 } else {
-
                     saveProjectBtn.style.display = 'block';
-
                     lecturerSelect.disabled = true;
                 }
 
-                // *** SỬA LỖI: LOGIC NÀY SẼ CHẠY ĐÚNG KHI CÓ HÀM getByIdWithDetails ***
                 fetch('/quanlydoan/Project/getProjectDetails/' + projectId)
                     .then(response => response.json())
                     .then(data => {
@@ -409,13 +406,11 @@ $statusMapping = [
                             document.getElementById('status').value = project.status;
                             document.getElementById('max_students').value = project.max_students || 3;
 
-                            // 1. Điền faculty_id (sẽ hoạt động vì model đã trả về)
                             document.getElementById('faculty_id').value = project.faculty_id || '';
 
                             const selectedFacultyId = project.faculty_id || '';
                             const originalLecturerId = project.lecturer_id || null;
 
-                            // 2. Tải GV cho khoa đó, chọn sẵn GV, và báo cho hàm biết đây có phải view mode không
                             fetchLecturers(selectedFacultyId, originalLecturerId, (mode === 'view'));
 
                         } else {
@@ -428,10 +423,8 @@ $statusMapping = [
                         bootstrap.Modal.getInstance(addEditModal).hide();
                     });
             }
-            // Không cần 'else' cho mode 'add' vì trạng thái reset ban đầu đã là 'add'
         });
 
-        // Xử lý submit form Add/Edit (Không đổi)
         projectForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const projectId = document.getElementById('projectId').value;
@@ -466,7 +459,6 @@ $statusMapping = [
                 });
         });
 
-        // 1. Xử lý hiển thị modal xóa
         deleteModal.addEventListener('show.bs.modal', function(event) {
             const button = event.relatedTarget;
             projectIdToDelete = button.getAttribute('data-id');
@@ -476,7 +468,6 @@ $statusMapping = [
             deleteModal.querySelector('#projectIdToDelete').textContent = projectIdToDelete;
         });
 
-        // 2. Xử lý xác nhận xóa
         confirmDeleteBtn.onclick = function() {
             if (!projectIdToDelete) return;
 

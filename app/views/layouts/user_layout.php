@@ -355,6 +355,66 @@ $uri = strtok($uri, '?');
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/quanlydoan/assets/js/index.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Xử lý Form Quên Mật Khẩu trong Modal
+            const forgotForm = document.getElementById('forgotForm');
+            const forgotMessage = document.getElementById('forgotMessage');
+
+            if (forgotForm) {
+                forgotForm.addEventListener('submit', function(e) {
+                    e.preventDefault(); // 1. Ngăn trình duyệt load lại trang
+
+                    const btn = forgotForm.querySelector('button[type="submit"]');
+                    const spinner = btn.querySelector('.spinner-border');
+
+                    // Hiệu ứng loading
+                    btn.disabled = true;
+                    if (spinner) spinner.classList.remove('d-none');
+                    forgotMessage.innerHTML = ''; // Xóa thông báo cũ
+
+                    const formData = new FormData(forgotForm);
+
+                    // 2. Gửi AJAX request
+                    fetch('/quanlydoan/auth/forgotPassword', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            // 3. Hiển thị thông báo dựa trên kết quả JSON
+                            if (data.success) {
+                                forgotMessage.innerHTML = `
+                                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                    <i class="bi bi-check-circle me-2"></i> ${data.message}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            `;
+                                forgotForm.reset(); // Xóa dữ liệu trong form
+                            } else {
+                                forgotMessage.innerHTML = `
+                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                    <i class="bi bi-exclamation-triangle me-2"></i> ${data.message}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            `;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            forgotMessage.innerHTML = `
+                            <div class="alert alert-danger" role="alert">Lỗi kết nối server!</div>
+                        `;
+                        })
+                        .finally(() => {
+                            // Tắt loading
+                            btn.disabled = false;
+                            if (spinner) spinner.classList.add('d-none');
+                        });
+                });
+            }
+        });
+    </script>
 </body>
 
 </html>
