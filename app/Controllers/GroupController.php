@@ -524,4 +524,68 @@ class GroupController extends BaseController
             }
         }
     }
+
+    public function apiGetDetails(): void
+    {
+        // 1. Kiểm tra phương thức và Session
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            $this->jsonResponse(['success' => false, 'message' => 'Method not allowed'], 405);
+            return;
+        }
+
+        if (session_status() === PHP_SESSION_NONE) session_start();
+
+        // Kiểm tra quyền Teacher
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'teacher') {
+            $this->jsonResponse(['success' => false, 'message' => 'Unauthorized'], 403);
+            return;
+        }
+
+        $groupId = (int)($_GET['id'] ?? 0);
+        if ($groupId <= 0) {
+            $this->jsonResponse(['success' => false, 'message' => 'Invalid ID'], 400);
+            return;
+        }
+
+        try {
+            // 2. Lấy thông tin cơ bản của nhóm
+            $group = $this->groupModel->getFullGroup($groupId);
+            if (!$group) {
+                $this->jsonResponse(['success' => false, 'message' => 'Nhóm không tồn tại'], 404);
+                return;
+            }
+
+            // 3. (Bảo mật) Kiểm tra xem nhóm này có thuộc đồ án Giảng viên này hướng dẫn không
+            // Lấy Lecturer ID của user hiện tại
+            $user = $this->userModel->findByAccountId($_SESSION['account_id']);
+            $lecturer = $this->lecturerModel->findByUserIdLecturer($user['user_id']);
+
+            // So sánh Lecturer ID của đồ án với Lecturer ID của user
+            // Giả sử $group trả về project_lecturer_id hoặc bạn query check riêng
+            // Code check nhanh:
+            $sqlCheck = "SELECT 1 FROM projects WHERE project_id = ? AND lecturer_id = ?";
+            $stmtCheck = $this->pdo->prepare($sqlCheck);
+            $stmtCheck->execute([$group['project_id'], $lecturer['lecturer_id']]);
+
+            if (!$stmtCheck->fetchColumn()) {
+                $this->jsonResponse(['success' => false, 'message' => 'Bạn không quản lý nhóm này.'], 403);
+                return;
+            }
+
+            // 4. Lấy danh sách thành viên chi tiết (Gọi hàm mới ở Bước 1)
+            $members = $this->groupMemberModel->getDetailedMembers($groupId);
+
+            // 5. Trả về JSON
+            $this->jsonResponse([
+                'success' => true,
+                'group' => [
+                    'title' => $group['project_title'] ?? 'Chưa có tên',
+                    'status' => $group['project_status'] ?? '', // Để hiển thị badge màu
+                ],
+                'members' => $members
+            ]);
+        } catch (\Exception $e) {
+            $this->jsonResponse(['success' => false, 'message' => 'Lỗi Server: ' . $e->getMessage()], 500);
+        }
+    }
 }

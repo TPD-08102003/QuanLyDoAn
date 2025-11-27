@@ -705,7 +705,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
             <!-- Thông báo -->
             <div class="nav-item">
-                <a class="nav-link <?php echo strpos($_SERVER['REQUEST_URI'], '/Notification/') !== false ? 'active' : ''; ?>" href="/quanlydoan/notification/list_admin">
+                <a class="nav-link <?php echo strpos($_SERVER['REQUEST_URI'], '/Notification/') !== false ? 'active' : ''; ?>" href="/quanlydoan/notification/manage">
                     <i class="bi bi-bell-fill"></i>
                     <span>Thông báo</span>
                 </a>

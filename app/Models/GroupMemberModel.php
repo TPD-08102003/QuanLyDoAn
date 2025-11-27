@@ -67,4 +67,23 @@ class GroupMemberModel extends BaseModel
         $stmt->execute(['group_id' => $groupId, 'student_id' => $studentId]);
         return $stmt->fetch() !== false;
     }
+
+    // Models/GroupMemberModel.php
+
+    public function getDetailedMembers(int $groupId): array
+    {
+        // LƯU Ý: Đã xóa 'u.email' khỏi câu SELECT để tránh lỗi 1054
+        $sql = "SELECT s.student_id, s.mssv, u.full_name, u.phone_number, u.avatar,
+                   CASE WHEN g.leader_id = s.student_id THEN 1 ELSE 0 END as is_leader
+            FROM group_members gm
+            JOIN groups g ON gm.group_id = g.group_id
+            JOIN students s ON gm.student_id = s.student_id
+            JOIN users u ON s.user_id = u.user_id
+            WHERE gm.group_id = :group_id
+            ORDER BY is_leader DESC, u.full_name ASC";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':group_id' => $groupId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
