@@ -441,16 +441,6 @@ class StudentController extends BaseController
 
     public function import(): void
     {
-        // if (!file_exists($file) || !is_readable($file)) {
-        //     $this->jsonResponse(['success' => false, 'message' => 'File upload thất bại hoặc không đọc được.'], 400);
-        //     return;
-        // }
-
-        // if (!$class) {
-        //     error_log("Lớp không tồn tại: $class_name");
-        //     continue;
-        // }
-
         if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_FILES['excelFile'])) {
             $this->jsonResponse(['success' => false, 'message' => 'Yêu cầu không hợp lệ'], 400);
             return;
@@ -464,7 +454,7 @@ class StudentController extends BaseController
             $sheet = $spreadsheet->getActiveSheet();
             $rows = $sheet->toArray(null, true, true, true);
 
-            array_shift($rows);  // Bỏ header
+            array_shift($rows);
 
             $this->pdo->beginTransaction();
             $countSuccess = 0;

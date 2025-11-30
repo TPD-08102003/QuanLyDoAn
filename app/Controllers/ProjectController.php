@@ -3,9 +3,15 @@
 
 namespace App\Controllers;
 
+require_once __DIR__ . '/../../vendor/autoload.php';
+
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+
 use PDO;
 use Exception;
 use PDOException;
@@ -31,6 +37,7 @@ class ProjectController extends BaseController
         $this->facultiesModel = new FacultiesModel($pdo);
         $this->studentModel = new StudentModel($pdo);
         $this->userModel = new UserModel($pdo);
+        date_default_timezone_set('Asia/Ho_Chi_Minh');
     }
 
 
@@ -66,18 +73,44 @@ class ProjectController extends BaseController
                     echo "Lỗi: Tài khoản chưa có thông tin giảng viên.";
                     return;
                 }
-                $result = $this->projectModel->getProjectsByLecturerIdWithPagination($lecturer['lecturer_id'], 10, 0, '');
 
-                // Lưu ý: Thư mục View phải viết hoa chữ 'P' nếu tên thư mục là Projects
+                // 1. Lấy tham số từ URL
+                $page = max(1, (int)($_GET['page'] ?? 1));
+                $keyword = trim($_GET['keyword'] ?? '');
+                $statusFilter = trim($_GET['status'] ?? '');
+                $limit = 10;
+
+                // 2. Lấy dữ liệu từ Model
+                // Lưu ý: Lấy số lượng lớn (1000) để về lọc Status bằng PHP sau đó mới phân trang
+                // Vì Model hiện tại có thể chưa hỗ trợ lọc Status trong SQL
+                $result = $this->projectModel->getProjectsByLecturerIdWithPagination($lecturer['lecturer_id'], 1000, 0, $keyword);
+                $projects = $result['projects'];
+
+                // 3. Lọc theo trạng thái (Status) bằng PHP
+                if (!empty($statusFilter)) {
+                    $projects = array_filter($projects, function ($p) use ($statusFilter) {
+                        return $p['status'] === $statusFilter;
+                    });
+                }
+
+                // 4. Phân trang thủ công (Array Slice) sau khi đã lọc
+                $totalProjects = count($projects);
+                $totalPages = ceil($totalProjects / $limit);
+                $offset = ($page - 1) * $limit;
+
+                // Cắt mảng để lấy đúng dữ liệu trang hiện tại
+                $pagedProjects = array_slice($projects, $offset, $limit);
+
+                // 5. Render View
                 $this->render('Projects/my_projects', [
-                    'projects' => $result['projects'],
-                    'totalProjects' => $result['total'],
-                    'totalPages' => 1,
-                    'page' => 1,
-                    'keyword' => ''
+                    'projects' => $pagedProjects,
+                    'totalProjects' => $totalProjects,
+                    'totalPages' => $totalPages,
+                    'page' => $page,
+                    'keyword' => $keyword,        // Truyền lại để hiển thị trên ô input
+                    'selectedStatus' => $statusFilter // Truyền lại để giữ select box
                 ]);
             } catch (Exception $e) {
-                // BẬT CHẾ ĐỘ DEBUG: In lỗi ra màn hình thay vì chuyển hướng
                 die("Lỗi Teacher: " . $e->getMessage());
             }
             return;
@@ -1386,5 +1419,312 @@ class ProjectController extends BaseController
             error_log("ProjectController::store error: " . $e->getMessage());
             $this->jsonResponse(['success' => false, 'message' => 'Lỗi hệ thống: ' . $e->getMessage()], 500);
         }
+    }
+
+    // app/Controllers/ProjectController.php
+
+    /**
+     * [ĐÃ SỬA] Xuất file Excel chỉ dành cho Giảng viên
+     * - Fix lỗi không hiện tên
+     * - Đổi font sang Times New Roman
+     */
+    public function exportByLecturer(): void
+    {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+
+        // 1. Kiểm tra quyền
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'teacher') {
+            header('Location: /quanlydoan/auth/login');
+            exit;
+        }
+
+        try {
+            // 2. Lấy thông tin Giảng viên
+            $user = $this->userModel->findByAccountId($_SESSION['account_id']);
+
+            // Tìm thông tin giảng viên (để lấy ID dùng cho query đồ án)
+            $lecturer = $this->lecturerModel->findByUserIdLecturer($user['user_id']);
+
+            if (!$lecturer) {
+                die("Không tìm thấy thông tin giảng viên.");
+            }
+
+            // 3. Lấy danh sách đồ án (Lấy hết)
+            $result = $this->projectModel->getProjectsByLecturerIdWithPagination($lecturer['lecturer_id'], 10000, 0, '');
+            $projects = $result['projects'];
+
+            // 4. Khởi tạo Excel
+            $spreadsheet = new Spreadsheet();
+
+            // --- CÀI ĐẶT FONT CHỮ TIMES NEW ROMAN CHO TOÀN BỘ FILE ---
+            $spreadsheet->getDefaultStyle()->getFont()->setName('Times New Roman');
+            $spreadsheet->getDefaultStyle()->getFont()->setSize(12);
+            // -----------------------------------------------------------
+
+            $sheet = $spreadsheet->getActiveSheet();
+            $sheet->setTitle('Đồ án của tôi');
+
+            // --- ĐỊNH DẠNG HEADER ---
+
+            // Dòng 1: Tiêu đề lớn
+            $sheet->mergeCells('A1:G1');
+            $sheet->setCellValue('A1', 'DANH SÁCH ĐỒ ÁN HƯỚNG DẪN');
+            $sheet->getStyle('A1')->applyFromArray([
+                'font' => ['bold' => true, 'size' => 16, 'color' => ['argb' => 'FF0000FF']], // Chữ xanh
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            ]);
+
+            // Dòng 2: Thông tin giảng viên & Ngày xuất
+            // SỬA LỖI: Lấy tên từ biến $user['full_name'] thay vì $lecturer
+            $lecturerName = $user['full_name'] ?? 'Không xác định';
+
+            $sheet->mergeCells('A2:G2');
+            $sheet->setCellValue('A2', "Giảng viên: " . $lecturerName . " - Ngày xuất: " . date('d/m/Y H:i'));
+            $sheet->getStyle('A2')->applyFromArray([
+                'font' => ['italic' => true, 'size' => 12], // Times New Roman nghiêng
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            ]);
+
+            // Dòng 4: Tiêu đề cột
+            $headers = ['ID', 'Tiêu đề đồ án', 'Mô tả/Yêu cầu', 'Số SV tối đa', 'Đã đăng ký', 'Trạng thái', 'Ngày tạo'];
+            $sheet->fromArray($headers, null, 'A4');
+
+            // Style cho dòng tiêu đề cột
+            $headerStyle = [
+                'font' => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF']],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF4F81BD']], // Nền xanh dương
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+            ];
+            $sheet->getStyle('A4:G4')->applyFromArray($headerStyle);
+            $sheet->getRowDimension(4)->setRowHeight(30); // Tăng chiều cao dòng tiêu đề chút cho thoáng
+
+            // --- ĐỔ DỮ LIỆU ---
+            $row = 5;
+            foreach ($projects as $p) {
+                $currentSV = $p['current_students'] ?? 0;
+                $statusText = $this->getStatusText($p['status']);
+
+                $data = [
+                    $p['project_id'],
+                    $p['title'],
+                    $p['description'],
+                    $p['max_students'],
+                    $currentSV,
+                    $statusText,
+                    date('d/m/Y', strtotime($p['created_at']))
+                ];
+                $sheet->fromArray($data, null, 'A' . $row);
+
+                // Căn chỉnh dòng dữ liệu này
+                $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER); // ID giữa
+                $sheet->getStyle('D' . $row . ':G' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER); // Các số liệu giữa
+                $sheet->getStyle('B' . $row)->getAlignment()->setWrapText(true); // Tiêu đề tự xuống dòng
+                $sheet->getStyle('C' . $row)->getAlignment()->setWrapText(true); // Mô tả tự xuống dòng
+
+                $row++;
+            }
+
+            // Kẻ bảng cho vùng dữ liệu
+            $lastRow = $row - 1;
+            if ($lastRow >= 5) {
+                $sheet->getStyle('A5:G' . $lastRow)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                $sheet->getStyle('A5:G' . $lastRow)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+            }
+
+            // Auto width (Điều chỉnh độ rộng)
+            $sheet->getColumnDimension('A')->setWidth(8);
+            $sheet->getColumnDimension('B')->setWidth(35);
+            $sheet->getColumnDimension('C')->setWidth(50);
+            $sheet->getColumnDimension('D')->setWidth(15);
+            $sheet->getColumnDimension('E')->setWidth(15);
+            $sheet->getColumnDimension('F')->setWidth(20);
+            $sheet->getColumnDimension('G')->setWidth(15);
+
+            // Output
+            $filename = "DS_DoAn_" . date('Ymd_Hi') . ".xlsx";
+
+            if (ob_get_length()) ob_end_clean();
+
+            $writer = new Xlsx($spreadsheet);
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            $writer->save('php://output');
+            exit;
+        } catch (Exception $e) {
+            $this->handleError($e, 'exportByLecturer');
+        }
+    }
+
+    /**
+     * [SỬA LỖI] Hàm Import dành riêng cho Giảng viên
+     * - Thêm try-catch chặt chẽ
+     * - Xóa output buffer để tránh lỗi JSON
+     */
+    public function importByLecturer(): void
+    {
+        // 1. Tắt hiển thị lỗi HTML, nhưng bật log lỗi hệ thống
+        ini_set('display_errors', 0);
+        ini_set('log_errors', 1);
+
+        // 2. Thiết lập Header JSON ngay từ đầu
+        header('Content-Type: application/json; charset=utf-8');
+
+        // Bắt đầu bộ đệm để hứng bất kỳ output rác nào (nếu có)
+        ob_start();
+
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_FILES['excelFile'])) {
+                throw new Exception("Yêu cầu không hợp lệ hoặc không có file.");
+            }
+
+            if (session_status() === PHP_SESSION_NONE) session_start();
+
+            // Kiểm tra upload file
+            if ($_FILES['excelFile']['error'] !== UPLOAD_ERR_OK) {
+                throw new Exception("Lỗi tải file lên server (Mã lỗi: " . $_FILES['excelFile']['error'] . ")");
+            }
+
+            // Kiểm tra quyền
+            if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'teacher') {
+                throw new Exception('Chức năng chỉ dành cho Giảng viên.');
+            }
+
+            // Lấy ID giảng viên
+            $user = $this->userModel->findByAccountId($_SESSION['account_id']);
+            $currentLecturer = $this->lecturerModel->findByUserIdLecturer($user['user_id']);
+
+            if (!$currentLecturer) {
+                throw new Exception('Không tìm thấy thông tin giảng viên.');
+            }
+            $lecturerId = $currentLecturer['lecturer_id'];
+
+            // Kiểm tra thư viện Excel
+            if (!class_exists('\PhpOffice\PhpSpreadsheet\IOFactory')) {
+                throw new Exception('Thư viện PhpSpreadsheet chưa được cài đặt hoặc chưa load autoload.php.');
+            }
+
+            // Đọc file
+            $file = $_FILES['excelFile']['tmp_name'];
+            $spreadsheet = IOFactory::load($file);
+            $sheet = $spreadsheet->getActiveSheet();
+            $rows = $sheet->toArray(null, true, true, true);
+
+            array_shift($rows); // Bỏ header
+
+            $this->pdo->beginTransaction();
+            $countSuccess = 0;
+            $errors = [];
+
+            foreach ($rows as $index => $row) {
+                $rowNumber = $index + 2;
+
+                $title = trim($row['A'] ?? '');
+                $description = trim($row['B'] ?? '');
+                $max_students = (int)($row['C'] ?? 3);
+                $status = trim($row['D'] ?? 'ChoDuyet');
+
+                if (empty($title)) continue; // Bỏ dòng trống
+
+                // Logic tạo/cập nhật...
+                $existing = $this->projectModel->findByTitle($title);
+                $updateExisting = !empty($_POST['update_existing']);
+
+                if ($existing) {
+                    if ($existing['lecturer_id'] != $lecturerId) {
+                        $errors[] = "Dòng $rowNumber: Đồ án '$title' đã tồn tại của GV khác.";
+                        continue;
+                    }
+                    if (!$updateExisting) {
+                        $errors[] = "Dòng $rowNumber: Đồ án '$title' đã tồn tại (Bỏ qua).";
+                        continue;
+                    }
+                    // Cập nhật
+                    $this->projectModel->updateProject($existing['project_id'], [
+                        'description' => $description,
+                        'status' => $status,
+                        'max_students' => $max_students
+                    ]);
+                    $countSuccess++;
+                } else {
+                    // Tạo mới
+                    $projectId = $this->projectModel->createProject([
+                        'title' => $title,
+                        'description' => $description,
+                        'lecturer_id' => $lecturerId,
+                        'status' => $status,
+                        'max_students' => $max_students
+                    ]);
+
+                    if ($projectId) {
+                        $this->createDefaultReportTypes($projectId);
+                        $countSuccess++;
+                    } else {
+                        $errors[] = "Dòng $rowNumber: Lỗi lưu vào CSDL.";
+                    }
+                }
+            }
+
+            $this->pdo->commit();
+
+            // Xóa sạch bộ đệm trước khi echo JSON
+            ob_end_clean();
+
+            $message = "Nhập thành công $countSuccess đồ án.";
+            if (!empty($errors)) {
+                $message .= "\nLỗi: " . implode('; ', array_slice($errors, 0, 3));
+                if (count($errors) > 3) $message .= "...";
+            }
+
+            echo json_encode(['success' => true, 'message' => $message]);
+        } catch (\Throwable $e) { // SỬ DỤNG \Throwable ĐỂ BẮT CẢ FATAL ERROR
+            if (isset($this->pdo) && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            // Xóa sạch bộ đệm để không bị lẫn HTML lỗi vào JSON
+            if (ob_get_length()) ob_end_clean();
+
+            // Ghi log lỗi để dev kiểm tra
+            error_log("Import Error: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
+
+            echo json_encode([
+                'success' => false,
+                'message' => 'Lỗi hệ thống: ' . $e->getMessage()
+            ]);
+        }
+        exit;
+    }
+
+
+    /**
+     * Tải file mẫu Excel mới dành cho Giảng viên (Không có cột Tên GV)
+     */
+    public function downloadTemplateForLecturer(): void
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Header mới
+        $headers = ['Tiêu đề đồ án (*)', 'Mô tả chi tiết', 'Số SV tối đa (1-3)', 'Trạng thái (ChoDuyet)'];
+        $sheet->fromArray($headers, null, 'A1');
+
+        // Dữ liệu mẫu
+        $sampleData = [
+            ['Website bán hàng', 'Yêu cầu: PHP, MVC...', 3, 'ChoDuyet'],
+            ['Ứng dụng Mobile App', 'Yêu cầu: React Native...', 2, 'ChoDuyet']
+        ];
+        $sheet->fromArray($sampleData, null, 'A2');
+
+        // Auto width
+        foreach (range('A', 'D') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="mau_do_an_giang_vien.xlsx"');
+        $writer->save('php://output');
+        exit;
     }
 }
