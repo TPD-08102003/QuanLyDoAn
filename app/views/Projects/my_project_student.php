@@ -62,7 +62,9 @@ $canLeave = !in_array($project['status'], ['DaNopBaoCao', 'DaBaoVe', 'HoanThanh'
                                 </button>
                             <?php endif; ?>
                         <?php endif; ?>
-
+                        <a href="/quanlydoan/score/manage" class="btn btn-primary shadow-sm w-100 mb-2">
+                            <i class="bi bi-mortarboard-fill me-2"></i> Xem Bảng Điểm
+                        </a>
                     </div>
                 </div>
             </div>

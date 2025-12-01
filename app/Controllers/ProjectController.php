@@ -78,7 +78,7 @@ class ProjectController extends BaseController
                 $page = max(1, (int)($_GET['page'] ?? 1));
                 $keyword = trim($_GET['keyword'] ?? '');
                 $statusFilter = trim($_GET['status'] ?? '');
-                $limit = 10;
+                $limit = 5;
 
                 // 2. Lấy dữ liệu từ Model
                 // Lưu ý: Lấy số lượng lớn (1000) để về lọc Status bằng PHP sau đó mới phân trang
@@ -1556,21 +1556,13 @@ class ProjectController extends BaseController
         }
     }
 
-    /**
-     * [SỬA LỖI] Hàm Import dành riêng cho Giảng viên
-     * - Thêm try-catch chặt chẽ
-     * - Xóa output buffer để tránh lỗi JSON
-     */
     public function importByLecturer(): void
     {
-        // 1. Tắt hiển thị lỗi HTML, nhưng bật log lỗi hệ thống
+        // 1. Tắt hiển thị lỗi HTML để tránh làm hỏng JSON response
         ini_set('display_errors', 0);
         ini_set('log_errors', 1);
 
-        // 2. Thiết lập Header JSON ngay từ đầu
         header('Content-Type: application/json; charset=utf-8');
-
-        // Bắt đầu bộ đệm để hứng bất kỳ output rác nào (nếu có)
         ob_start();
 
         try {
@@ -1590,7 +1582,7 @@ class ProjectController extends BaseController
                 throw new Exception('Chức năng chỉ dành cho Giảng viên.');
             }
 
-            // Lấy ID giảng viên
+            // Lấy thông tin Giảng viên
             $user = $this->userModel->findByAccountId($_SESSION['account_id']);
             $currentLecturer = $this->lecturerModel->findByUserIdLecturer($user['user_id']);
 
@@ -1598,22 +1590,26 @@ class ProjectController extends BaseController
                 throw new Exception('Không tìm thấy thông tin giảng viên.');
             }
             $lecturerId = $currentLecturer['lecturer_id'];
+            $lecturerName = $user['full_name'];
 
             // Kiểm tra thư viện Excel
             if (!class_exists('\PhpOffice\PhpSpreadsheet\IOFactory')) {
-                throw new Exception('Thư viện PhpSpreadsheet chưa được cài đặt hoặc chưa load autoload.php.');
+                throw new Exception('Thư viện PhpSpreadsheet chưa được cài đặt.');
             }
 
-            // Đọc file
+            // Đọc file Excel
             $file = $_FILES['excelFile']['tmp_name'];
             $spreadsheet = IOFactory::load($file);
             $sheet = $spreadsheet->getActiveSheet();
             $rows = $sheet->toArray(null, true, true, true);
 
-            array_shift($rows); // Bỏ header
+            array_shift($rows); // Bỏ dòng Header
 
             $this->pdo->beginTransaction();
+
             $countSuccess = 0;
+            $countCreated = 0; // Đếm số lượng tạo mới
+            $countUpdated = 0; // Đếm số lượng cập nhật
             $errors = [];
 
             foreach ($rows as $index => $row) {
@@ -1622,11 +1618,11 @@ class ProjectController extends BaseController
                 $title = trim($row['A'] ?? '');
                 $description = trim($row['B'] ?? '');
                 $max_students = (int)($row['C'] ?? 3);
-                $status = trim($row['D'] ?? 'ChoDuyet');
+                $status = trim($row['D'] ?? 'ChoDuyet'); // Mặc định là Chờ Duyệt
 
-                if (empty($title)) continue; // Bỏ dòng trống
+                if (empty($title)) continue;
 
-                // Logic tạo/cập nhật...
+                // Kiểm tra đồ án đã tồn tại chưa
                 $existing = $this->projectModel->findByTitle($title);
                 $updateExisting = !empty($_POST['update_existing']);
 
@@ -1639,6 +1635,7 @@ class ProjectController extends BaseController
                         $errors[] = "Dòng $rowNumber: Đồ án '$title' đã tồn tại (Bỏ qua).";
                         continue;
                     }
+
                     // Cập nhật
                     $this->projectModel->updateProject($existing['project_id'], [
                         'description' => $description,
@@ -1646,6 +1643,7 @@ class ProjectController extends BaseController
                         'max_students' => $max_students
                     ]);
                     $countSuccess++;
+                    $countUpdated++;
                 } else {
                     // Tạo mới
                     $projectId = $this->projectModel->createProject([
@@ -1659,34 +1657,62 @@ class ProjectController extends BaseController
                     if ($projectId) {
                         $this->createDefaultReportTypes($projectId);
                         $countSuccess++;
+                        $countCreated++;
                     } else {
                         $errors[] = "Dòng $rowNumber: Lỗi lưu vào CSDL.";
                     }
                 }
             }
 
-            $this->pdo->commit();
+            // --- GỬI THÔNG BÁO CHO ADMIN ---
+            // Logic: Gửi khi có đồ án Tạo mới HOẶC Cập nhật (vì có thể cập nhật lại trạng thái chờ duyệt)
+            if ($countCreated > 0 || $countUpdated > 0) {
+                // 1. Tìm danh sách Admin (Bỏ điều kiện active để đảm bảo tìm thấy)
+                $stmtAdmin = $this->pdo->prepare("
+                    SELECT u.user_id 
+                    FROM users u 
+                    JOIN accounts a ON u.account_id = a.account_id 
+                    WHERE a.role = 'admin'
+                ");
+                $stmtAdmin->execute();
+                $admins = $stmtAdmin->fetchAll(\PDO::FETCH_ASSOC);
 
-            // Xóa sạch bộ đệm trước khi echo JSON
+                if (!empty($admins)) {
+                    // 2. Nội dung thông báo
+                    $notifTitle = "Yêu cầu duyệt đồ án từ Excel";
+                    $notifMessage = "Giảng viên " . htmlspecialchars($lecturerName) . " vừa import Excel:\n" .
+                        "- Thêm mới: " . $countCreated . " đồ án.\n" .
+                        "- Cập nhật: " . $countUpdated . " đồ án.\n" .
+                        "Vui lòng kiểm tra và phê duyệt.";
+
+                    // 3. Gửi thông báo
+                    $notificationModel = new \App\Models\NotificationModel($this->pdo);
+                    foreach ($admins as $admin) {
+                        $notificationModel->createNotification($admin['user_id'], $notifTitle, $notifMessage);
+                    }
+                } else {
+                    // Log nếu không tìm thấy admin để debug
+                    error_log("ImportProject: Không tìm thấy Admin nào để gửi thông báo.");
+                }
+            }
+            // --- KẾT THÚC GỬI THÔNG BÁO ---
+
+            $this->pdo->commit();
             ob_end_clean();
 
-            $message = "Nhập thành công $countSuccess đồ án.";
+            $message = "Xử lý thành công $countSuccess đồ án (Mới: $countCreated, Cập nhật: $countUpdated).";
             if (!empty($errors)) {
                 $message .= "\nLỗi: " . implode('; ', array_slice($errors, 0, 3));
                 if (count($errors) > 3) $message .= "...";
             }
 
             echo json_encode(['success' => true, 'message' => $message]);
-        } catch (\Throwable $e) { // SỬ DỤNG \Throwable ĐỂ BẮT CẢ FATAL ERROR
+        } catch (\Throwable $e) {
             if (isset($this->pdo) && $this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }
-
-            // Xóa sạch bộ đệm để không bị lẫn HTML lỗi vào JSON
             if (ob_get_length()) ob_end_clean();
-
-            // Ghi log lỗi để dev kiểm tra
-            error_log("Import Error: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
+            error_log("Import Error: " . $e->getMessage());
 
             echo json_encode([
                 'success' => false,

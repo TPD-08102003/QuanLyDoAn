@@ -33,6 +33,8 @@ use App\Controllers\ClassesController;
 use App\Controllers\FacultiesController;
 use App\Controllers\AdminController;
 use App\Controllers\NotificationController;
+use App\Controllers\ScoreController;
+use App\Controllers\GradeController;
 // Remove 'App\User' if it's not a controller; use models separately if needed
 
 session_start();
@@ -63,6 +65,8 @@ $allowedControllers = [
     'ClassesController' => ClassesController::class,
     'FacultiesController' => FacultiesController::class,
     'NotificationController' => NotificationController::class,
+    'ScoreController' => ScoreController::class,
+    // 'GradeController' => GradeController::class,
 ];
 
 // Handle route function

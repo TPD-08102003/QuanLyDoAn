@@ -123,6 +123,11 @@ $statusConfig = [
                                                 <i class="bi bi-pencil"></i>
                                             </a>
                                         <?php endif; ?>
+                                        <a href="/quanlydoan/score/manage/<?= $project['project_id']; ?>"
+                                            class="btn btn-sm btn-outline-success border-0 rounded-circle me-1"
+                                            title="Quản lý điểm số">
+                                            <i class="bi bi-calculator"></i>
+                                        </a>
                                     </div>
                                 </td>
                             </tr>
@@ -136,18 +141,33 @@ $statusConfig = [
             <nav class="mt-4">
                 <ul class="pagination justify-content-center">
                     <?php
-                    $queryParams = $_GET;
-                    unset($queryParams['page']);
-                    $queryString = http_build_query($queryParams);
+                    // Tạo query string giữ lại các tham số tìm kiếm và lọc hiện tại
+                    // Đã loại bỏ 'faculty_id' vì Giảng viên không cần dùng
+                    $queryParams = http_build_query([
+                        'keyword' => $keyword ?? '',
+                        'status' => $selectedStatus ?? ''
+                    ]);
                     ?>
 
+                    <li class="page-item <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
+                        <a class="page-link rounded-pill px-3 me-1" href="?page=<?php echo $page - 1; ?>&<?php echo $queryParams; ?>">
+                            <i class="bi bi-chevron-left"></i> Trước
+                        </a>
+                    </li>
+
                     <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                        <li class="page-item <?= ($page == $i) ? 'active' : '' ?>">
-                            <a class="page-link" href="?page=<?= $i ?>&<?= $queryString ?>">
-                                <?= $i ?>
+                        <li class="page-item <?php echo ($i == $page) ? 'active' : ''; ?>">
+                            <a class="page-link rounded-pill px-3 me-1" href="?page=<?php echo $i; ?>&<?php echo $queryParams; ?>">
+                                <?php echo $i; ?>
                             </a>
                         </li>
                     <?php endfor; ?>
+
+                    <li class="page-item <?php echo ($page >= $totalPages) ? 'disabled' : ''; ?>">
+                        <a class="page-link rounded-pill px-3" href="?page=<?php echo $page + 1; ?>&<?php echo $queryParams; ?>">
+                            Sau <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
                 </ul>
             </nav>
         <?php endif; ?>
@@ -159,6 +179,7 @@ $statusConfig = [
         </div>
     <?php endif; ?>
 </div>
+
 
 <div class="modal fade" id="viewProjectModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
