@@ -30,6 +30,7 @@ class LecturerController extends BaseController
         $this->userModel = new UserModel($pdo);
         $this->accountModel = new AccountModel($pdo);
         $this->facultiesModel = new FacultiesModel($pdo);
+        date_default_timezone_set('Asia/Ho_Chi_Minh');
     }
 
 
@@ -308,44 +309,107 @@ class LecturerController extends BaseController
     public function export(): void
     {
         try {
+            // 1. Lấy dữ liệu
+            // Nếu sau này bạn có bộ lọc theo Khoa, có thể thêm logic lấy tên Khoa vào đây
             $lecturers = $this->lecturerModel->getAllLecturersWithRole();
+            $subTitle = "Khoa: Tất cả";
 
+            if (empty($lecturers)) {
+                $this->jsonResponse(['success' => false, 'message' => 'Không có dữ liệu để xuất.'], 404);
+                return;
+            }
+
+            // 2. Khởi tạo Excel
             $spreadsheet = new Spreadsheet();
             $sheet = $spreadsheet->getActiveSheet();
             $sheet->setTitle('Danh sách Giảng viên');
 
-            // Header
-            $headers = ['MSGV', 'Họ và Tên', 'Giới tính', 'Khoa', 'Chức vụ', 'Chuyên ngành', 'Kinh nghiệm', 'Email', 'SĐT', 'Tình trạng'];
-            $sheet->fromArray($headers, null, 'A1');
+            // --- CẤU HÌNH STYLE CHUNG (Times New Roman, Size 12) ---
+            $spreadsheet->getDefaultStyle()->getFont()->setName('Times New Roman');
+            $spreadsheet->getDefaultStyle()->getFont()->setSize(12);
 
-            // Data
-            $row = 2;
+            // --- PHẦN TIÊU ĐỀ TRANG (HEADINGS) ---
+
+            // Dòng 1: Tiêu đề lớn
+            $sheet->setCellValue('A1', 'DANH SÁCH GIẢNG VIÊN');
+            $sheet->mergeCells('A1:J1'); // Gộp từ cột A đến J (10 cột)
+            $sheet->getStyle('A1')->applyFromArray([
+                'font' => ['bold' => true, 'size' => 16],
+                'alignment' => [
+                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                    'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                ],
+            ]);
+
+            // Dòng 2: Thông tin phụ (Khoa)
+            $sheet->setCellValue('A2', $subTitle);
+            $sheet->getStyle('A2')->getFont()->setBold(true);
+
+            // Dòng 3: Ngày xuất
+            $sheet->setCellValue('A3', 'Ngày xuất: ' . date('d/m/Y H:i'));
+            $sheet->getStyle('A3')->getFont()->setItalic(true);
+
+            // --- PHẦN BẢNG DỮ LIỆU ---
+
+            // Dòng 5: Tiêu đề cột
+            $headerRow = 5;
+            $headers = ['MSGV', 'Họ và Tên', 'Giới tính', 'Khoa', 'Chức vụ', 'Chuyên ngành', 'Kinh nghiệm', 'Email', 'SĐT', 'Tình trạng'];
+            $sheet->fromArray($headers, null, 'A' . $headerRow);
+
+            // Style cho dòng tiêu đề cột (Nền xám, in đậm, căn giữa, có viền)
+            $headerStyle = [
+                'font' => ['bold' => true, 'color' => ['rgb' => '000000']],
+                'fill' => [
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => ['argb' => 'FFEFEFEF']
+                ],
+                'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+                'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]]
+            ];
+            $sheet->getStyle('A' . $headerRow . ':J' . $headerRow)->applyFromArray($headerStyle);
+
+            // Dữ liệu: Bắt đầu từ dòng 6
+            $row = $headerRow + 1;
             foreach ($lecturers as $lecturer) {
                 $data = [
-                    $lecturer['lecturer_code'] ?? 'Chưa có',
-                    $lecturer['full_name'] ?? 'N/A',
-                    $lecturer['gender'] ?? 'Chưa cập nhật',
-                    $lecturer['faculty_name'] ?? 'Chưa có',
-                    $lecturer['position'] ?? 'Chưa có',
-                    $lecturer['specialization'] ?? 'Chưa có',
+                    $lecturer['lecturer_code'] ?? '',
+                    $lecturer['full_name'] ?? '',
+                    $lecturer['gender'] ?? '',
+                    $lecturer['faculty_name'] ?? '',
+                    $lecturer['position'] ?? '',
+                    $lecturer['specialization'] ?? '',
                     $lecturer['years_of_experience'] ?? 0,
-                    $lecturer['email'] ?? 'Chưa có',
-                    $lecturer['phone_number'] ?? 'Chưa có',
+                    $lecturer['email'] ?? '',
+                    $lecturer['phone_number'] ?? '',
                     $lecturer['status'] === 'active' ? 'Hoạt động' : 'Khóa'
                 ];
                 $sheet->fromArray($data, null, 'A' . $row);
                 $row++;
             }
 
-            // Auto size columns
+            // --- ĐỊNH DẠNG CUỐI CÙNG ---
+
+            // 1. Kẻ bảng (Border) cho toàn bộ vùng dữ liệu
+            $lastRow = $row - 1;
+            $dataRange = 'A' . $headerRow . ':J' . $lastRow;
+            $sheet->getStyle($dataRange)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+
+            // 2. Auto size columns (Tự động chỉnh độ rộng cột)
             foreach (range('A', 'J') as $col) {
                 $sheet->getColumnDimension($col)->setAutoSize(true);
             }
 
-            // Output file
+            // 3. Xuất file
+            $fileName = "danh_sach_giang_vien_" . date('Y-m-d_H-i') . ".xlsx";
             $writer = new Xlsx($spreadsheet);
+
+            // Xóa buffer để tránh lỗi file bị hỏng
+            if (ob_get_length()) ob_clean();
+
             header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            header('Content-Disposition: attachment; filename="danh_sach_giang_vien.xlsx"');
+            header('Content-Disposition: attachment; filename="' . $fileName . '"');
+            header('Cache-Control: max-age=0');
+
             $writer->save('php://output');
             exit;
         } catch (Exception $e) {

@@ -118,41 +118,35 @@
                                     ?>
                                 </td>
                                 <td class="text-center">
-                                    <div class="btn-group btn-group-sm" role="group">
-                                        <!-- Nút Xem chi tiết -->
+                                    <div class="d-flex justify-content-center gap-1">
                                         <button type="button"
-                                            class="btn btn-primary btn-action"
+                                            class="btn btn-sm btn-outline-primary"
                                             title="Xem chi tiết"
                                             data-bs-toggle="modal"
                                             data-bs-target="#viewLecturerModal"
                                             data-lecturer-id="<?php echo $lecturer['lecturer_id'] ?? 0; ?>"
                                             onclick="loadLecturerDetails(<?php echo $lecturer['lecturer_id'] ?? 0; ?>)">
-                                            <i class="bi bi-eye-fill"></i>
-                                            <span class="btn-text">Xem</span>
+                                            <i class="bi bi-eye"></i>
                                         </button>
 
-                                        <!-- Nút Chỉnh sửa -->
                                         <button type="button"
-                                            class="btn btn-warning btn-action text-white"
-                                            title="Chỉnh sửa thông tin"
+                                            class="btn btn-sm btn-outline-warning"
+                                            title="Chỉnh sửa"
                                             data-bs-toggle="modal"
                                             data-bs-target="#editLecturerModal"
                                             onclick="loadLecturerForEdit(<?php echo $lecturer['lecturer_id'] ?? 0; ?>)">
-                                            <i class="bi bi-pencil-fill"></i>
-                                            <span class="btn-text">Sửa</span>
+                                            <i class="bi bi-pencil"></i>
                                         </button>
 
-                                        <!-- Nút Xóa -->
                                         <button type="button"
-                                            class="btn btn-danger btn-action"
-                                            title="Xóa giảng viên"
+                                            class="btn btn-sm btn-outline-danger"
+                                            title="Xóa"
                                             data-bs-toggle="modal"
                                             data-bs-target="#deleteLecturerModal"
                                             data-lecturer-id="<?php echo $lecturer['lecturer_id'] ?? 0; ?>"
                                             data-lecturer-name="<?php echo htmlspecialchars($lecturer['full_name'] ?? ''); ?>"
                                             data-lecturer-msgv="<?php echo htmlspecialchars($lecturer['lecturer_code'] ?? ''); ?>">
-                                            <i class="bi bi-trash-fill"></i>
-                                            <span class="btn-text">Xóa</span>
+                                            <i class="bi bi-trash"></i>
                                         </button>
                                     </div>
                                 </td>

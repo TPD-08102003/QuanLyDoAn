@@ -34,6 +34,7 @@ class StudentController extends BaseController
         $this->accountModel = new AccountModel($pdo);
         $this->classesModel = new ClassesModel($pdo);
         $this->facultiesModel = new FacultiesModel($pdo);
+        date_default_timezone_set('Asia/Ho_Chi_Minh');
     }
 
     // Thêm vào StudentController
@@ -390,48 +391,174 @@ class StudentController extends BaseController
         }
     }
 
+    // public function export(): void
+    // {
+    //     try {
+    //         // Lấy tất cả sinh viên
+    //         $students = $this->studentModel->getAllStudentsWithRole();
+
+    //         $spreadsheet = new Spreadsheet();
+    //         $sheet = $spreadsheet->getActiveSheet();
+    //         $sheet->setTitle('Danh sách Sinh viên');
+
+    //         // Header
+    //         $headers = ['MSSV', 'Họ và Tên', 'Giới tính', 'Lớp', 'Khoa', 'Email', 'SĐT', 'Ngày sinh', 'Địa chỉ', 'Tình trạng'];
+    //         $sheet->fromArray($headers, null, 'A1');
+
+    //         // Data
+    //         $row = 2;
+    //         foreach ($students as $student) {
+    //             $data = [
+    //                 $student['mssv'] ?? 'Chưa có',
+    //                 $student['full_name'] ?? 'N/A',
+    //                 $student['gender'] ?? 'Chưa cập nhật',
+    //                 $student['class_name'] ?? 'Chưa có',
+    //                 $student['faculty_name'] ?? 'Chưa có',
+    //                 $student['email'] ?? 'Chưa có',
+    //                 $student['phone_number'] ?? 'Chưa có',
+    //                 $student['date_of_birth'] ? date('d/m/Y', strtotime($student['date_of_birth'])) : 'Chưa có',
+    //                 $student['address'] ?? 'Chưa có',
+    //                 $student['status'] === 'active' ? 'Hoạt động' : 'Khóa'
+    //             ];
+    //             $sheet->fromArray($data, null, 'A' . $row);
+    //             $row++;
+    //         }
+
+    //         // Auto size columns
+    //         foreach (range('A', 'J') as $col) {
+    //             $sheet->getColumnDimension($col)->setAutoSize(true);
+    //         }
+
+    //         // Output file
+    //         $writer = new Xlsx($spreadsheet);
+    //         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    //         header('Content-Disposition: attachment; filename="danh_sach_sinh_vien.xlsx"');
+    //         $writer->save('php://output');
+    //         exit;
+    //     } catch (Exception $e) {
+    //         $this->handleError($e, 'export');
+    //     }
+    // }
     public function export(): void
     {
         try {
-            // Lấy tất cả sinh viên
-            $students = $this->studentModel->getAllStudentsWithRole();
+            // 1. Lấy tham số và dữ liệu
+            $exportType = $_GET['export_type'] ?? 'all';
+            $classId = !empty($_GET['class_id']) ? (int)$_GET['class_id'] : null;
+            $classNameDisplay = "Tất cả"; // Mặc định hiển thị tên lớp
 
+            if ($exportType === 'class' && $classId) {
+                $students = $this->studentModel->getStudentsForExport($classId);
+                $fileNameSuffix = "_lop_" . $classId;
+
+                // Lấy tên lớp để hiển thị trong file Excel
+                $classInfo = $this->classesModel->findById($classId);
+                if ($classInfo) {
+                    $classNameDisplay = $classInfo['class_name'];
+                }
+            } else {
+                $students = $this->studentModel->getStudentsForExport(null);
+                $fileNameSuffix = "_tat_ca";
+            }
+
+            if (empty($students)) {
+                $_SESSION['message'] = "Không có dữ liệu sinh viên nào để xuất.";
+                $_SESSION['message_type'] = "warning";
+                header('Location: /quanlydoan/Student/manage');
+                exit;
+            }
+
+            // 2. Khởi tạo Excel
             $spreadsheet = new Spreadsheet();
             $sheet = $spreadsheet->getActiveSheet();
             $sheet->setTitle('Danh sách Sinh viên');
 
-            // Header
-            $headers = ['MSSV', 'Họ và Tên', 'Giới tính', 'Lớp', 'Khoa', 'Email', 'SĐT', 'Ngày sinh', 'Địa chỉ', 'Tình trạng'];
-            $sheet->fromArray($headers, null, 'A1');
+            // --- CẤU HÌNH STYLE CHUNG (Times New Roman) ---
+            $spreadsheet->getDefaultStyle()->getFont()->setName('Times New Roman');
+            $spreadsheet->getDefaultStyle()->getFont()->setSize(12);
 
-            // Data
-            $row = 2;
+            // --- PHẦN TIÊU ĐỀ TRANG (HEADINGS) ---
+
+            // Dòng 1: Tiêu đề lớn
+            $sheet->setCellValue('A1', 'DANH SÁCH SINH VIÊN');
+            $sheet->mergeCells('A1:J1'); // Gộp từ cột A đến J (10 cột)
+            $sheet->getStyle('A1')->applyFromArray([
+                'font' => ['bold' => true, 'size' => 16],
+                'alignment' => [
+                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                    'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                ],
+            ]);
+
+            // Dòng 2: Tên lớp
+            $sheet->setCellValue('A2', 'Lớp: ' . $classNameDisplay);
+            $sheet->getStyle('A2')->getFont()->setBold(true);
+
+            // Dòng 3: Ngày xuất
+            $sheet->setCellValue('A3', 'Ngày xuất: ' . date('d/m/Y H:i'));
+            $sheet->getStyle('A3')->getFont()->setItalic(true);
+
+            // --- PHẦN BẢNG DỮ LIỆU ---
+
+            // Dòng 5: Tiêu đề cột
+            $headerRow = 5;
+            $headers = ['MSSV', 'Họ và Tên', 'Giới tính', 'Lớp', 'Khoa', 'Email', 'SĐT', 'Ngày sinh', 'Địa chỉ', 'Tình trạng'];
+            $sheet->fromArray($headers, null, 'A' . $headerRow);
+
+            // Style cho dòng tiêu đề cột (Nền xám, in đậm, căn giữa, có viền)
+            $headerStyle = [
+                'font' => ['bold' => true, 'color' => ['rgb' => '000000']],
+                'fill' => [
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => ['argb' => 'FFEFEFEF']
+                ],
+                'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+                'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]]
+            ];
+            $sheet->getStyle('A' . $headerRow . ':J' . $headerRow)->applyFromArray($headerStyle);
+
+            // Dữ liệu: Bắt đầu từ dòng 6
+            $row = $headerRow + 1;
             foreach ($students as $student) {
                 $data = [
-                    $student['mssv'] ?? 'Chưa có',
-                    $student['full_name'] ?? 'N/A',
-                    $student['gender'] ?? 'Chưa cập nhật',
-                    $student['class_name'] ?? 'Chưa có',
-                    $student['faculty_name'] ?? 'Chưa có',
-                    $student['email'] ?? 'Chưa có',
-                    $student['phone_number'] ?? 'Chưa có',
-                    $student['date_of_birth'] ? date('d/m/Y', strtotime($student['date_of_birth'])) : 'Chưa có',
-                    $student['address'] ?? 'Chưa có',
+                    $student['mssv'] ?? '',
+                    $student['full_name'] ?? '',
+                    $student['gender'] ?? '',
+                    $student['class_name'] ?? '',
+                    $student['faculty_name'] ?? '',
+                    $student['email'] ?? '',
+                    $student['phone_number'] ?? '',
+                    $student['date_of_birth'] ? date('d/m/Y', strtotime($student['date_of_birth'])) : '',
+                    $student['address'] ?? '',
                     $student['status'] === 'active' ? 'Hoạt động' : 'Khóa'
                 ];
                 $sheet->fromArray($data, null, 'A' . $row);
                 $row++;
             }
 
-            // Auto size columns
+            // --- ĐỊNH DẠNG CUỐI CÙNG ---
+
+            // 1. Kẻ bảng (Border) cho toàn bộ vùng dữ liệu
+            $lastRow = $row - 1;
+            $dataRange = 'A' . $headerRow . ':J' . $lastRow; // Từ dòng tiêu đề đến dòng cuối
+            $sheet->getStyle($dataRange)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+
+            // 2. Auto size columns (Tự động chỉnh độ rộng cột)
             foreach (range('A', 'J') as $col) {
                 $sheet->getColumnDimension($col)->setAutoSize(true);
             }
 
-            // Output file
+            // 3. Xuất file
+            $fileName = "danh_sach_sinh_vien" . $fileNameSuffix . "_" . date('Y-m-d_H-i') . ".xlsx";
             $writer = new Xlsx($spreadsheet);
+
+            // Xóa buffer để tránh lỗi file bị hỏng do khoảng trắng thừa
+            if (ob_get_length()) ob_clean();
+
             header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            header('Content-Disposition: attachment; filename="danh_sach_sinh_vien.xlsx"');
+            header('Content-Disposition: attachment; filename="' . $fileName . '"');
+            header('Cache-Control: max-age=0');
+
             $writer->save('php://output');
             exit;
         } catch (Exception $e) {

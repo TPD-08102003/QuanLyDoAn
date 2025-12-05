@@ -822,4 +822,190 @@ class ProjectModel extends BaseModel
 
         return ['projects' => $projects, 'total' => $total];
     }
+
+    public function searchAvailableProjects(int $limit, int $offset, string $keyword = '', ?int $facultyId = null): array
+    {
+        // 1. Câu lệnh SQL cơ bản
+        $sql = "SELECT 
+                p.project_id,
+                p.title,
+                p.description,
+                p.status,
+                p.created_at,
+                p.max_students,
+                u.full_name AS lecturer_name,
+                f.faculty_name,
+                f.faculty_id,
+                -- Subquery đếm số sinh viên đã tham gia
+                (SELECT COUNT(*) 
+                 FROM group_members gm 
+                 JOIN groups g ON gm.group_id = g.group_id 
+                 WHERE g.project_id = p.project_id) as current_students
+            FROM projects p
+            LEFT JOIN lecturers l ON p.lecturer_id = l.lecturer_id
+            LEFT JOIN users u ON l.user_id = u.user_id
+            LEFT JOIN faculties f ON l.faculty_id = f.faculty_id
+            WHERE p.status IN ('DaDuyet', 'DangThucHien') 
+    ";
+
+        $params = [];
+
+
+
+        // 2. Xử lý tìm kiếm từ khóa (Tên đồ án, Tên GV, Tên Khoa)
+        if (!empty($keyword)) {
+            $sql .= " AND (p.title LIKE :keyword 
+                   OR u.full_name LIKE :keyword 
+                   OR f.faculty_name LIKE :keyword)";
+            $params[':keyword'] = "%{$keyword}%";
+        }
+
+        // 3. Xử lý lọc theo Khoa (nếu có)
+        if (!empty($facultyId)) {
+            $sql .= " AND f.faculty_id = :facultyId";
+            $params[':facultyId'] = $facultyId;
+        }
+
+        // 4. Sắp xếp: Mới nhất lên đầu
+        $sql .= " ORDER BY p.created_at DESC LIMIT :limit OFFSET :offset";
+
+        // 5. Thực thi query lấy dữ liệu
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+        $stmt->execute();
+        $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // 6. Thực thi query đếm tổng số (để phân trang)
+        $countSql = "SELECT COUNT(*) 
+                 FROM projects p
+                 LEFT JOIN lecturers l ON p.lecturer_id = l.lecturer_id
+                 LEFT JOIN users u ON l.user_id = u.user_id
+                 LEFT JOIN faculties f ON l.faculty_id = f.faculty_id
+                 WHERE p.status IN ('DaDuyet', 'DangThucHien')";
+
+        if (!empty($keyword)) {
+            $countSql .= " AND (p.title LIKE :keyword OR u.full_name LIKE :keyword OR f.faculty_name LIKE :keyword)";
+        }
+        if (!empty($facultyId)) {
+            $countSql .= " AND f.faculty_id = :facultyId";
+        }
+
+        $countStmt = $this->pdo->prepare($countSql);
+        foreach ($params as $key => $value) {
+            $countStmt->bindValue($key, $value);
+        }
+        $countStmt->execute();
+        $total = (int)$countStmt->fetchColumn();
+
+        return [
+            'projects' => $projects,
+            'total'    => $total
+        ];
+    }
+
+    /**
+     * Lấy danh sách Giảng viên để hiển thị trong bộ lọc
+     */
+    public function getLecturersForFilter(): array
+    {
+        $sql = "SELECT l.lecturer_id, u.full_name 
+                FROM lecturers l 
+                JOIN users u ON l.user_id = u.user_id 
+                WHERE l.deleted_at IS NULL 
+                ORDER BY u.full_name ASC";
+        return $this->query($sql);
+    }
+
+    /**
+     * Lọc đồ án cho sinh viên (Thay thế tìm kiếm từ khóa)
+     * Chỉ hiện đồ án còn chỗ và Status hợp lệ
+     */
+    public function filterProjectsForStudent(int $limit, int $offset, int $facultyId = 0, int $lecturerId = 0): array
+    {
+        // Query chính: Lấy thông tin đồ án + đếm số SV hiện tại
+        $sql = "SELECT 
+                    p.project_id,
+                    p.title,
+                    p.description,
+                    p.status,
+                    p.max_students,
+                    p.created_at,
+                    u.full_name AS lecturer_name,
+                    f.faculty_name,
+                    
+                    -- Subquery đếm số sinh viên đã tham gia
+                    (SELECT COUNT(*) 
+                     FROM group_members gm 
+                     JOIN groups g ON gm.group_id = g.group_id 
+                     WHERE g.project_id = p.project_id) as current_students
+
+                FROM projects p
+                LEFT JOIN lecturers l ON p.lecturer_id = l.lecturer_id
+                LEFT JOIN users u ON l.user_id = u.user_id
+                LEFT JOIN faculties f ON l.faculty_id = f.faculty_id
+                
+                WHERE p.status IN ('DaDuyet', 'DangThucHien') ";
+
+        $params = [];
+
+        // Lọc theo Khoa
+        if ($facultyId > 0) {
+            $sql .= " AND f.faculty_id = :facultyId";
+            $params[':facultyId'] = $facultyId;
+        }
+
+        // Lọc theo Giảng viên
+        if ($lecturerId > 0) {
+            $sql .= " AND p.lecturer_id = :lecturerId";
+            $params[':lecturerId'] = $lecturerId;
+        }
+
+        // QUAN TRỌNG: Chỉ lấy các đồ án CÒN CHỖ TRỐNG (current < max)
+        // Dùng HAVING vì current_students là alias
+        $sql .= " HAVING current_students < p.max_students ";
+
+        $sql .= " ORDER BY p.created_at DESC LIMIT :limit OFFSET :offset";
+
+        // Thực thi query lấy data
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+        $stmt->execute();
+        $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // --- Đếm tổng số (để phân trang) ---
+        // Lưu ý: Cần subquery để đếm đúng với điều kiện HAVING
+        $countSql = "SELECT COUNT(*) FROM (
+                        SELECT p.project_id,
+                               (SELECT COUNT(*) FROM group_members gm JOIN groups g ON gm.group_id = g.group_id WHERE g.project_id = p.project_id) as current_students,
+                               p.max_students
+                        FROM projects p
+                        LEFT JOIN lecturers l ON p.lecturer_id = l.lecturer_id
+                        LEFT JOIN faculties f ON l.faculty_id = f.faculty_id
+                        WHERE p.status IN ('DaDuyet', 'DangThucHien') ";
+
+        if ($facultyId > 0) $countSql .= " AND f.faculty_id = :facultyId";
+        if ($lecturerId > 0) $countSql .= " AND p.lecturer_id = :lecturerId";
+
+        $countSql .= " HAVING current_students < max_students) as filtered_table";
+
+        $countStmt = $this->pdo->prepare($countSql);
+        foreach ($params as $key => $value) {
+            $countStmt->bindValue($key, $value);
+        }
+        $countStmt->execute();
+        $total = (int)$countStmt->fetchColumn();
+
+        return [
+            'projects' => $projects,
+            'total'    => $total
+        ];
+    }
 }

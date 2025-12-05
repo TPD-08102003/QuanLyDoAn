@@ -349,4 +349,43 @@ class StudentModel extends BaseModel
         $stmt = $this->pdo->query("SELECT COUNT(*) FROM students");
         return (int) $stmt->fetchColumn();
     }
+
+    /**
+     * Lấy danh sách sinh viên để xuất Excel (có hỗ trợ lọc theo lớp)
+     */
+    public function getStudentsForExport(?int $classId = null): array
+    {
+        $sql = "SELECT 
+            s.mssv, 
+            u.full_name, u.gender, u.phone_number, u.date_of_birth, u.address,
+            a.email, a.status,
+            c.class_name, 
+            f.faculty_name
+        FROM accounts a
+        JOIN users u ON a.account_id = u.account_id
+        LEFT JOIN students s ON u.user_id = s.user_id
+        LEFT JOIN classes c ON s.class_id = c.class_id
+        LEFT JOIN faculties f ON s.faculty_id = f.faculty_id
+        WHERE a.role = 'student' AND s.deleted_at IS NULL";
+
+        // Nếu có classId thì thêm điều kiện lọc
+        if ($classId) {
+            $sql .= " AND s.class_id = :class_id";
+        }
+
+        $sql .= " ORDER BY s.mssv ASC"; // Sắp xếp theo MSSV cho đẹp
+
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            if ($classId) {
+                $stmt->execute(['class_id' => $classId]);
+            } else {
+                $stmt->execute();
+            }
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("StudentModel::getStudentsForExport error: " . $e->getMessage());
+            return [];
+        }
+    }
 }

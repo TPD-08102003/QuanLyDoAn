@@ -23,6 +23,7 @@ $uri = strtok($uri, '?');
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Trang Chủ</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
@@ -87,6 +88,8 @@ $uri = strtok($uri, '?');
                         <li class="nav-item">
                             <a class="nav-link <?php echo ($uri === '/quanlydoan' || $uri === '/quanlydoan/') ? 'active' : ''; ?>" href="/quanlydoan">Trang chủ</a>
                         </li>
+
+
                         <?php if ($user): // Chỉ hiện khi đã đăng nhập 
                         ?>
                             <li class="nav-item dropdown">
@@ -108,7 +111,12 @@ $uri = strtok($uri, '?');
                                     <?php endif; ?>
                                 </ul>
                                 <?php if ($role === 'teacher'): ?>
-                            <li><a class="nav-link" <?php echo strpos($uri, '/quanlydoan/report/manage_progress') === 0 ? 'active' : ''; ?> href="/quanlydoan/report/manage_progress"><i></i> Quản lý tiến độ</a></li>
+                            <li>
+                                <a class="nav-link <?php echo strpos($uri, '/quanlydoan/report/manage_progress') === 0 ? 'active' : ''; ?>"
+                                    href="/quanlydoan/report/manage_progress">
+                                    Quản lý tiến độ
+                                </a>
+                            </li>
                         <?php endif; ?>
                         </li>
                     <?php endif;
@@ -116,6 +124,14 @@ $uri = strtok($uri, '?');
                     <?php if ($role === 'student' || $role === 'teacher'): ?>
                         <li>
                             <a class="nav-link <?php echo strpos($uri, '/quanlydoan/group') === 0 ? 'active' : ''; ?>" href="/quanlydoan/group">Nhóm Dự án</a>
+                        </li>
+                    <?php endif; ?>
+                    <?php if ($role != 'student' && $role != 'teacher'): ?>
+                        <li class="nav-item">
+                            <a class="nav-link <?php echo (strpos($uri, '/quanlydoan/project') === 0) ? 'active' : ''; ?>"
+                                href="/quanlydoan/project">
+                                Đồ án
+                            </a>
                         </li>
                     <?php endif; ?>
                     <li class="nav-item">
@@ -154,7 +170,7 @@ $uri = strtok($uri, '?');
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#loginModal"><i class="bi bi-box-arrow-in-right me-2"></i> Đăng nhập</a></li>
-                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#registerModal"><i class="bi bi-person-plus me-2"></i> Đăng ký</a></li>
+                                <!-- <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#registerModal"><i class="bi bi-person-plus me-2"></i> Đăng ký</a></li> -->
                                 <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal"><i class="bi bi-question-circle me-2"></i> Quên mật khẩu</a></li>
                             </ul>
                         </li>

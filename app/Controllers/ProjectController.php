@@ -362,46 +362,6 @@ class ProjectController extends BaseController
         ]);
     }
 
-    // public function manage(): void
-    // {
-    //     try {
-    //         $page = (int)($_GET['page'] ?? 1);
-    //         $keyword = trim($_GET['keyword'] ?? '');
-    //         $limit = 5;
-    //         $offset = ($page - 1) * $limit;
-
-
-    //         if (empty($keyword)) {
-    //             $allProjects = $this->projectModel->getAllWithDetails();
-    //             $totalProjects = count($allProjects);
-    //             $projects = array_slice($allProjects, $offset, $limit);
-    //             $totalPages = ceil($totalProjects / $limit);
-    //         } else {
-    //             // Giả sử ProjectModel có getProjectsWithPagination
-    //             $result = $this->projectModel->getProjectsWithPagination($limit, $offset, $keyword);
-    //             $projects = $result['projects'];
-    //             $totalProjects = $result['total'];
-    //             $totalPages = ceil($totalProjects / $limit);
-    //         }
-
-    //         // $lecturers = $this->projectModel->getAvailableLecturers(); // Lấy tất cả
-    //         $faculties = $this->facultiesModel->getActiveFaculties();
-    //         // $lecturers = $this->projectModel->getAvailableLecturers();
-    //         // $faculties = $this->facultiesModel->getActiveFaculties();
-
-    //         $this->render('projects/manage', [
-    //             'projects' => $projects,
-    //             'totalProjects' => $totalProjects,
-    //             'totalPages' => $totalPages,
-    //             'page' => $page,
-    //             'keyword' => $keyword,
-    //             // 'lecturers' => $lecturers,
-    //             'faculties' => $faculties,
-    //         ]);
-    //     } catch (Exception $e) {
-    //         $this->handleError($e, 'manage');
-    //     }
-    // }
 
     public function manage(): void
     {
@@ -1065,61 +1025,25 @@ class ProjectController extends BaseController
         }
 
         try {
-            $page = max(1, (int)($_GET['page'] ?? 1)); // Đảm bảo page >= 1
-            $keyword = trim($_GET['keyword'] ?? '');
+            // 1. Lấy tham số filter
+            $page = max(1, (int)($_GET['page'] ?? 1));
+            $facultyId = (int)($_GET['faculty_id'] ?? 0);
+            $lecturerId = (int)($_GET['lecturer_id'] ?? 0);
+
             $limit = 9;
             $offset = ($page - 1) * $limit;
-            $params = [];
 
-            // 1. QUERY CHÍNH: Lấy danh sách đồ án
-            $sql = "SELECT p.*, 
-                           u.full_name as lecturer_name, 
-                           f.faculty_name,
-                           COALESCE(p.max_students, 3) as max_students,
-                           (SELECT COUNT(*) 
-                            FROM group_members gm 
-                            JOIN groups g ON gm.group_id = g.group_id 
-                            WHERE g.project_id = p.project_id) as current_students
-                    FROM projects p
-                    LEFT JOIN lecturers l ON p.lecturer_id = l.lecturer_id
-                    LEFT JOIN users u ON l.user_id = u.user_id
-                    LEFT JOIN faculties f ON l.faculty_id = f.faculty_id
-                    WHERE p.status IN ('DaDuyet', 'DangThucHien')";
-
-            // Logic tìm kiếm: Tiêu đề OR Tên giảng viên OR Tên Khoa
-            if (!empty($keyword)) {
-                $sql .= " AND (p.title LIKE :keyword 
-                               OR u.full_name LIKE :keyword 
-                               OR f.faculty_name LIKE :keyword)";
-                $params[':keyword'] = "%$keyword%";
-            }
-
-            $sql .= " ORDER BY p.created_at DESC LIMIT $limit OFFSET $offset";
-
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute($params);
-            $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            // 2. QUERY ĐẾM: Tính tổng trang (Phải join giống hệt query chính để đếm đúng)
-            $countSql = "SELECT COUNT(*) 
-                         FROM projects p 
-                         LEFT JOIN lecturers l ON p.lecturer_id = l.lecturer_id
-                         LEFT JOIN users u ON l.user_id = u.user_id
-                         LEFT JOIN faculties f ON l.faculty_id = f.faculty_id
-                         WHERE p.status IN ('DaDuyet', 'DangThucHien')";
-
-            if (!empty($keyword)) {
-                $countSql .= " AND (p.title LIKE :keyword 
-                                    OR u.full_name LIKE :keyword 
-                                    OR f.faculty_name LIKE :keyword)";
-            }
-
-            $stmtCount = $this->pdo->prepare($countSql);
-            $stmtCount->execute($params);
-            $totalProjects = $stmtCount->fetchColumn();
+            // 2. Gọi Model lọc dữ liệu
+            $result = $this->projectModel->filterProjectsForStudent($limit, $offset, $facultyId, $lecturerId);
+            $projects = $result['projects'];
+            $totalProjects = $result['total'];
             $totalPages = ceil($totalProjects / $limit);
 
-            // 3. CHECK ĐĂNG KÝ: Kiểm tra sinh viên đã đăng ký đồ án nào chưa
+            // 3. Lấy dữ liệu cho Dropdown Filter
+            $faculties = $this->facultiesModel->getActiveFaculties(); // Hàm này đã có trong FacultiesModel
+            $lecturers = $this->projectModel->getLecturersForFilter(); // Hàm vừa thêm ở bước 1
+
+            // 4. Kiểm tra sinh viên đã đăng ký đồ án nào chưa (để disable nút Đăng ký)
             $registeredProjectIds = [];
             if (isset($_SESSION['role']) && $_SESSION['role'] === 'student') {
                 $user = $this->userModel->findByAccountId($_SESSION['account_id']);
@@ -1145,13 +1069,17 @@ class ProjectController extends BaseController
                 'totalProjects' => $totalProjects,
                 'totalPages' => $totalPages,
                 'page' => $page,
-                'keyword' => $keyword,
+                'facultyId' => $facultyId,
+                'lecturerId' => $lecturerId,
+                'faculties' => $faculties,
+                'lecturers' => $lecturers,
                 'registeredProjectIds' => $registeredProjectIds,
             ]);
         } catch (Exception $e) {
             $this->handleError($e, 'index');
         }
     }
+
 
 
     /**

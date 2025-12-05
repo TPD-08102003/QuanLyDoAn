@@ -110,42 +110,35 @@
                                     ?>
                                 </td>
                                 <td class="text-center">
-                                    <div class="btn-group btn-group-sm" role="group">
-                                        <!-- Nút Xem chi tiết -->
+                                    <div class="d-flex justify-content-center gap-1">
                                         <button type="button"
-                                            class="btn btn-primary btn-action"
+                                            class="btn btn-sm btn-outline-primary"
                                             title="Xem chi tiết"
                                             data-bs-toggle="modal"
                                             data-bs-target="#viewStudentModal"
                                             data-student-id="<?php echo $student['student_id'] ?? $student['id'] ?? 0; ?>"
                                             onclick="loadStudentDetails(<?php echo $student['student_id'] ?? $student['id'] ?? 0; ?>)">
-                                            <i class="bi bi-eye-fill"></i>
-                                            <span class="btn-text">Xem</span>
+                                            <i class="bi bi-eye"></i>
                                         </button>
 
-
-                                        <!-- Nút Chỉnh sửa -->
                                         <button type="button"
-                                            class="btn btn-warning btn-action text-white"
-                                            title="Chỉnh sửa thông tin"
+                                            class="btn btn-sm btn-outline-warning"
+                                            title="Chỉnh sửa"
                                             data-bs-toggle="modal"
                                             data-bs-target="#editStudentModal"
                                             onclick="loadStudentForEdit(<?php echo $student['student_id'] ?? $student['id'] ?? 0; ?>)">
-                                            <i class="bi bi-pencil-fill"></i>
-                                            <span class="btn-text">Sửa</span>
+                                            <i class="bi bi-pencil"></i>
                                         </button>
 
-                                        <!-- Nút Xóa -->
                                         <button type="button"
-                                            class="btn btn-danger btn-action"
-                                            title="Xóa sinh viên"
+                                            class="btn btn-sm btn-outline-danger"
+                                            title="Xóa"
                                             data-bs-toggle="modal"
                                             data-bs-target="#deleteStudentModal"
                                             data-student-id="<?php echo $student['student_id'] ?? $student['id'] ?? 0; ?>"
                                             data-student-name="<?php echo htmlspecialchars($student['full_name'] ?? ''); ?>"
                                             data-student-mssv="<?php echo htmlspecialchars($student['mssv'] ?? ''); ?>">
-                                            <i class="bi bi-trash-fill"></i>
-                                            <span class="btn-text">Xóa</span>
+                                            <i class="bi bi-trash"></i>
                                         </button>
                                     </div>
                                 </td>
@@ -446,7 +439,72 @@
         </ul>
     </nav>
 <?php endif; ?>
+<div class="modal fade" id="exportStudentModal" tabindex="-1" aria-labelledby="exportStudentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="exportStudentModalLabel">
+                    <i class="bi bi-file-earmark-spreadsheet me-1"></i> Xuất Danh sách Sinh viên
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="/quanlydoan/Student/export" method="GET" id="exportForm">
+                <div class="modal-body">
+                    <p class="mb-3">Vui lòng chọn phạm vi dữ liệu muốn xuất:</p>
 
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="export_type" id="export_all" value="all" checked onchange="toggleExportClassSelect()">
+                        <label class="form-check-label" for="export_all">
+                            Xuất tất cả sinh viên
+                        </label>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" name="export_type" id="export_class" value="class" onchange="toggleExportClassSelect()">
+                        <label class="form-check-label" for="export_class">
+                            Xuất theo lớp cụ thể
+                        </label>
+                    </div>
+
+                    <div class="mb-3">
+                        <select class="form-select" name="class_id" id="export_class_select" disabled>
+                            <option value="">-- Chọn lớp --</option>
+                            <?php if (isset($classes) && is_array($classes)): ?>
+                                <?php foreach ($classes as $class): ?>
+                                    <option value="<?php echo $class['class_id']; ?>">
+                                        <?php echo htmlspecialchars($class['class_name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-info text-white">
+                        <i class="bi bi-download"></i> Xuất file
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Hàm bật/tắt dropdown chọn lớp trong Modal xuất Excel
+    function toggleExportClassSelect() {
+        const isClassSelected = document.getElementById('export_class').checked;
+        const selectBox = document.getElementById('export_class_select');
+        selectBox.disabled = !isClassSelected;
+        if (isClassSelected) {
+            selectBox.focus();
+            selectBox.setAttribute('required', 'required');
+        } else {
+            selectBox.removeAttribute('required');
+            selectBox.value = "";
+        }
+    }
+</script>
 <style>
     .btn-action {
         border-radius: 4px;
