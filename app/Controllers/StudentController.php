@@ -8,7 +8,7 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-
+use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use PDO;
 use Exception;
 use PDOException;
@@ -566,6 +566,7 @@ class StudentController extends BaseController
         }
     }
 
+    // Trong StudentController.php
     public function import(): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_FILES['excelFile'])) {
@@ -581,36 +582,83 @@ class StudentController extends BaseController
             $sheet = $spreadsheet->getActiveSheet();
             $rows = $sheet->toArray(null, true, true, true);
 
+            // Bỏ dòng tiêu đề
             array_shift($rows);
 
             $this->pdo->beginTransaction();
             $countSuccess = 0;
+            $failedRows = [];
 
-            foreach ($rows as $row) {
-                $mssv = trim($row['A'] ?? '');
-                $full_name = trim($row['B'] ?? '');
-                $gender = trim($row['C'] ?? '');
-                $class_name = trim($row['D'] ?? '');
-                $email = trim($row['E'] ?? '');
-                $phone_number = trim($row['F'] ?? '');
+            foreach ($rows as $index => $row) {
+                $rowIndex = $index + 2; // +2 vì index bắt đầu từ 0 và đã bỏ header
 
-                if (empty($mssv) || empty($full_name) || empty($class_name)) continue;
+                // Lấy dữ liệu thô
+                $mssv          = trim($row['A'] ?? '');
+                $full_name     = trim($row['B'] ?? '');
+                $gender        = trim($row['C'] ?? '');
+                $raw_dob       = trim($row['D'] ?? ''); // <--- Lấy dữ liệu thô ngày sinh
+                $class_name    = trim($row['E'] ?? '');
+                // Cột F là Khoa (bỏ qua vì lấy theo lớp)
+                $academic_year = trim($row['G'] ?? '2021-2025');
+                $email         = trim($row['H'] ?? '');
+                $phone_number  = trim($row['I'] ?? '');
+                $address       = trim($row['J'] ?? '');
 
+                // --- XỬ LÝ NGÀY SINH ---
+                $dob = $this->processDate($raw_dob); // <--- Gọi hàm xử lý ngày sinh
+
+                // 1. Kiểm tra dữ liệu bắt buộc
+                if (empty($mssv) || empty($full_name) || empty($class_name)) {
+                    $failedRows[] = "Dòng $rowIndex: Thiếu MSSV, Tên hoặc Lớp.";
+                    continue;
+                }
+
+                // 2. Kiểm tra lớp học
                 $class = $this->classesModel->findByName($class_name);
-                if (!$class) continue;
+                if (!$class) {
+                    $failedRows[] = "Dòng $rowIndex: Lớp '$class_name' không tồn tại.";
+                    continue;
+                }
+
                 $class_id = $class['class_id'];
                 $faculty_id = $class['faculty_id'];
 
+                // 3. Xử lý Sinh viên đã tồn tại
                 $existing = $this->studentModel->findByMssv($mssv);
                 if ($existing) {
-                    if (!$updateExisting) continue;
+                    if (!$updateExisting) {
+                        $failedRows[] = "Dòng $rowIndex: MSSV $mssv đã tồn tại.";
+                        continue;
+                    }
+
+                    // Cập nhật User
                     $userId = $existing['user_id'];
-                    $this->userModel->update($userId, ['full_name' => $full_name, 'gender' => $gender, 'phone_number' => $phone_number]);
+                    $updateData = [
+                        'full_name' => $full_name,
+                        'gender' => $gender,
+                        'phone_number' => $phone_number,
+                        'address' => $address
+                    ];
+                    if (!empty($dob)) {
+                        $updateData['date_of_birth'] = $dob;
+                    }
+
+                    $this->userModel->update($userId, $updateData);
                     $countSuccess++;
                     continue;
                 }
 
-                // Tạo mới
+                // 4. Tạo mới 
+                if (empty($email)) {
+                    $email = strtolower($mssv) . '@student.ctu.edu.vn';
+                }
+
+                if ($this->accountModel->findByEmail($email)) {
+                    $failedRows[] = "Dòng $rowIndex: Email $email trùng lặp.";
+                    continue;
+                }
+
+                // Tạo Account
                 $accountId = $this->accountModel->create([
                     'username' => $mssv,
                     'email' => $email,
@@ -618,39 +666,126 @@ class StudentController extends BaseController
                     'role' => 'student',
                     'status' => 'active'
                 ]);
-                $userId = $this->userModel->create([
+
+                if (!$accountId) {
+                    $failedRows[] = "Dòng $rowIndex: Lỗi tạo tài khoản.";
+                    continue;
+                }
+
+                // Tạo User
+                $userData = [
                     'account_id' => $accountId,
                     'full_name' => $full_name,
                     'gender' => $gender,
-                    'phone_number' => $phone_number
-                ]);
+                    'phone_number' => $phone_number,
+                    'address' => $address,
+                    'date_of_birth' => $dob // <--- Sử dụng ngày sinh đã convert
+                ];
+
+                $userId = $this->userModel->create($userData);
+
+                // Tạo Student
                 $this->studentModel->create([
                     'user_id' => $userId,
                     'mssv' => $mssv,
                     'class_id' => $class_id,
-                    'faculty_id' => $faculty_id
+                    'faculty_id' => $faculty_id,
+                    'academic_year' => $academic_year
                 ]);
+
                 $countSuccess++;
             }
 
             $this->pdo->commit();
-            $this->jsonResponse(['success' => true, 'message' => "Nhập thành công $countSuccess sinh viên."]);
+
+            $msg = "Đã nhập thành công $countSuccess sinh viên.";
+            if (count($failedRows) > 0) {
+                $msg .= " Có " . count($failedRows) . " dòng lỗi.";
+            }
+
+            $this->jsonResponse([
+                'success' => true,
+                'message' => $msg,
+                'errors' => $failedRows
+            ]);
         } catch (Exception $e) {
-            $this->pdo->rollBack();
-            $this->jsonResponse(['success' => false, 'message' => 'Lỗi: ' . $e->getMessage()], 500);
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            $this->jsonResponse(['success' => false, 'message' => 'Lỗi hệ thống: ' . $e->getMessage()], 500);
         }
     }
+
+    /**
+     * Hàm hỗ trợ chuyển đổi ngày từ Excel sang định dạng Y-m-d cho MySQL
+     */
+    private function processDate($value): ?string
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        try {
+            // Trường hợp 1: Excel trả về số (Excel Serial Date)
+            if (is_numeric($value)) {
+                // Chuyển từ số Excel sang PHP DateTime object
+                return ExcelDate::excelToDateTimeObject($value)->format('Y-m-d');
+            }
+
+            // Trường hợp 2: Excel trả về chuỗi text (vd: "30/01/2003" hoặc "30-01-2003")
+            $value = str_replace('/', '-', $value); // Đổi dấu / thành -
+            $date = date_create($value);
+            if ($date) {
+                return date_format($date, 'Y-m-d');
+            }
+        } catch (\Exception $e) {
+            // Nếu lỗi format thì trả về null hoặc để nguyên
+            return null;
+        }
+
+        return null;
+    }
+
     public function downloadTemplate(): void
     {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-        $headers = ['MSSV', 'Họ tên', 'Giới tính', 'Lớp', 'Email', 'Số điện thoại'];
+
+        // SỬA: Thêm cột "Địa chỉ" vào cuối mảng headers
+        $headers = ['MSSV', 'Họ tên', 'Giới tính', 'Ngày sinh', 'Lớp', 'Khoa', 'Niên khóa', 'Email', 'SĐT', 'Địa chỉ'];
+
         $sheet->fromArray($headers, null, 'A1');
-        $sheet->fromArray(['SV001', 'Nguyễn Văn A', 'Nam', 'CNTT1', 'vana@example.com', '0123456789'], null, 'A2');
+
+        // SỬA: Thêm dữ liệu mẫu cho cột địa chỉ
+        $sampleData = [
+            'B2111xxx',
+            'Nguyễn Văn A',
+            'Nam',
+            '2003-01-01',
+            'ĐHCNTT21A',
+            'Công nghệ thông tin',
+            '2021-2025',
+            'nva@student.ctu.edu.vn',
+            '0123456789',
+            'Cần Thơ' // Dữ liệu mẫu cho cột Địa chỉ
+        ];
+
+        $sheet->fromArray($sampleData, null, 'A2');
+
+        // Tự động chỉnh độ rộng cột cho đẹp
+        foreach (range('A', 'J') as $columnID) {
+            $sheet->getColumnDimension($columnID)->setAutoSize(true);
+        }
 
         $writer = new Xlsx($spreadsheet);
+
+        // Clean buffer để tránh lỗi file bị corrupt
+        if (ob_get_length()) ob_clean();
+
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment; filename="mau_nhap_sinh_vien.xlsx"');
+        header('Cache-Control: max-age=0');
+
         $writer->save('php://output');
         exit;
     }

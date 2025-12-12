@@ -42,18 +42,7 @@ class FacultiesModel extends BaseModel
         return $this->query($sql);
     }
 
-    /**
-     * Tìm khoa theo tên
-     */
-    // public function findByName(string $name): array|false
-    // {
-    //     $sql = "SELECT faculty_id, faculty_name, description, deleted_at, created_at, updated_at 
-    //     FROM faculties 
-    //     WHERE faculty_name = :name";
 
-    //     $result = $this->query($sql, [':name' => $name]);
-    //     return $result[0] ?? false;
-    // }
 
     public function findByName(string $name): array|false
     {
@@ -63,6 +52,21 @@ class FacultiesModel extends BaseModel
 
         $result = $this->query($sql, [':name' => trim($name)]);
         return $result[0] ?? false;
+    }
+
+
+
+    public function findByNameisImport(string $name): array|false
+    {
+        // Tìm chính xác hoặc gần đúng tên khoa
+        $sql = "SELECT * FROM {$this->table} WHERE faculty_name LIKE :name LIMIT 1";
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([':name' => "%" . trim($name) . "%"]);
+            return $stmt->fetch(\PDO::FETCH_ASSOC);
+        } catch (\PDOException $e) {
+            return false;
+        }
     }
     /**
      * Kiểm tra tên khoa đã tồn tại chưa
@@ -106,6 +110,7 @@ class FacultiesModel extends BaseModel
             if (!empty($keyword)) {
                 $sql = "SELECT * FROM faculties 
                     WHERE faculty_name LIKE ? 
+                    AND deleted_at IS NULL
                     ORDER BY created_at DESC 
                     LIMIT ? OFFSET ?";
                 $stmt = $this->pdo->prepare($sql);
@@ -113,6 +118,7 @@ class FacultiesModel extends BaseModel
                 $faculties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             } else {
                 $sql = "SELECT * FROM faculties 
+                WHERE deleted_at IS NULL
                     ORDER BY created_at DESC 
                     LIMIT ? OFFSET ?";
                 $stmt = $this->pdo->prepare($sql);
@@ -120,13 +126,15 @@ class FacultiesModel extends BaseModel
                 $faculties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             }
 
-            // Lấy tổng số records
+            // Lấy tổng số records (để phân trang)
             if (!empty($keyword)) {
-                $countSql = "SELECT COUNT(*) as total FROM faculties WHERE faculty_name LIKE ?";
+                // Đếm theo từ khóa VÀ chưa xóa
+                $countSql = "SELECT COUNT(*) as total FROM faculties WHERE faculty_name LIKE ? AND deleted_at IS NULL";
                 $countStmt = $this->pdo->prepare($countSql);
                 $countStmt->execute(['%' . $keyword . '%']);
             } else {
-                $countSql = "SELECT COUNT(*) as total FROM faculties";
+                // Đếm tất cả các dòng chưa xóa
+                $countSql = "SELECT COUNT(*) as total FROM faculties WHERE deleted_at IS NULL";
                 $countStmt = $this->pdo->prepare($countSql);
                 $countStmt->execute();
             }

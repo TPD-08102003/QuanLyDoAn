@@ -168,6 +168,46 @@
                 </tbody>
             </table>
         </div>
+        <?php if (isset($totalPages) && $totalPages > 1): ?>
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+
+                    <li class="page-item <?php echo $page <= 1 ? 'disabled' : ''; ?>">
+                        <a class="page-link" href="/quanlydoan/Lecturer/manage?page=<?php echo max(1, $page - 1); ?>&keyword=<?php echo urlencode($keyword ?? ''); ?>" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+
+                    <?php
+                    // Cấu hình hiển thị tối đa 5 trang
+                    $visiblePages = 5;
+                    $startPage = max(1, $page - 2);
+                    $endPage = min($totalPages, $page + 2);
+
+                    // Tính toán lại để luôn hiển thị đủ 5 nút nếu có thể
+                    while (($endPage - $startPage + 1) < $visiblePages && ($startPage > 1 || $endPage < $totalPages)) {
+                        if ($startPage > 1) $startPage--;
+                        if ($endPage < $totalPages) $endPage++;
+                    }
+
+                    // Vòng lặp hiển thị các nút
+                    for ($i = $startPage; $i <= $endPage; $i++):
+                    ?>
+                        <li class="page-item <?php echo (int)$i === (int)$page ? 'active' : ''; ?>">
+                            <a class="page-link" href="/quanlydoan/Lecturer/manage?page=<?php echo $i; ?>&keyword=<?php echo urlencode($keyword ?? ''); ?>">
+                                <?php echo $i; ?>
+                            </a>
+                        </li>
+                    <?php endfor; ?>
+
+                    <li class="page-item <?php echo $page >= $totalPages ? 'disabled' : ''; ?>">
+                        <a class="page-link" href="/quanlydoan/Lecturer/manage?page=<?php echo min($totalPages, $page + 1); ?>&keyword=<?php echo urlencode($keyword ?? ''); ?>" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -201,60 +241,91 @@
             <div class="modal-body">
                 <form id="editLecturerForm" method="POST">
                     <input type="hidden" name="lecturer_id" id="edit_lecturer_id">
-                    <div class="mb-3">
-                        <label for="edit_lecturer_code" class="form-label">MSGV <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="edit_lecturer_code" name="lecturer_code" required>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_lecturer_code" class="form-label">MSGV <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="edit_lecturer_code" name="lecturer_code" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_full_name" class="form-label">Họ và tên <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="edit_full_name" name="full_name" required>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="edit_full_name" class="form-label">Họ và tên <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="edit_full_name" name="full_name" required>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_gender" class="form-label">Giới tính</label>
+                            <select class="form-select" id="edit_gender" name="gender">
+                                <option value="Nam">Nam</option>
+                                <option value="Nữ">Nữ</option>
+                                <option value="Khác">Khác</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_faculty_id" class="form-label">Khoa <span class="text-danger">*</span></label>
+                            <select class="form-select" id="edit_faculty_id" name="faculty_id" required>
+                                <option value="">Chọn khoa</option>
+                                <?php foreach ($faculties as $faculty): ?>
+                                    <option value="<?php echo $faculty['faculty_id']; ?>"><?php echo htmlspecialchars($faculty['faculty_name']); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="edit_gender" class="form-label">Giới tính</label>
-                        <select class="form-select" id="edit_gender" name="gender">
-                            <option value="Nam">Nam</option>
-                            <option value="Nữ">Nữ</option>
-                            <option value="Khác">Khác</option>
-                        </select>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_position" class="form-label">Chức vụ</label>
+                            <input type="text" class="form-control" id="edit_position" name="position">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_specialization" class="form-label">Chuyên ngành</label>
+                            <input type="text" class="form-control" id="edit_specialization" name="specialization">
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="edit_faculty_id" class="form-label">Khoa <span class="text-danger">*</span></label>
-                        <select class="form-select" id="edit_faculty_id" name="faculty_id" required>
-                            <option value="">Chọn khoa</option>
-                            <?php foreach ($faculties as $faculty): ?>
-                                <option value="<?php echo $faculty['faculty_id']; ?>"><?php echo htmlspecialchars($faculty['faculty_name']); ?></option>
-                            <?php endforeach; ?>
-                        </select>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_email" class="form-label">Email <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="edit_email" name="email" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_phone_number" class="form-label">Số điện thoại</label>
+                            <input type="text" class="form-control" id="edit_phone_number" name="phone_number">
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="edit_position" class="form-label">Chức vụ</label>
-                        <input type="text" class="form-control" id="edit_position" name="position">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_years_of_experience" class="form-label">Kinh nghiệm (năm)</label>
+                            <input type="number" class="form-control" id="edit_years_of_experience" name="years_of_experience" min="0">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_date_of_birth" class="form-label">Ngày sinh</label>
+                            <input type="date" class="form-control" id="edit_date_of_birth" name="date_of_birth">
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="edit_specialization" class="form-label">Chuyên ngành</label>
-                        <input type="text" class="form-control" id="edit_specialization" name="specialization">
+
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="edit_address" class="form-label">Địa chỉ</label>
+                            <input type="text" class="form-control" id="edit_address" name="address">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="edit_status" class="form-label">Trạng thái tài khoản</label>
+                            <select class="form-select" id="edit_status" name="status">
+                                <option value="active" class="text-success fw-bold">Hoạt động</option>
+                                <option value="inactive" class="text-danger fw-bold">Khóa / Ngưng</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="edit_years_of_experience" class="form-label">Kinh nghiệm (năm)</label>
-                        <input type="number" class="form-control" id="edit_years_of_experience" name="years_of_experience" min="0" value="0">
+
+                    <div class="text-end border-top pt-3">
+                        <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-warning text-white">
+                            <i class="bi bi-save me-1"></i> Lưu thay đổi
+                        </button>
                     </div>
-                    <div class="mb-3">
-                        <label for="edit_email" class="form-label">Email <span class="text-danger">*</span></label>
-                        <input type="email" class="form-control" id="edit_email" name="email" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit_phone_number" class="form-label">Số điện thoại</label>
-                        <input type="text" class="form-control" id="edit_phone_number" name="phone_number">
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit_date_of_birth" class="form-label">Ngày sinh</label>
-                        <input type="date" class="form-control" id="edit_date_of_birth" name="date_of_birth">
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit_address" class="form-label">Địa chỉ</label>
-                        <input type="text" class="form-control" id="edit_address" name="address">
-                    </div>
-                    <button type="submit" class="btn btn-primary">Cập nhật giảng viên</button>
                 </form>
             </div>
         </div>
@@ -388,7 +459,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <a href="/quanlydoan/Lecturer/downloadTemplate" class="btn btn-outline-secondary mb-3">Tải mẫu Excel</a>
+                    <a href="/quanlydoan/Lecturer/downloadTemplate" class="btn btn-outline-secondary">Tải mẫu Excel</a>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
                     <button type="submit" class="btn btn-primary" id="importSubmitBtn">
                         <i class="fas fa-upload me-1"></i> Tải lên và Nhập
@@ -542,6 +613,9 @@
 
     // Load dữ liệu lên form edit
     function loadLecturerForEdit(id) {
+        // Reset form trước khi load để tránh dữ liệu cũ
+        document.getElementById('editLecturerForm').reset();
+
         fetch(`/quanlydoan/Lecturer/show/${id}`)
             .then(res => res.json())
             .then(data => {
@@ -559,9 +633,20 @@
                     document.getElementById('edit_phone_number').value = l.phone_number || '';
                     document.getElementById('edit_date_of_birth').value = l.date_of_birth || '';
                     document.getElementById('edit_address').value = l.address || '';
-                } else alert('Không thể tải dữ liệu giảng viên.');
+
+                    // Xử lý status (nếu API trả về status, mặc định là active)
+                    const statusSelect = document.getElementById('edit_status');
+                    if (statusSelect) {
+                        statusSelect.value = l.status || 'active';
+                    }
+                } else {
+                    alert('Không thể tải dữ liệu giảng viên: ' + (data.message || 'Lỗi không xác định'));
+                }
             })
-            .catch(() => alert('Lỗi kết nối máy chủ.'));
+            .catch(err => {
+                console.error(err);
+                alert('Lỗi kết nối máy chủ.');
+            });
     }
 
     // Gửi form edit - SỬA LẠI DÙNG JSON
@@ -758,7 +843,4 @@
                 });
         });
     }
-
-    // XÓA PHẦN NÀY VÌ NÚT KHÔNG TỒN TẠI
-    // document.getElementById('importLecturerButton').addEventListener('click', function() { ... });
 </script>

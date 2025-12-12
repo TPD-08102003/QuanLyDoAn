@@ -282,13 +282,20 @@ if (session_status() === PHP_SESSION_NONE) {
                 </li>
             <?php endif; ?>
             <?php
+            // 1. Logic tính toán để luôn hiển thị đủ 5 nút (nếu đủ trang)
+            $visiblePages = 5;
             $startPage = max(1, $page - 2);
             $endPage = min($totalPages, $page + 2);
-            if ($endPage - $startPage < 4) {
-                $startPage = max(1, $endPage - 4);
+
+            // Nếu số lượng trang hiển thị chưa đủ 5, ta mở rộng thêm
+            while (($endPage - $startPage + 1) < $visiblePages && ($startPage > 1 || $endPage < $totalPages)) {
+                if ($startPage > 1) $startPage--;
+                if ($endPage < $totalPages) $endPage++;
             }
+
+            // 2. Vòng lặp hiển thị
             for ($i = $startPage; $i <= $endPage; $i++): ?>
-                <li class="page-item <?php echo $i === $page ? 'active' : ''; ?>">
+                <li class="page-item <?php echo (int)$i === (int)$page ? 'active' : ''; ?>">
                     <a class="page-link" href="/quanlydoan/Account/manage?page=<?php echo $i; ?>&keyword=<?php echo urlencode($keyword); ?>"><?php echo $i; ?></a>
                 </li>
             <?php endfor; ?>

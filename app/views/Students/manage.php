@@ -635,15 +635,75 @@
             });
         }
 
-        // Xử lý nhập Excel
-        document.getElementById('importButton').addEventListener('click', function() {
-            const fileInput = document.getElementById('excelFile');
-            if (!fileInput.files.length) {
-                alert('Vui lòng chọn file Excel để nhập!');
-                return;
-            }
-            alert('Tính năng nhập Excel sẽ được tích hợp với backend!');
-        });
+        // --- XỬ LÝ NHẬP EXCEL (IMPORT) ---
+        const importBtn = document.getElementById('importButton');
+
+        if (importBtn) {
+            importBtn.addEventListener('click', function() {
+                const fileInput = document.getElementById('excelFile');
+                const form = document.getElementById('importForm');
+                const modalElement = document.getElementById('importStudentModal');
+                const modalInstance = bootstrap.Modal.getInstance(modalElement);
+
+                // 1. Validation: Kiểm tra đã chọn file chưa
+                if (!fileInput.files.length) {
+                    alert('Vui lòng chọn file Excel (.xlsx) trước khi nhập!');
+                    fileInput.focus();
+                    return;
+                }
+
+                // 2. UI Loading: Khóa nút và hiện spinner
+                const originalText = this.innerHTML;
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang xử lý...';
+
+                // 3. Chuẩn bị dữ liệu gửi đi
+                const formData = new FormData(form);
+
+                // 4. Gửi Request
+                fetch('/quanlydoan/Student/import', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => {
+                        // Kiểm tra HTTP status trước
+                        if (!response.ok) {
+                            throw new Error(`Lỗi Server (${response.status})`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            // Đóng modal
+                            if (modalInstance) modalInstance.hide();
+
+                            // Hiển thị thông báo thành công (dùng hàm showAlert có sẵn)
+                            showAlert(data.message, 'success');
+
+                            // Reload lại trang sau 1.5s để cập nhật danh sách
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1500);
+                        } else {
+                            alert('Lỗi nhập liệu: ' + (data.message || 'Không xác định'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Lỗi Import:', error);
+                        alert('Đã xảy ra lỗi khi kết nối đến máy chủ: ' + error.message);
+                    })
+                    .finally(() => {
+                        // 5. Reset nút về trạng thái ban đầu
+                        this.disabled = false;
+                        this.innerHTML = originalText;
+
+                        // Reset form (xóa file đã chọn)
+                        if (!importBtn.disabled && document.getElementById('importStudentModal').classList.contains('show') === false) {
+                            form.reset();
+                        }
+                    });
+            });
+        }
     });
 
     // Hàm hiển thị thông báo trong form

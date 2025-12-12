@@ -20,14 +20,7 @@ unset($_SESSION['error_message']);
         <!-- Toolbar -->
         <div class="d-flex flex-wrap gap-3 mb-3 align-items-center">
             <div class="me-auto">
-                <form method="GET" action="/quanlydoan/Project/approve" class="d-inline-flex align-items-center gap-2">
-                    <input type="text" name="keyword" class="form-control" placeholder="Tìm kiếm tiêu đề, giảng viên, khoa..."
-                        value="<?= htmlspecialchars($keyword ?? '') ?>" style="width: 380px;">
-                    <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
-                    <?php if (!empty($keyword)): ?>
-                        <a href="/quanlydoan/Project/approve" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i></a>
-                    <?php endif; ?>
-                </form>
+
             </div>
             <div>
                 <button class="btn btn-success btn-sm" onclick="batchApprove()"><i class="bi bi-check-lg"></i> Duyệt hàng loạt</button>

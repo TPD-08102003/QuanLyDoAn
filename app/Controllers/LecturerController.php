@@ -54,7 +54,8 @@ class LecturerController extends BaseController
                 $totalPages = ceil($totalLecturers / $limit);
             }
 
-            $faculties = $this->facultiesModel->findAll();
+            //$faculties = $this->facultiesModel->findAll();
+            $faculties = $this->facultiesModel->getActiveFaculties();
 
             $this->render('lecturers/manage', [
                 'lecturers' => $lecturers,
@@ -673,7 +674,7 @@ class LecturerController extends BaseController
                 // 3. Tìm ID Khoa
                 $faculty_id = 0;
                 if (!$skipRow) {
-                    $faculty = $this->facultiesModel->findByName($faculty_name);
+                    $faculty = $this->facultiesModel->findByNameisImport($faculty_name);
                     if (!$faculty) {
                         $errors[] = $errorMsg . "Tên Khoa '{$faculty_name}' không tồn tại.";
                         $skipRow = true;

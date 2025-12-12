@@ -147,24 +147,57 @@ class LecturerModel extends BaseModel
      * @param array $data
      * @return bool
      */
+    // public function update(int $id, array $data): bool
+    // {
+    //     if (empty($data)) return false;
+
+    //     $fields = [];
+    //     $params = [];
+    //     foreach ($data as $key => $value) {
+    //         $fields[] = "$key = :$key";
+    //         $params[":$key"] = $value;
+    //     }
+    //     $params[':id'] = $id;
+
+    //     $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . " WHERE lecturer_id = :id AND deleted_at IS NULL";
+    //     try {
+    //         $stmt = $this->pdo->prepare($sql);
+    //         return $stmt->execute($params);
+    //     } catch (PDOException $e) {
+    //         error_log("LecturerModel::update error: " . $e->getMessage());
+    //         return false;
+    //     }
+    // }
+    // File: App/Models/LecturerModel.php
+
     public function update(int $id, array $data): bool
     {
-        if (empty($data)) return false;
-
-        $fields = [];
-        $params = [];
-        foreach ($data as $key => $value) {
-            $fields[] = "$key = :$key";
-            $params[":$key"] = $value;
-        }
-        $params[':id'] = $id;
-
-        $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . " WHERE lecturer_id = :id AND deleted_at IS NULL";
         try {
+            // Lọc bỏ các trường không tồn tại trong bảng lecturers
+            // (Đặc biệt là updated_at gây ra lỗi)
+            $allowedFields = ['faculty_id', 'lecturer_code', 'position', 'specialization', 'years_of_experience', 'deleted_at'];
+
+            $fields = [];
+            $params = [':id' => $id];
+
+            foreach ($data as $key => $value) {
+                if (in_array($key, $allowedFields)) {
+                    $fields[] = "$key = :$key";
+                    $params[":$key"] = $value;
+                }
+            }
+
+            if (empty($fields)) {
+                return true; // Không có gì để update
+            }
+
+            // CÂU SQL ĐÃ SỬA: Bỏ "updated_at = NOW()"
+            $sql = "UPDATE lecturers SET " . implode(', ', $fields) . " WHERE lecturer_id = :id";
+
             $stmt = $this->pdo->prepare($sql);
             return $stmt->execute($params);
         } catch (PDOException $e) {
-            error_log("LecturerModel::update error: " . $e->getMessage());
+            error_log("Error updating lecturer: " . $e->getMessage());
             return false;
         }
     }
@@ -347,20 +380,4 @@ class LecturerModel extends BaseModel
             return false;
         }
     }
-
-
-    // // Các method khác (nếu có), ví dụ findByName() từ code gốc
-    // public function findByName(string $name): array|false
-    // {
-    //     $sql = "
-    //         SELECT l.*
-    //         FROM lecturers l
-    //         LEFT JOIN users u ON l.user_id = u.user_id
-    //         WHERE u.full_name = :name
-    //         LIMIT 1
-    //     ";
-    //     $stmt = $this->pdo->prepare($sql);
-    //     $stmt->execute([':name' => $name]);
-    //     return $stmt->fetch(PDO::FETCH_ASSOC);
-    // }
 }
