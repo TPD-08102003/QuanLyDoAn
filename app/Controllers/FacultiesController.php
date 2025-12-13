@@ -107,9 +107,7 @@ class FacultiesController extends BaseController
         }
     }
 
-    /**
-     * Lấy thông tin khoa theo ID (cho AJAX)
-     */
+
     /**
      * Lấy thông tin khoa theo ID (cho AJAX)
      */
